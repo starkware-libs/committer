@@ -11,3 +11,5 @@ workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+starknet.workspace = true
+pathfinder-crypto.workspace = true

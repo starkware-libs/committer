@@ -9,5 +9,13 @@ description = "Cli for the committer package."
 [lints]
 workspace = true
 
-[dev-dependencies]
-pretty_assertions.workspace = true
+[dependencies]
+starknet.workspace = true
+pathfinder-crypto.workspace = true
+starknet-types-core = { version = "0.0.10", git = "https://github.com/starknet-io/types-rs", default-features = false, features = [
+    "alloc",
+    "serde",
+    "arbitrary",
+    "curve",
+    "hash",
+] }

@@ -9,5 +9,9 @@ description = "Cli for the committer package."
 [lints]
 workspace = true
 
-[dev-dependencies]
-pretty_assertions.workspace = true
+[dependencies]
+rand = "0.8"
+starknet.workspace = true
+pathfinder-crypto.workspace = true
+tokio = { version = "1.2.0", features = ["full"] }
+async-recursion = "1.1.0"

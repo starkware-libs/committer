@@ -1,2 +1,2 @@
-pub mod patricia_merkle_node;
-pub mod patricia_merkle_tree;
+pub mod node;
+pub mod tree;

@@ -1,3 +1,5 @@
+pub mod patricia_merkle_tree;
+
 // TODO(Dori, 3/3/2024): Delete this dummy code.
 pub fn dummy() -> u8 {
     7

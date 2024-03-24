@@ -11,3 +11,6 @@ workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+
+[dependencies]
+pathfinder-crypto = { git = "https://github.com/eqlabs/pathfinder.git"}

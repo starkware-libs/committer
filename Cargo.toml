@@ -14,6 +14,16 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 pretty_assertions = "1.2.1"
+rand = "0.8"
+starknet = "0.9.0"
+pathfinder-crypto = { git = "https://github.com/eqlabs/pathfinder.git", branch="main"}
+starknet-types-core = { version = "0.0.10", git = "https://github.com/starknet-io/types-rs", default-features = false, features = [
+    "alloc",
+    "serde",
+    "arbitrary",
+    "curve",
+    "hash",
+] }
 
 [workspace.lints.rust]
 warnings = "deny"
@@ -24,3 +34,4 @@ unused = "deny"
 
 [workspace.lints.clippy]
 as_conversions = "deny"
+

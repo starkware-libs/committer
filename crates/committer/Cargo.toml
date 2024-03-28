@@ -14,3 +14,13 @@ pretty_assertions.workspace = true
 rand = "0.8"
 starknet.workspace = true
 pathfinder-crypto.workspace = true
+tokio = { version = "1.2.0", features = ["full"] }
+async-recursion = "1.1.0"
+rayon = "1.10.0"
+starknet-types-core = { version = "0.0.11", git = "https://github.com/starknet-io/types-rs", default-features = false, features = [
+    "alloc",
+    "serde",
+    "arbitrary",
+    "curve",
+    "hash",
+] }

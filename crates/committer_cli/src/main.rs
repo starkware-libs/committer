@@ -7,6 +7,8 @@ use std::time::Instant;
 use async_recursion::async_recursion;
 use pathfinder_crypto::Felt;
 
+use rayon::Scope;
+
 const TREE_HEIGHT: u8 = 18;
 
 /// Main entry point of the committer CLI.
@@ -30,6 +32,7 @@ async fn main() {
     let now = Instant::now();
     let root = create_dummy_tree(_height);
     let root_clone = clone_tree(&root);
+    let root_clone_clone = clone_tree(&root_clone);
     let elapased_time = now.elapsed();
     println!("Tree creation time: {:?}", elapased_time);
 
@@ -44,6 +47,15 @@ async fn main() {
 
     let now = Instant::now();
     // Code block to measure.
+    let result_rayon = algorithm_rayon(*root_clone_clone.unwrap());
+    // TODO: sanity check
+    // End of code block to measure.
+    let elapased_time_rayon = now.elapsed();
+    // Print measurement.
+    println!("Rayon time: {:?}", elapased_time_rayon);
+
+    let now = Instant::now();
+    // Code block to measure.
     let result_seq = algorithm_seq(*root.unwrap());
     // TODO: sanity check
     // End of code block to measure.
@@ -53,12 +65,8 @@ async fn main() {
 
     // Sanity check.
     assert_eq!(result_seq, result_tokio);
+    assert_eq!(result_seq, result_rayon);
     println!("Sanity check passed!");
-    println!(
-        "Tokio took {}% less runtime",
-        100_f64 * (elapased_time_seq - elapased_time_tokio).as_secs_f64()
-            / elapased_time_seq.as_secs_f64()
-    );
 
     // Output to file.
     let output = "Dummy output";
@@ -175,6 +183,43 @@ pub async fn algorithm_tokio(mut node: SNTreeNode) -> Felt {
     } else {
         //TODO: compute/return the path hash
         todo!("Path hash computation")
+    }
+}
+
+pub fn compute_val_rayon(node: SNTreeNode) -> Felt {
+    match node.hash_value {
+        Some(value) => value,
+        None => algorithm_rayon(node),
+    }
+}
+pub fn algorithm_rayon(mut node: SNTreeNode) -> Felt {
+    if node.is_leaf {
+        return node.hash_value.unwrap();
+    }
+    let left_child = node
+        .left_child
+        .expect("Not a leaf node, left child must exist");
+    let right_child = node
+        .right_child
+        .expect("Not a leaf node, right child must exist");
+    let mut left_value: Felt = Default::default();
+    let mut right_value: Felt = Default::default();
+    rayon::scope(|s: &Scope<'_>| {
+        s.spawn(|_s| {
+            left_value = compute_val_rayon(*left_child);
+        });
+        s.spawn(|_s| {
+            right_value = compute_val_rayon(*right_child);
+        });
+    });
+    if !node.is_path {
+        node.hash_value = Some(pathfinder_crypto::hash::pedersen_hash(
+            left_value,
+            right_value,
+        ));
+        node.hash_value.unwrap()
+    } else {
+        Felt::default()
     }
 }
 

@@ -4,10 +4,24 @@ pub fn dummy() -> u8 {
 }
 #[cfg(test)]
 pub mod test {
-    const TREE_HEIGHT: u8 = 10;
     use rand::Rng;
+    use starknet_types_core::hash;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use std::sync::Mutex;
+    use std::sync::RwLock;
     use std::time::Duration;
     use std::time::Instant;
+
+    use crate::test_utils::clone_tree;
+    use crate::test_utils::count_inner_nodes;
+    use crate::test_utils::create_dummy_tree;
+    // use crate::test_utils::print_tree;
+    use crate::test_utils::tree_to_hashmap;
+    use crate::test_utils::ONE;
+    use crate::test_utils::TREE_HEIGHT;
+    use crate::test_utils::TWO;
+    use crate::test_utils::{mean, std_deviation};
 
     use super::dummy;
     use pathfinder_crypto::Felt;
@@ -25,26 +39,6 @@ pub mod test {
     #[test]
     fn test_dummy() {
         assert_eq!(dummy(), 7);
-    }
-
-    fn mean(data: &[Duration]) -> Duration {
-        data.iter()
-            .sum::<Duration>()
-            .checked_div(data.len().try_into().unwrap())
-            .unwrap()
-    }
-    #[allow(clippy::as_conversions)]
-    fn std_deviation(data: &[Duration]) -> Duration {
-        let mean = mean(data).as_secs_f32();
-        let mut variance = data
-            .iter()
-            .map(|x| {
-                let diff = (*x).as_secs_f32() - mean;
-                diff * diff
-            })
-            .sum::<f32>();
-        variance /= data.len() as f32;
-        Duration::from_secs_f32(variance.sqrt())
     }
 
     //run with `cargo test --release -- --nocapture bench`
@@ -172,105 +166,50 @@ pub mod test {
 
     //Thread benchmarking
 
+    #[derive(Clone)]
     pub struct SNTreeNode {
-        left_child: Option<Box<SNTreeNode>>,
-        right_child: Option<Box<SNTreeNode>>,
-        _parent: Option<Box<SNTreeNode>>,
-        hash_value: Option<Felt>,
-        is_path: bool,
-        _path_data: Option<[u128; 2]>,
-        _is_root: bool,
-        is_leaf: bool,
+        pub left_child: Option<Box<SNTreeNode>>,
+        pub right_child: Option<Box<SNTreeNode>>,
+        pub(crate) _parent: Option<Box<SNTreeNode>>,
+        pub(crate) hash_value: Option<StarknetFelt>,
+        pub is_path: bool,
+        pub length: u8,
+        pub _path_data: Option<[u128; 2]>,
+        pub(crate) _is_root: bool,
+        pub is_leaf: bool,
         // _leaf_data: Option<(ClassHash, ClassTreeNode)>,
     }
 
-    pub fn random_felt() -> Felt {
-        let mut buf: [u8; 32] = rand::thread_rng().gen();
-        buf[0] &= 0x07; // clear the 5 most significant bits
-        Felt::from_be_bytes(buf).expect("Overflow ;(")
-    }
-
-    pub fn create_dummy_tree(height: u8) -> Option<Box<SNTreeNode>> {
-        let node = match height {
-            TREE_HEIGHT => SNTreeNode {
-                left_child: create_dummy_tree(height - 1),
-                right_child: create_dummy_tree(height - 1),
-                _parent: None,
-                hash_value: None,
-                is_path: false,
-                _path_data: None,
-                _is_root: true,
-                is_leaf: false,
-            },
-            0 => SNTreeNode {
-                left_child: None,
-                right_child: None,
-                _parent: None,
-                hash_value: Some(random_felt()),
-                is_path: false,
-                _path_data: None,
-                _is_root: false,
-                is_leaf: true,
-            },
-            _ => SNTreeNode {
-                left_child: create_dummy_tree(height - 1),
-                right_child: create_dummy_tree(height - 1),
-                _parent: None,
-                hash_value: None,
-                is_path: false,
-                _path_data: None,
-                _is_root: false,
-                is_leaf: false,
-            },
-        };
-        Some(Box::new(node))
-    }
-
-    pub fn clone_tree(node: &Option<Box<SNTreeNode>>) -> Option<Box<SNTreeNode>> {
-        match node {
-            Some(node) => {
-                let mut new_node = SNTreeNode {
-                    left_child: None,
-                    right_child: None,
-                    _parent: None,
-                    hash_value: node.hash_value,
-                    is_path: node.is_path,
-                    _path_data: node._path_data,
-                    _is_root: node._is_root,
-                    is_leaf: node.is_leaf,
-                };
-                new_node.left_child = clone_tree(&node.left_child);
-                new_node.right_child = clone_tree(&node.right_child);
-                Some(Box::new(new_node))
-            }
-            None => None,
-        }
-    }
-
-    pub fn count_inner_nodes(node: &Option<Box<SNTreeNode>>) -> u32 {
-        match node {
-            Some(node) => {
-                let mut count = 0;
-                if !node.is_leaf {
-                    count += 1;
-                    count += count_inner_nodes(&node.left_child);
-                    count += count_inner_nodes(&node.right_child);
-                }
-                count
-            }
-            None => 0,
-        }
-    }
-
-    pub async fn compute_val(node: SNTreeNode) -> Felt {
+    pub async fn compute_val(node: SNTreeNode) -> StarknetFelt {
         match node.hash_value {
             Some(value) => value,
             None => algorithm_tokio(node).await,
         }
     }
 
+    pub fn algorithm_seq(mut node: SNTreeNode) -> StarknetFelt {
+        if node.is_leaf {
+            return node.hash_value.unwrap();
+        }
+        let left_child = node
+            .left_child
+            .expect("Not a leaf node, left child must exist");
+        let right_child = node
+            .right_child
+            .expect("Not a leaf node, right child must exist");
+        let left_value = algorithm_seq(*left_child);
+        let right_value = algorithm_seq(*right_child);
+        if !node.is_path {
+            node.hash_value = Some(hash::Pedersen::hash(&left_value, &right_value));
+            node.hash_value.unwrap()
+        } else {
+            //TODO: compute/return the path hash
+            todo!("Path hash computation")
+        }
+    }
+
     #[async_recursion]
-    pub async fn algorithm_tokio(mut node: SNTreeNode) -> Felt {
+    pub async fn algorithm_tokio(mut node: SNTreeNode) -> StarknetFelt {
         if node.is_leaf {
             //TODO: compute/return the leaf hash
             return node.hash_value.unwrap();
@@ -288,10 +227,7 @@ pub mod test {
                 left_value_future.await.unwrap(),
                 right_value_future.await.unwrap(),
             );
-            node.hash_value = Some(pathfinder_crypto::hash::pedersen_hash(
-                left_value,
-                right_value,
-            ));
+            node.hash_value = Some(hash::Pedersen::hash(&left_value, &right_value));
             return node.hash_value.unwrap();
         } else {
             //TODO: compute/return the path hash
@@ -299,13 +235,13 @@ pub mod test {
         }
     }
 
-    pub fn compute_val_rayon(node: SNTreeNode) -> Felt {
+    pub fn compute_val_rayon(node: SNTreeNode) -> StarknetFelt {
         match node.hash_value {
             Some(value) => value,
             None => algorithm_rayon(node),
         }
     }
-    pub fn algorithm_rayon(mut node: SNTreeNode) -> Felt {
+    pub fn algorithm_rayon(mut node: SNTreeNode) -> StarknetFelt {
         if node.is_leaf {
             return node.hash_value.unwrap();
         }
@@ -315,8 +251,8 @@ pub mod test {
         let right_child = node
             .right_child
             .expect("Not a leaf node, right child must exist");
-        let mut left_value: Felt = Default::default();
-        let mut right_value: Felt = Default::default();
+        let mut left_value: StarknetFelt = Default::default();
+        let mut right_value: StarknetFelt = Default::default();
         rayon::scope(|s: &Scope<'_>| {
             s.spawn(|_s| {
                 left_value = compute_val_rayon(*left_child);
@@ -326,10 +262,7 @@ pub mod test {
             });
         });
         if !node.is_path {
-            node.hash_value = Some(pathfinder_crypto::hash::pedersen_hash(
-                left_value,
-                right_value,
-            ));
+            node.hash_value = Some(hash::Pedersen::hash(&left_value, &right_value));
             node.hash_value.unwrap()
         } else {
             //TODO: compute/return the path hash
@@ -337,26 +270,88 @@ pub mod test {
         }
     }
 
-    pub fn algorithm_seq(mut node: SNTreeNode) -> Felt {
+    pub fn algorithm_hash(
+        map: &HashMap<StarknetFelt, SNTreeNode>,
+        index: StarknetFelt,
+    ) -> StarknetFelt {
+        let node = map.get(&index).unwrap();
         if node.is_leaf {
             return node.hash_value.unwrap();
         }
-        let left_child = node
-            .left_child
-            .expect("Not a leaf node, left child must exist");
-        let right_child = node
-            .right_child
-            .expect("Not a leaf node, right child must exist");
-        let left_value = algorithm_seq(*left_child);
-        let right_value = algorithm_seq(*right_child);
         if !node.is_path {
-            node.hash_value = Some(pathfinder_crypto::hash::pedersen_hash(
-                left_value,
-                right_value,
-            ));
-            node.hash_value.unwrap()
+            let left_index = index * TWO;
+            let left_value = algorithm_hash(map, left_index);
+            let right_value = algorithm_hash(map, left_index + 1);
+            hash::Pedersen::hash(&left_value, &right_value)
         } else {
-            //TODO: compute/return the path hash
+            todo!("Path hash computation")
+        }
+    }
+
+    pub fn algorithm_hash_rayon(
+        map: &HashMap<StarknetFelt, SNTreeNode>,
+        index: StarknetFelt,
+        output_map: Arc<RwLock<HashMap<StarknetFelt, Mutex<StarknetFelt>>>>,
+    ) -> StarknetFelt {
+        let node = &mut map.get(&index).unwrap();
+        if node.is_leaf {
+            let mut write_locked_map = output_map.write().expect("RwLock poisoned");
+            write_locked_map.insert(index, Mutex::new(node.hash_value.unwrap()));
+            return node.hash_value.unwrap();
+        }
+        let mut left_value: StarknetFelt = Default::default();
+        let mut right_value: StarknetFelt = Default::default();
+        let left_index = index * TWO;
+        let right_index = left_index + ONE;
+        rayon::scope(|s: &Scope<'_>| {
+            s.spawn(|_s| {
+                left_value = algorithm_hash_rayon(map, left_index, Arc::clone(&output_map));
+            });
+            s.spawn(|_s| {
+                right_value = algorithm_hash_rayon(map, right_index, Arc::clone(&output_map));
+            });
+        });
+        if !node.is_path {
+            let hash_value = hash::Pedersen::hash(&left_value, &right_value);
+            //let read_locked_map = output_map.read().expect("RwLock poisoned");
+            let mut write_locked_map = output_map.write().expect("RwLock poisoned");
+            write_locked_map.insert(index, Mutex::new(hash_value));
+            // drop(read_locked_map);
+            hash_value
+        } else {
+            todo!("Path hash computation")
+        }
+    }
+
+    pub fn algorithm_hash_rayon_join(
+        map: &HashMap<StarknetFelt, SNTreeNode>,
+        index: StarknetFelt,
+        output_map: Arc<RwLock<HashMap<StarknetFelt, Mutex<StarknetFelt>>>>,
+    ) -> StarknetFelt {
+        let node = &mut map.get(&index).unwrap();
+        if node.is_leaf {
+            return node.hash_value.unwrap();
+        }
+        let mut left_value: StarknetFelt = Default::default();
+        let mut right_value: StarknetFelt = Default::default();
+        let left_index = index * TWO;
+        let right_index = left_index + ONE;
+        rayon::join(
+            || {
+                left_value = algorithm_hash_rayon(map, left_index, Arc::clone(&output_map));
+            },
+            || {
+                right_value = algorithm_hash_rayon(map, right_index, Arc::clone(&output_map));
+            },
+        );
+        if !node.is_path {
+            let hash_value = hash::Pedersen::hash(&left_value, &right_value);
+            //let read_locked_map = output_map.read().expect("RwLock poisoned");
+            let mut write_locked_map = output_map.write().expect("RwLock poisoned");
+            write_locked_map.insert(index, Mutex::new(hash_value));
+            // drop(read_locked_map);
+            hash_value
+        } else {
             todo!("Path hash computation")
         }
     }
@@ -376,13 +371,19 @@ pub mod test {
             let root = create_dummy_tree(height);
             let root_clone = clone_tree(&root);
             let root_clone_clone = clone_tree(&root_clone);
+            let root_clone_3 = clone_tree(&root_clone_clone);
             let elapased_time = now.elapsed();
             println!("Tree creation time: {:?}", elapased_time);
             assert_eq!(count_inner_nodes(&root), 2_u32.pow(height.into()) - 1);
 
             let now = Instant::now();
+            let hash_map = tree_to_hashmap(*root_clone_3.unwrap());
+            let elapased_time = now.elapsed();
+            println!("Hash map creation time: {:?}", elapased_time);
+
+            let now = Instant::now();
             // Code block to measure.
-            let result_tokio = algorithm_tokio(*root_clone.unwrap()).await;
+            let result_tokio = algorithm_tokio(*root_clone.clone().unwrap()).await;
             // End of code block to measure.
             let elapased_time_tokio = now.elapsed();
             time_tokio.push(elapased_time_tokio);
@@ -407,9 +408,46 @@ pub mod test {
             // Print measurement.
             println!("Sequential time: {:?}", elapased_time_seq);
 
+            let now = Instant::now();
+            // Code block to measure.
+            let result_hash = algorithm_hash(&hash_map, ONE);
+            // End of code block to measure.
+            let elapased_time_hash = now.elapsed();
+            // Print measurement.
+            println!("Hash map time: {:?}", elapased_time_hash);
+
+            let now = Instant::now();
+            // Code block to measure.
+            let result_map = Arc::new(RwLock::new(HashMap::new()));
+            let result_hash_rayon = algorithm_hash_rayon(&hash_map, ONE, Arc::clone(&result_map));
+            // End of code block to measure.
+            let elapased_time_hash_rayon = now.elapsed();
+            // Print measurement.
+            println!("Hash map rayon time: {:?}", elapased_time_hash_rayon);
+
+            let now = Instant::now();
+            // Code block to measure.
+            let result_map = Arc::new(RwLock::new(HashMap::new()));
+            let result_hash_rayon_join =
+                algorithm_hash_rayon_join(&hash_map, ONE, Arc::clone(&result_map));
+            // End of code block to measure.
+            let elapased_time_hash_rayon_join = now.elapsed();
+            // Print measurement.
+            println!(
+                "Hash map rayon join time: {:?}",
+                elapased_time_hash_rayon_join
+            );
+
             // Sanity check.
             assert_eq!(result_seq, result_tokio);
             assert_eq!(result_seq, result_rayon);
+            assert_eq!(result_seq, result_hash);
+            assert_eq!(result_seq, result_hash_rayon);
+            assert_eq!(result_seq, result_hash_rayon_join);
+            assert_eq!(
+                2_usize.pow(height.into()) * 2 - 1,
+                result_map.read().unwrap().len()
+            );
             println!("Sanity check passed!");
         }
         // Print statistics.
@@ -433,3 +471,6 @@ pub mod test {
         );
     }
 }
+
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;

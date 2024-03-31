@@ -4,7 +4,7 @@ pub fn dummy() -> u8 {
 }
 #[cfg(test)]
 pub mod test {
-    const TREE_HEIGHT: u8 = 18;
+    const TREE_HEIGHT: u8 = 10;
     use rand::Rng;
     use std::time::Duration;
     use std::time::Instant;
@@ -186,7 +186,7 @@ pub mod test {
 
     pub fn random_felt() -> Felt {
         let mut buf: [u8; 32] = rand::thread_rng().gen();
-        buf[0] &= 0x01; // clear the 4 most significant bits
+        buf[0] &= 0x07; // clear the 5 most significant bits
         Felt::from_be_bytes(buf).expect("Overflow ;(")
     }
 
@@ -244,6 +244,21 @@ pub mod test {
                 Some(Box::new(new_node))
             }
             None => None,
+        }
+    }
+
+    pub fn count_inner_nodes(node: &Option<Box<SNTreeNode>>) -> u32 {
+        match node {
+            Some(node) => {
+                let mut count = 0;
+                if !node.is_leaf {
+                    count += 1;
+                    count += count_inner_nodes(&node.left_child);
+                    count += count_inner_nodes(&node.right_child);
+                }
+                count
+            }
+            None => 0,
         }
     }
 
@@ -317,7 +332,8 @@ pub mod test {
             ));
             node.hash_value.unwrap()
         } else {
-            Felt::default()
+            //TODO: compute/return the path hash
+            todo!("Path hash computation")
         }
     }
 
@@ -340,52 +356,80 @@ pub mod test {
             ));
             node.hash_value.unwrap()
         } else {
-            Felt::default()
+            //TODO: compute/return the path hash
+            todo!("Path hash computation")
         }
     }
 
     //run with `cargo test --release -- --nocapture bench_threading`
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn bench_threading() {
-        let _height = TREE_HEIGHT;
-        // fill the tree with data
-        let now = Instant::now();
-        let root = create_dummy_tree(_height);
-        let root_clone = clone_tree(&root);
-        let root_clone_clone = clone_tree(&root_clone);
-        let elapased_time = now.elapsed();
-        println!("Tree creation time: {:?}", elapased_time);
+        let height = TREE_HEIGHT;
+        let num_repetitions: usize = 3;
+        let mut time_tokio: Vec<Duration> = Vec::new();
+        let mut time_rayon: Vec<Duration> = Vec::new();
+        let mut time_seq: Vec<Duration> = Vec::new();
 
-        let now = Instant::now();
-        // Code block to measure.
-        let result_tokio = algorithm_tokio(*root_clone.unwrap()).await;
-        // TODO: sanity check
-        // End of code block to measure.
-        let elapased_time_tokio = now.elapsed();
-        // Print measurement.
-        println!("Tokio time: {:?}", elapased_time_tokio);
+        for _i in 0..num_repetitions {
+            // fill the tree with data
+            let now = Instant::now();
+            let root = create_dummy_tree(height);
+            let root_clone = clone_tree(&root);
+            let root_clone_clone = clone_tree(&root_clone);
+            let elapased_time = now.elapsed();
+            println!("Tree creation time: {:?}", elapased_time);
+            assert_eq!(count_inner_nodes(&root), 2_u32.pow(height.into()) - 1);
 
-        let now = Instant::now();
-        // Code block to measure.
-        let result_rayon = algorithm_rayon(*root_clone_clone.unwrap());
-        // TODO: sanity check
-        // End of code block to measure.
-        let elapased_time_rayon = now.elapsed();
-        // Print measurement.
-        println!("Rayon time: {:?}", elapased_time_rayon);
+            let now = Instant::now();
+            // Code block to measure.
+            let result_tokio = algorithm_tokio(*root_clone.unwrap()).await;
+            // End of code block to measure.
+            let elapased_time_tokio = now.elapsed();
+            time_tokio.push(elapased_time_tokio);
+            // Print measurement.
+            println!("Tokio time: {:?}", elapased_time_tokio);
 
-        let now = Instant::now();
-        // Code block to measure.
-        let result_seq = algorithm_seq(*root.unwrap());
-        // TODO: sanity check
-        // End of code block to measure.
-        let elapased_time_seq = now.elapsed();
-        // Print measurement.
-        println!("Sequential time: {:?}", elapased_time_seq);
+            let now = Instant::now();
+            // Code block to measure.
+            let result_rayon = algorithm_rayon(*root_clone_clone.unwrap());
+            // End of code block to measure.
+            let elapased_time_rayon = now.elapsed();
+            time_rayon.push(elapased_time_rayon);
+            // Print measurement.
+            println!("Rayon time: {:?}", elapased_time_rayon);
 
-        // Sanity check.
-        assert_eq!(result_seq, result_tokio);
-        assert_eq!(result_seq, result_rayon);
-        println!("Sanity check passed!");
+            let now = Instant::now();
+            // Code block to measure.
+            let result_seq = algorithm_seq(*root.unwrap());
+            // End of code block to measure.
+            let elapased_time_seq = now.elapsed();
+            time_seq.push(elapased_time_seq);
+            // Print measurement.
+            println!("Sequential time: {:?}", elapased_time_seq);
+
+            // Sanity check.
+            assert_eq!(result_seq, result_tokio);
+            assert_eq!(result_seq, result_rayon);
+            println!("Sanity check passed!");
+        }
+        // Print statistics.
+        println!(
+            "Average time for {:?} hashes using tokio: {:?}, Std deviation: {:?}",
+            2_u32.pow(height.into()) - 1,
+            mean(&time_tokio),
+            std_deviation(&time_tokio),
+        );
+        println!(
+            "Average time for {:?} hashes using rayon: {:?}, Std deviation: {:?}",
+            2_u32.pow(height.into()) - 1,
+            mean(&time_rayon),
+            std_deviation(&time_rayon),
+        );
+        println!(
+            "Average time for {:?} hashes using sequential: {:?}, Std deviation: {:?}",
+            2_u32.pow(height.into()) - 1,
+            mean(&time_seq),
+            std_deviation(&time_seq),
+        );
     }
 }

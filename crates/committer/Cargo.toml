@@ -14,3 +14,5 @@ pretty_assertions.workspace = true
 
 [dependencies]
 pathfinder-crypto = { git = "https://github.com/eqlabs/pathfinder.git"}
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0"

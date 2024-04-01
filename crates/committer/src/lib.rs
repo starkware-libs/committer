@@ -1,3 +1,4 @@
+mod io_handle;
 use pathfinder_crypto::Felt;
 use patricia_merkle_tree::{
     hash::{HashInput, HashOutput},
@@ -18,6 +19,8 @@ pub fn dummy() -> Felt {
 
 #[cfg(test)]
 pub mod test {
+    use crate::io_handle::parse_input_file;
+
     use super::dummy;
     use pathfinder_crypto::Felt;
     use pretty_assertions::assert_eq;
@@ -25,5 +28,11 @@ pub mod test {
     #[test]
     fn test_dummy() {
         assert_eq!(dummy(), Felt::from_u64(0_u64));
+    }
+    #[test]
+    fn test_parse_input_file() {
+        let input_file = "/home/nimrod/workspace/committer/crates/committer/src/example_json.json";
+        parse_input_file(input_file.to_string());
+        assert_eq!(0, 0);
     }
 }

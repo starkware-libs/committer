@@ -32,6 +32,9 @@ impl std::ops::Mul for Felt {
 #[allow(dead_code)]
 impl Felt {
     pub const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
+    pub(crate) fn from_bytes_be_slice(bytes: &[u8]) -> Self {
+        Self(StarknetTypesFelt::from_bytes_be_slice(bytes))
+    }
     pub const ONE: Felt = Felt(StarknetTypesFelt::ONE);
     pub const TWO: Felt = Felt(StarknetTypesFelt::TWO);
 

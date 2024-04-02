@@ -2,10 +2,11 @@ use crate::storage::errors::StorageError;
 use std::collections::HashMap;
 
 #[allow(dead_code)]
-pub(crate) struct StorageKey(Vec<u8>);
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub(crate) struct StorageKey(pub Vec<u8>);
 
 #[allow(dead_code)]
-pub(crate) struct StorageValue(Vec<u8>);
+pub(crate) struct StorageValue(pub Vec<u8>);
 
 pub(crate) trait Storage {
     /// Returns value from storage, if it exists.

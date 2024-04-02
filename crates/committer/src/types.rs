@@ -31,12 +31,16 @@ impl std::ops::Mul for Felt {
 
 #[allow(dead_code)]
 impl Felt {
-    pub const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
-    pub const ONE: Felt = Felt(StarknetTypesFelt::ONE);
-    pub const TWO: Felt = Felt(StarknetTypesFelt::TWO);
+    pub(crate) const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
+    pub(crate) const ONE: Felt = Felt(StarknetTypesFelt::ONE);
+    pub(crate) const TWO: Felt = Felt(StarknetTypesFelt::TWO);
+
+    pub(crate) fn from_bytes_be_slice(bytes: &[u8]) -> Self {
+        Self(StarknetTypesFelt::from_bytes_be_slice(bytes))
+    }
 
     /// Raises `self` to the power of `exponent`.
-    pub fn pow(&self, exponent: impl Into<u128>) -> Self {
+    pub(crate) fn pow(&self, exponent: impl Into<u128>) -> Self {
         Self(self.0.pow(exponent.into()))
     }
 }

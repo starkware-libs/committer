@@ -9,8 +9,8 @@ pub(crate) struct Nonce(pub Felt);
 #[allow(dead_code)]
 /// A node in a Patricia-Merkle tree which was modified during an update.
 pub(crate) struct FilledNode<L: LeafDataTrait> {
-    hash: HashOutput,
-    data: NodeData<L>,
+    pub(crate) hash: HashOutput,
+    pub(crate) data: NodeData<L>,
 }
 
 #[allow(dead_code)]
@@ -23,8 +23,17 @@ pub(crate) enum NodeData<L: LeafDataTrait> {
 
 #[allow(dead_code)]
 pub(crate) struct BinaryData {
-    left_hash: HashOutput,
-    right_hash: HashOutput,
+    pub(crate) left_hash: HashOutput,
+    pub(crate) right_hash: HashOutput,
+}
+
+impl Default for BinaryData {
+    fn default() -> Self {
+        Self {
+            left_hash: HashOutput::ZERO,
+            right_hash: HashOutput::ZERO,
+        }
+    }
 }
 
 #[allow(dead_code)]

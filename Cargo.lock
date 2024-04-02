@@ -137,6 +137,8 @@ dependencies = [
  "pretty_assertions",
  "rayon",
  "rstest",
+ "serde",
+ "serde_json",
  "starknet-types-core",
  "thiserror",
 ]

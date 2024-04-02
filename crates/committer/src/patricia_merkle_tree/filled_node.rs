@@ -2,6 +2,7 @@ use crate::patricia_merkle_tree::types::{LeafDataTrait, PathToBottom};
 use crate::{hash::types::HashOutput, types::Felt};
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
+#[derive(Eq, PartialEq, Hash)]
 pub(crate) struct ClassHash(pub Felt);
 #[allow(dead_code)]
 pub(crate) struct Nonce(pub Felt);

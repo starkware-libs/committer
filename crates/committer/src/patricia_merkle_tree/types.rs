@@ -5,6 +5,7 @@ use crate::types::Felt;
 pub(crate) trait TreeHashFunction<L: LeafDataTrait, H: HashFunction> {
     /// Computes the hash of given node data.
     fn compute_node_hash(node_data: NodeData<L>) -> HashOutput;
+    // async fn compute_leaf_hash(leaf_data: L) -> HashOutput;
 }
 
 // TODO(Amos, 01/05/2024): Implement types for NodeIndex, EdgePath, EdgePathLength
@@ -36,4 +37,5 @@ pub(crate) struct PathToBottom {
 pub(crate) trait LeafDataTrait {
     /// Returns true if leaf is empty.
     fn is_empty(&self) -> bool;
+    // fn compute_leaf_hash(&self) -> HashOutput;
 }

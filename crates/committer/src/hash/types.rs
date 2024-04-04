@@ -4,7 +4,7 @@ use crate::types::Felt;
 pub(crate) struct HashInputPair(pub Felt, pub Felt);
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub(crate) struct HashOutput(pub Felt);
 
 #[allow(dead_code)]

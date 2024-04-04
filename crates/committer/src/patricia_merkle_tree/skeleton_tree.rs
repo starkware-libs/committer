@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 #[allow(unused_imports)]
 use crate::hash::types::{HashFunction, HashOutput};
@@ -14,7 +14,11 @@ use starknet_types_core::hash::{self, StarkHash};
 
 use super::filled_node::NodeData;
 
-pub(crate) trait CurrentSkeletonTree<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
+pub(crate) trait CurrentSkeletonTree<
+    L: LeafDataTrait + std::clone::Clone,
+    H: HashFunction,
+    TH: TreeHashFunction<L, H>,
+>
 {
     /// Computes and returns updated skeleton tree.
     fn compute_updated_skeleton_tree(
@@ -32,7 +36,11 @@ pub(crate) trait UpdatedSkeletonTree<L: LeafDataTrait, H: HashFunction, TH: Tree
 }
 
 #[allow(dead_code)]
-struct UpdatedSkeletonTreeImpl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>> {
+struct UpdatedSkeletonTreeImpl<
+    L: LeafDataTrait + std::clone::Clone,
+    H: HashFunction,
+    TH: TreeHashFunction<L, H>,
+> {
     root: SkeletonNode<L>,
     skeleton_tree: HashMap<NodeIndex, SkeletonNode<L>>,
     hash_function: H,
@@ -40,7 +48,7 @@ struct UpdatedSkeletonTreeImpl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFu
 }
 
 #[allow(dead_code)]
-impl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
+impl<L: LeafDataTrait + std::clone::Clone, H: HashFunction, TH: TreeHashFunction<L, H>>
     UpdatedSkeletonTreeImpl<L, H, TH>
 {
     fn get_root(&self) -> &SkeletonNode<L> {
@@ -53,42 +61,59 @@ impl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
         self.skeleton_tree.get(&index)
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     pub fn compute_filled_tree(
         &self,
-        map: &HashMap<Felt, SkeletonNode<L>>,
-        index: Felt,
-        output_map: Arc<RwLock<HashMap<Felt, Mutex<Felt>>>>,
-    ) -> Felt {
+        map: &HashMap<NodeIndex, SkeletonNode<L>>,
+        index: NodeIndex,
+        output_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>,
+    ) -> HashOutput {
         let node = &mut map.get(&index).unwrap();
         let node_hash = match node {
             SkeletonNode::Binary => {
-                let left_index = index * TWO;
-                let right_index = left_index + ONE;
+                let left_index = NodeIndex(index.0 * TWO);
+                let right_index = NodeIndex(left_index.0 + ONE);
                 // rayon::scope(|s: &Scope<'_>| {
                 //     s.spawn(|_s| {
-                let left_value = self.compute_filled_tree(map, left_index, Arc::clone(&output_map));
+                let left_hash = self.compute_filled_tree(map, left_index, Arc::clone(&output_map));
                 // });
                 // s.spawn(|_s| {
-                let right_value =
+                let right_hash =
                     self.compute_filled_tree(map, right_index, Arc::clone(&output_map));
-                let hash_value = hash::Pedersen::hash(&left_value, &right_value);
+                //TODO:
+                let hash_value = HashOutput(hash::Pedersen::hash(&left_hash.0, &right_hash.0));
                 //let read_locked_map = output_map.read().expect("RwLock poisoned");
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
-                write_locked_map.insert(index, Mutex::new(hash_value));
+                write_locked_map.insert(
+                    hash_value.clone(),
+                    Box::new(FilledNode {
+                        hash: hash_value.clone(),
+                        data: NodeData::Binary(BinaryData {
+                            left_hash,
+                            right_hash,
+                        }),
+                    }),
+                );
                 // drop(read_locked_map);
                 hash_value
             }
             SkeletonNode::Edge { path_to_bottom: _ } => todo!("Edge hash computation"),
             SkeletonNode::Sibling(hash_result) => {
-                let mut write_locked_map = output_map.write().expect("RwLock poisoned");
-                write_locked_map.insert(index, Mutex::new(hash_result.0));
-                return hash_result.0;
+                // let mut write_locked_map = output_map.write().expect("RwLock poisoned");
+                // write_locked_map.insert(*hash_result, Box::new(hash_result));
+                hash_result.clone()
             }
             SkeletonNode::Leaf(node_data) => {
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
-                let tmp = TH::compute_node_hash(NodeData::Leaf(*node_data));
-                write_locked_map.insert(index, Mutex::new(tmp.0));
-                return tmp.0;
+                let tmp = TH::compute_node_hash(NodeData::Leaf(node_data.clone()));
+                write_locked_map.insert(
+                    tmp.clone(),
+                    Box::new(FilledNode {
+                        hash: tmp.clone(),
+                        data: NodeData::Leaf(node_data.clone()),
+                    }),
+                );
+                return tmp;
             }
             SkeletonNode::Empty => {
                 unimplemented!("UpdatedSkeletonTree should not contain Empty nodes")
@@ -125,31 +150,37 @@ impl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
     }
 }
 
-impl<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>> UpdatedSkeletonTree<L, H, TH>
-    for UpdatedSkeletonTreeImpl<L, H, TH>
+impl<
+        L: LeafDataTrait + std::fmt::Debug + std::clone::Clone,
+        H: HashFunction,
+        TH: TreeHashFunction<L, H>,
+    > UpdatedSkeletonTree<L, H, TH> for UpdatedSkeletonTreeImpl<L, H, TH>
 {
     fn compute_filled_tree(&self) -> Result<impl FilledTree<L>, SkeletonTreeError> {
         // TODO: Implement this method
         // 1. Create a new hashmap for the filled tree.
         // TODO: add mut
         #[allow(unused_mut)]
-        let mut filled_tree_map = HashMap::new();
+        let mut filled_tree_map = Arc::new(RwLock::new(HashMap::new()));
         // TODO: delete this block
-        let tmp_node = FilledNode {
-            data: NodeData::Binary(BinaryData {
-                left_hash: HashOutput::ZERO,
-                right_hash: HashOutput::ZERO,
-            }),
-            hash: (HashOutput::ZERO),
-        };
-        filled_tree_map.insert(NodeIndex::root_index(), Box::new(tmp_node));
+        // let tmp_node = FilledNode {
+        //     data: NodeData::Binary(BinaryData {
+        //         left_hash: HashOutput::ZERO,
+        //         right_hash: HashOutput::ZERO,
+        //     }),
+        //     hash: (HashOutput::ZERO),
+        // };
+        // let mut write_locked_map = filled_tree_map.write().expect("RwLock poisoned");
+        // write_locked_map.insert(HashOutput(Felt::default()), Box::new(tmp_node));
+
         // 2. Compute the filled tree hashmap from the skeleton_tree.
         let skeleton_tree = self.get_sk_tree();
         let index = NodeIndex::root_index();
-        self.compute_filled_tree(skeleton_tree, index.0, filled_tree_map);
+        self.compute_filled_tree(skeleton_tree, index, Arc::clone(&filled_tree_map));
         // assert_eq!(_root, _skeleton_tree.get(&NodeIndex(Felt::ONE)).unwrap());
         // 3. Create a new FilledTreeImpl from the hashmap.
-        let filled_tree: filled_tree::FilledTreeImpl<L> = FilledTreeImpl::new(filled_tree_map);
+        let filled_tree: filled_tree::FilledTreeImpl<L> =
+            FilledTreeImpl::new(Arc::clone(&filled_tree_map));
         Ok(filled_tree)
     }
 }

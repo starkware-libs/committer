@@ -7,12 +7,14 @@ pub(crate) struct ClassHash(pub Felt);
 pub(crate) struct Nonce(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) struct FilledNode<L: LeafDataTrait> {
     pub(crate) hash: HashOutput,
     pub(crate) data: NodeData<L>,
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) enum NodeData<L: LeafDataTrait> {
     Binary(BinaryData),
     Edge(EdgeData),
@@ -20,6 +22,7 @@ pub(crate) enum NodeData<L: LeafDataTrait> {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) struct BinaryData {
     pub(crate) left_hash: HashOutput,
     pub(crate) right_hash: HashOutput,
@@ -35,12 +38,14 @@ impl Default for BinaryData {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) struct EdgeData {
     bottom_hash: HashOutput,
     path_to_bottom: PathToBottom,
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) enum LeafData {
     StorageValue(Felt),
     CompiledClassHash(ClassHash),

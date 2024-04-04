@@ -20,15 +20,15 @@ impl NodeIndex {
 }
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct EdgePath(pub Felt);
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct EdgePathLength(pub u16);
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,

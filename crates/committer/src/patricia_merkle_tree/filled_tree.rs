@@ -1,27 +1,29 @@
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
+use crate::hash::types::HashOutput;
 use crate::patricia_merkle_tree::filled_node::FilledNode;
-use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex};
+use crate::patricia_merkle_tree::types::LeafDataTrait;
 
 /// Consider a Patricia-Merkle Tree which has been updated with new leaves.
 /// FilledTree consists of all nodes which were modified in the update, including their updated
 /// data and hashes.
 pub(crate) trait FilledTree<L: LeafDataTrait> {
-    fn get_all_nodes(&self) -> &HashMap<NodeIndex, Box<FilledNode<L>>>;
+    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>;
 }
 
 pub(crate) struct FilledTreeImpl<L: LeafDataTrait> {
-    tree_map: HashMap<NodeIndex, Box<FilledNode<L>>>,
+    tree_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>,
 }
 
 impl<L: LeafDataTrait> FilledTreeImpl<L> {
-    pub(crate) fn new(tree_map: HashMap<NodeIndex, Box<FilledNode<L>>>) -> Self {
+    pub(crate) fn new(tree_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>) -> Self {
         Self { tree_map }
     }
 }
 
 impl<L: LeafDataTrait> FilledTree<L> for FilledTreeImpl<L> {
-    fn get_all_nodes(&self) -> &HashMap<NodeIndex, Box<FilledNode<L>>> {
-        &self.tree_map
+    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>> {
+        Arc::clone(&self.tree_map)
     }
 }

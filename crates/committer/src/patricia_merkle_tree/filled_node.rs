@@ -59,3 +59,43 @@ impl LeafDataTrait for LeafData {
         }
     }
 }
+
+impl FilledNode<LeafData>{
+
+pub(crate) fn serialise(&self,) -> Vec<u8> {
+
+    let mut fact = vec![];
+    match &self.data {
+        NodeData::Binary(data) => {
+            fact.extend_from_slice(&data.left_hash);
+            fact.extend_from_slice(&data.right_hash);
+        }
+        NodeData::Edge(data) => {
+            fact.extend_from_slice(&data.bottom_hash);
+            fact.extend_from_slice(&data.path_to_bottom.path.0.to_be_bytes());
+            fact.extend_from_slice(&data.path_to_bottom.length.to_be_bytes());
+        }
+        NodeData::Leaf(data) => {
+            match data {
+                //``
+                LeafData::StorageValue(value) => {
+                    fact.extend_from_slice(&value.to_be_bytes());
+                }
+                LeafData::CompiledClassHash(class_hash) => {
+                    fact.extend_from_slice(&class_hash.0.to_be_bytes());
+                }
+                LeafData::StateTreeTuple {
+                    class_hash,
+                    contract_state_root_hash,
+                    nonce,
+                } => {
+                    //TODO: Aviv(4.4.2024) - Change StateTreeTuple implementation to be as python.
+                    fact.extend_from_slice(&class_hash.0.to_be_bytes());
+                    fact.extend_from_slice(&contract_state_root_hash.to_be_bytes());
+                }
+            }
+        }
+    }
+    fact
+}
+}

@@ -1,4 +1,5 @@
 use crate::patricia_merkle_tree::types::{LeafDataTrait, PathToBottom};
+use crate::types::FeltTrait;
 use crate::{hash::types::HashOutput, types::Felt};
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
@@ -62,40 +63,29 @@ impl LeafDataTrait for LeafData {
 
 impl FilledNode<LeafData>{
 
-pub(crate) fn serialise(&self,) -> Vec<u8> {
+    pub(crate) fn serialise(&self,) -> Vec<u8> {
+        // This method serialises the filled node into a byte vector, where:
+        // - For binary nodes: Concatenates left and right hashes.
+        // - For edge nodes: Concatenates bottom hash, path, and path length.
+        // - For leaf nodes: Concatenates the node's hash.
 
-    let mut fact = vec![];
-    match &self.data {
-        NodeData::Binary(data) => {
-            fact.extend_from_slice(&data.left_hash);
-            fact.extend_from_slice(&data.right_hash);
-        }
-        NodeData::Edge(data) => {
-            fact.extend_from_slice(&data.bottom_hash);
-            fact.extend_from_slice(&data.path_to_bottom.path.0.to_be_bytes());
-            fact.extend_from_slice(&data.path_to_bottom.length.to_be_bytes());
-        }
-        NodeData::Leaf(data) => {
-            match data {
-                //``
-                LeafData::StorageValue(value) => {
-                    fact.extend_from_slice(&value.to_be_bytes());
-                }
-                LeafData::CompiledClassHash(class_hash) => {
-                    fact.extend_from_slice(&class_hash.0.to_be_bytes());
-                }
-                LeafData::StateTreeTuple {
-                    class_hash,
-                    contract_state_root_hash,
-                    nonce,
-                } => {
-                    //TODO: Aviv(4.4.2024) - Change StateTreeTuple implementation to be as python.
-                    fact.extend_from_slice(&class_hash.0.to_be_bytes());
-                    fact.extend_from_slice(&contract_state_root_hash.to_be_bytes());
+        let mut serialised = vec![];
+        match &self.data {
+            NodeData::Binary(data) => {
+                serialised.extend_from_slice(&data.left_hash.0.to_bytes());
+                serialised.extend_from_slice(&data.right_hash.0.to_bytes());
+            }
+
+            NodeData::Edge(data) => {
+                serialised.extend_from_slice(&data.bottom_hash.0.to_bytes());
+                serialised.extend_from_slice(&data.path_to_bottom.path.0.to_bytes());
+                serialised.extend_from_slice(&data.path_to_bottom.length.0.to_be_bytes());
+            }
+
+            NodeData::Leaf(data) => {
+                serialised.extend_from_slice(&self.hash.0.to_bytes());
                 }
             }
-        }
+        serialised
     }
-    fact
-}
 }

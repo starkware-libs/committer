@@ -67,7 +67,7 @@ impl<
     pub fn compute_filled_tree(
         map: &HashMap<NodeIndex, SkeletonNode<L>>,
         index: NodeIndex,
-        output_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>,
+        output_map: Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>>,
     ) -> HashOutput {
         let node = &mut map.get(&index).unwrap();
         let node_hash = match node {
@@ -93,13 +93,13 @@ impl<
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
                     hash_value.clone(),
-                    Box::new(FilledNode {
+                    FilledNode {
                         hash: hash_value.clone(),
                         data: NodeData::Binary(BinaryData {
                             left_hash,
                             right_hash,
                         }),
-                    }),
+                    },
                 );
                 hash_value
             }
@@ -113,13 +113,13 @@ impl<
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
                     hash_value.clone(),
-                    Box::new(FilledNode {
+                    FilledNode {
                         hash: hash_value.clone(),
                         data: NodeData::Edge(EdgeData {
                             path_to_bottom: path_to_bottom.clone(),
                             bottom_hash: bottom_node_hash,
                         }),
-                    }),
+                    },
                 );
                 hash_value
             }
@@ -129,10 +129,10 @@ impl<
                 let tmp = TH::compute_node_hash(NodeData::Leaf(node_data.clone()));
                 write_locked_map.insert(
                     tmp.clone(),
-                    Box::new(FilledNode {
+                    FilledNode {
                         hash: tmp.clone(),
                         data: NodeData::Leaf(node_data.clone()),
-                    }),
+                    },
                 );
                 return tmp;
             }

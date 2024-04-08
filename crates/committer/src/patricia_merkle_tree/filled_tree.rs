@@ -9,21 +9,21 @@ use crate::patricia_merkle_tree::types::LeafDataTrait;
 /// FilledTree consists of all nodes which were modified in the update, including their updated
 /// data and hashes.
 pub(crate) trait FilledTree<L: LeafDataTrait> {
-    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>;
+    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>>;
 }
 
 pub(crate) struct FilledTreeImpl<L: LeafDataTrait> {
-    tree_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>,
+    tree_map: Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>>,
 }
 
 impl<L: LeafDataTrait> FilledTreeImpl<L> {
-    pub(crate) fn new(tree_map: Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>>) -> Self {
+    pub(crate) fn new(tree_map: Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>>) -> Self {
         Self { tree_map }
     }
 }
 
 impl<L: LeafDataTrait> FilledTree<L> for FilledTreeImpl<L> {
-    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, Box<FilledNode<L>>>>> {
+    fn get_all_nodes(&self) -> Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>> {
         Arc::clone(&self.tree_map)
     }
 }

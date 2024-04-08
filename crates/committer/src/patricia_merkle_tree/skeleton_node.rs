@@ -3,6 +3,10 @@ use starknet_types_core::felt::Felt;
 use crate::hash::types::HashOutput;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, PathToBottom};
 
+#[cfg(test)]
+#[path = "./skeleton_node_test.rs"]
+pub mod skeleton_node_test;
+
 #[allow(dead_code)]
 /// A node in the structure of a Patricia-Merkle tree, before or after an update.
 #[derive(Debug, Clone)]

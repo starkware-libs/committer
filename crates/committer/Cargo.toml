@@ -11,6 +11,7 @@ workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
+rstest.workspace = true
 
 [dependencies]
 starknet-types-core = "0.0.11"

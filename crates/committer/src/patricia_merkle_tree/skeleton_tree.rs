@@ -2,10 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use crate::hash::types::HashInputPair;
-#[allow(unused_imports)]
 use crate::hash::types::{HashFunction, HashOutput};
 use crate::patricia_merkle_tree::errors::SkeletonTreeError;
-#[allow(unused_imports)]
 use crate::patricia_merkle_tree::filled_node::{BinaryData, FilledNode};
 use crate::patricia_merkle_tree::filled_tree::{self, FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::skeleton_node::{compute_bottom_index, SkeletonNode};
@@ -30,8 +28,6 @@ pub(crate) trait CurrentSkeletonTree<
 pub(crate) trait UpdatedSkeletonTree<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
 {
     /// Computes and returns the filled tree.
-    // TODO: add get_root impl
-    // TODO: add get_preimage impl
     fn compute_filled_tree(&self) -> Result<impl FilledTree<L>, SkeletonTreeError>;
 }
 

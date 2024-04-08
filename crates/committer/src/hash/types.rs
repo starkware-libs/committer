@@ -1,4 +1,6 @@
-use crate::types::Felt;
+use std::ops;
+
+use crate::{patricia_merkle_tree::types::EdgePathLength, types::Felt};
 
 #[allow(dead_code)]
 pub(crate) struct HashInputPair(pub Felt, pub Felt);
@@ -15,4 +17,13 @@ impl HashOutput {
 pub(crate) trait HashFunction {
     /// Computes the hash of given input.
     fn compute_hash(i: HashInputPair) -> HashOutput;
+}
+
+/// Field addition, Never overflows/underflows. Used for computing the hash of Edge nodes.
+impl ops::Add<EdgePathLength> for HashOutput {
+    type Output = HashOutput;
+
+    fn add(self, rhs: EdgePathLength) -> Self::Output {
+        Self(self.0 + Felt::from(rhs.0))
+    }
 }

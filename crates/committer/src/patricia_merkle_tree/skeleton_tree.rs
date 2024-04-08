@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::filled_node::{EdgeData, NodeData};
+use crate::hash::types::HashInputPair;
 #[allow(unused_imports)]
 use crate::hash::types::{HashFunction, HashOutput};
 use crate::patricia_merkle_tree::errors::SkeletonTreeError;
@@ -10,8 +11,7 @@ use crate::patricia_merkle_tree::filled_node::{BinaryData, FilledNode};
 use crate::patricia_merkle_tree::filled_tree::{self, FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::skeleton_node::{compute_bottom_index, SkeletonNode};
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHashFunction};
-use starknet_types_core::felt::Felt;
-use starknet_types_core::hash::{self, StarkHash};
+use crate::types::{ONE, TWO};
 
 /// Consider a Patricia-Merkle Tree which should be updated with new leaves.
 /// This trait represents the structure of the subtree which will be modified in the
@@ -93,7 +93,7 @@ impl<
                     },
                 );
 
-                let hash_value = HashOutput(hash::Pedersen::hash(&left_hash.0, &right_hash.0));
+                let hash_value = H::compute_hash(HashInputPair(left_hash.0, right_hash.0));
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
                     hash_value.clone(),
@@ -111,10 +111,9 @@ impl<
                 let bottom_node_index = compute_bottom_index(index, path_to_bottom.clone());
                 let bottom_node_hash =
                     Self::compute_filled_tree(map, bottom_node_index, Arc::clone(&output_map));
-                let hash_value = HashOutput(hash::Pedersen::hash(
-                    &bottom_node_hash.0,
-                    &path_to_bottom.path.0,
-                ));
+                let hash_value =
+                    H::compute_hash(HashInputPair(bottom_node_hash.0, path_to_bottom.path.0))
+                        + path_to_bottom.length.clone();
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
                     hash_value.clone(),
@@ -168,6 +167,3 @@ impl<
         Ok(filled_tree)
     }
 }
-
-const ONE: Felt = Felt::ONE;
-const TWO: Felt = Felt::TWO;

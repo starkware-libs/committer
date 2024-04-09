@@ -1,9 +1,11 @@
 use crate::types::Felt;
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct HashInputPair(pub Felt, pub Felt);
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct HashOutput(pub Felt);
 
 #[allow(dead_code)]

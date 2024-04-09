@@ -15,4 +15,4 @@ rstest.workspace = true
 
 [dependencies]
 starknet-types-core.workspace = true
-derive_more = "0.99.17"
+derive_more.workspace = true

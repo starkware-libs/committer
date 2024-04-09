@@ -2,8 +2,10 @@ use crate::patricia_merkle_tree::types::{EdgeData, LeafDataTrait};
 use crate::{hash::types::HashOutput, types::Felt};
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct ClassHash(pub Felt);
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Nonce(pub Felt);
 
 #[allow(dead_code)]

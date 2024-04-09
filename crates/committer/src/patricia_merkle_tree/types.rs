@@ -9,15 +9,19 @@ pub(crate) trait TreeHashFunction<L: LeafDataTrait, H: HashFunction> {
 
 // TODO(Amos, 01/05/2024): Implement types for NodeIndex, EdgePath, EdgePathLength
 #[allow(dead_code)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct NodeIndex(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct EdgePath(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct EdgePathLength(pub u8);
 
 #[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,

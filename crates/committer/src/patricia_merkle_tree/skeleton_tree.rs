@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use super::filled_node::{EdgeData, NodeData};
 use crate::hash::types::HashInputPair;
@@ -67,7 +67,7 @@ impl<
     pub fn compute_filled_tree(
         map: &HashMap<NodeIndex, SkeletonNode<L>>,
         index: NodeIndex,
-        output_map: Arc<RwLock<HashMap<HashOutput, FilledNode<L>>>>,
+        output_map: Arc<RwLock<HashMap<NodeIndex, Mutex<FilledNode<L>>>>>,
     ) -> HashOutput {
         let node = &mut map.get(&index).unwrap();
         let node_hash = match node {
@@ -92,14 +92,14 @@ impl<
                 let hash_value = H::compute_hash(HashInputPair(left_hash.0, right_hash.0));
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
-                    hash_value.clone(),
-                    FilledNode {
+                    index,
+                    Mutex::new(FilledNode {
                         hash: hash_value.clone(),
                         data: NodeData::Binary(BinaryData {
                             left_hash,
                             right_hash,
                         }),
-                    },
+                    }),
                 );
                 hash_value
             }
@@ -112,29 +112,29 @@ impl<
                         + path_to_bottom.length.clone();
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
-                    hash_value.clone(),
-                    FilledNode {
+                    index,
+                    Mutex::new(FilledNode {
                         hash: hash_value.clone(),
                         data: NodeData::Edge(EdgeData {
                             path_to_bottom: path_to_bottom.clone(),
                             bottom_hash: bottom_node_hash,
                         }),
-                    },
+                    }),
                 );
                 hash_value
             }
             SkeletonNode::Sibling(hash_result) => hash_result.clone(),
             SkeletonNode::Leaf(node_data) => {
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
-                let tmp = TH::compute_node_hash(NodeData::Leaf(node_data.clone()));
+                let hash_value = TH::compute_node_hash(NodeData::Leaf(node_data.clone()));
                 write_locked_map.insert(
-                    tmp.clone(),
-                    FilledNode {
-                        hash: tmp.clone(),
+                    index,
+                    Mutex::new(FilledNode {
+                        hash: hash_value.clone(),
                         data: NodeData::Leaf(node_data.clone()),
-                    },
+                    }),
                 );
-                return tmp;
+                return hash_value;
             }
             SkeletonNode::Empty => {
                 unimplemented!("UpdatedSkeletonTree should not contain Empty nodes!")

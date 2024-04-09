@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::hash::types::HashFunction;
-use crate::patricia_merkle_tree::errors::SkeletonTreeError;
+use crate::patricia_merkle_tree::errors::CurrentSkeletonTreeError;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHashFunction};
 use crate::patricia_merkle_tree::updated_skeleton_tree::UpdatedSkeletonTree;
 
@@ -15,5 +15,5 @@ pub(crate) trait CurrentSkeletonTree<L: LeafDataTrait, H: HashFunction, TH: Tree
     fn compute_updated_skeleton_tree(
         &self,
         index_to_updated_leaf: HashMap<NodeIndex, L>,
-    ) -> Result<impl UpdatedSkeletonTree<L, H, TH>, SkeletonTreeError>;
+    ) -> Result<impl UpdatedSkeletonTree<L, H, TH>, CurrentSkeletonTreeError>;
 }

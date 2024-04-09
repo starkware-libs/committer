@@ -1,6 +1,6 @@
 use starknet_types_core::felt::Felt as StarknetTypesFelt;
 
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Felt(StarknetTypesFelt);
 
 impl From<StarknetTypesFelt> for Felt {

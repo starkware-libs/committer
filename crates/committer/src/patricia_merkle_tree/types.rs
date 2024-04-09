@@ -19,7 +19,7 @@ impl TreeHashFunction<LeafData, PedersenHashFunction> for TreeHashFunctionTestin
             NodeData::Binary(_) => todo!(),
             NodeData::Edge(_) => todo!(),
             NodeData::Leaf(leaf_data) => match leaf_data {
-                LeafData::StorageValue(value) => HashOutput(value),
+                LeafData::StorageValue(_) => todo!(),
                 LeafData::CompiledClassHash(compiled_class_hash) => {
                     HashOutput(compiled_class_hash.0)
                 }
@@ -43,15 +43,15 @@ impl NodeIndex {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct EdgePath(pub Felt);
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct EdgePathLength(pub u16);
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,

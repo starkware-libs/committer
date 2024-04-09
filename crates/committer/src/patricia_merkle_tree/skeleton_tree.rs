@@ -97,7 +97,7 @@ impl<
                 write_locked_map.insert(
                     index,
                     Mutex::new(FilledNode {
-                        hash: hash_value.clone(),
+                        hash: hash_value,
                         data: NodeData::Binary(BinaryData {
                             left_hash,
                             right_hash,
@@ -107,33 +107,33 @@ impl<
                 hash_value
             }
             SkeletonNode::Edge { path_to_bottom } => {
-                let bottom_node_index = compute_bottom_index(index, path_to_bottom.clone());
+                let bottom_node_index = compute_bottom_index(index, *path_to_bottom);
                 let bottom_node_hash =
                     Self::compute_filled_tree(map, bottom_node_index, Arc::clone(&output_map));
                 let hash_value =
                     H::compute_hash(HashInputPair(bottom_node_hash.0, path_to_bottom.path.0))
-                        + path_to_bottom.length.clone();
+                        + path_to_bottom.length;
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 write_locked_map.insert(
                     index,
                     Mutex::new(FilledNode {
-                        hash: hash_value.clone(),
+                        hash: hash_value,
                         data: NodeData::Edge(EdgeData {
-                            path_to_bottom: path_to_bottom.clone(),
+                            path_to_bottom: *path_to_bottom,
                             bottom_hash: bottom_node_hash,
                         }),
                     }),
                 );
                 hash_value
             }
-            SkeletonNode::Sibling(hash_result) => hash_result.clone(),
+            SkeletonNode::Sibling(hash_result) => *hash_result,
             SkeletonNode::Leaf(node_data) => {
                 let mut write_locked_map = output_map.write().expect("RwLock poisoned");
                 let hash_value = TH::compute_node_hash(NodeData::Leaf(node_data.clone()));
                 write_locked_map.insert(
                     index,
                     Mutex::new(FilledNode {
-                        hash: hash_value.clone(),
+                        hash: hash_value,
                         data: NodeData::Leaf(node_data.clone()),
                     }),
                 );

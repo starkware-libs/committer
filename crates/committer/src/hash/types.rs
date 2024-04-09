@@ -8,7 +8,7 @@ use crate::{patricia_merkle_tree::types::EdgePathLength, types::Felt};
 pub(crate) struct HashInputPair(pub Felt, pub Felt);
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Copy)]
 pub(crate) struct HashOutput(pub Felt);
 
 #[allow(dead_code)]

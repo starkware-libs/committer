@@ -2,10 +2,10 @@ use crate::patricia_merkle_tree::types::{LeafDataTrait, PathToBottom};
 use crate::{hash::types::HashOutput, types::Felt};
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct ClassHash(pub Felt);
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Nonce(pub Felt);
 
 #[allow(dead_code)]
@@ -49,7 +49,7 @@ pub(crate) struct EdgeData {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum LeafData {
     StorageValue(Felt),
     CompiledClassHash(ClassHash),
@@ -74,6 +74,17 @@ impl LeafDataTrait for LeafData {
                     && class_hash.0 == Felt::ZERO
                     && *contract_state_root_hash == Felt::ZERO
             }
+        }
+    }
+
+    fn compute_leaf_hash(
+        &self,
+        _hash_function: crate::hash::types::PedersenHashFunction,
+    ) -> HashOutput {
+        match self {
+            LeafData::StorageValue(test) => HashOutput(*test),
+            LeafData::CompiledClassHash(_) => todo!(),
+            LeafData::StateTreeTuple { .. } => todo!(),
         }
     }
 }

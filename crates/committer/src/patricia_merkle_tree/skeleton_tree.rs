@@ -11,6 +11,9 @@ use crate::patricia_merkle_tree::skeleton_node::{compute_bottom_index, SkeletonN
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHashFunction};
 use crate::types::{ONE, TWO};
 
+#[cfg(test)]
+#[path = "./skeleton_tree_test.rs"]
+pub mod skeleton_tree_test;
 /// Consider a Patricia-Merkle Tree which should be updated with new leaves.
 /// This trait represents the structure of the subtree which will be modified in the
 /// update. It also contains the hashes of the Sibling nodes on the Merkle paths from the

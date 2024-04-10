@@ -1,9 +1,12 @@
 use crate::{
     hash::types::{HashOutput, PedersenHashFunction},
-    patricia_merkle_tree::filled_node::{LeafData, NodeData},
+    patricia_merkle_tree::{
+        self,
+        filled_node::{LeafData, NodeData},
+    },
 };
 
-use super::TreeHashFunction;
+use patricia_merkle_tree::types::TreeHashFunction;
 
 pub(crate) struct MockTreeHashFunctionImpl;
 

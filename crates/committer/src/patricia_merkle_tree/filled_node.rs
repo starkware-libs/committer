@@ -2,18 +2,22 @@ use crate::patricia_merkle_tree::types::{EdgeData, LeafDataTrait};
 use crate::{hash::types::HashOutput, types::Felt};
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct ClassHash(pub Felt);
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct Nonce(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Clone)]
 /// A node in a Patricia-Merkle tree which was modified during an update.
 pub(crate) struct FilledNode<L: LeafDataTrait> {
     pub(crate) hash: HashOutput,
-    data: NodeData<L>,
+    pub(crate) data: NodeData<L>,
 }
 
 #[allow(dead_code)]
+#[derive(Clone)]
 // A Patricia-Merkle tree node's data, i.e., the pre-image of its hash.
 pub(crate) enum NodeData<L: LeafDataTrait> {
     Binary(BinaryData),
@@ -22,12 +26,14 @@ pub(crate) enum NodeData<L: LeafDataTrait> {
 }
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub(crate) struct BinaryData {
-    left_hash: HashOutput,
-    right_hash: HashOutput,
+    pub(crate) left_hash: HashOutput,
+    pub(crate) right_hash: HashOutput,
 }
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub(crate) enum LeafData {
     StorageValue(Felt),
     CompiledClassHash(ClassHash),

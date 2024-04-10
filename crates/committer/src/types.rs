@@ -1,6 +1,9 @@
+use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as StarknetTypesFelt;
 
-#[derive(Eq, PartialEq, Clone, Copy, Debug, Default, Hash, derive_more::Add)]
+#[derive(
+    Eq, PartialEq, Clone, Copy, Debug, Default, Hash, Serialize, Deserialize, derive_more::Add,
+)]
 pub(crate) struct Felt(StarknetTypesFelt);
 
 impl From<StarknetTypesFelt> for Felt {
@@ -38,5 +41,9 @@ impl Felt {
     /// Raises `self` to the power of `exponent`.
     pub fn pow(&self, exponent: impl Into<u128>) -> Self {
         Self(self.0.pow(exponent.into()))
+    }
+
+    pub(crate) fn as_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes_be()
     }
 }

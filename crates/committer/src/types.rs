@@ -38,6 +38,7 @@ impl Felt {
     pub const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
     pub const ONE: Felt = Felt(StarknetTypesFelt::ONE);
     pub const TWO: Felt = Felt(StarknetTypesFelt::TWO);
+    pub const THREE: Felt = Felt(StarknetTypesFelt::THREE);
 
     /// Raises `self` to the power of `exponent`.
     pub fn pow(&self, exponent: impl Into<u128>) -> Self {

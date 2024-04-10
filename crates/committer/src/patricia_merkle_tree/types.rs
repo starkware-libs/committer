@@ -32,8 +32,8 @@ pub(crate) struct PathToBottom {
 
 #[allow(dead_code)]
 pub(crate) struct EdgeData {
-    bottom_hash: HashOutput,
-    path_to_bottom: PathToBottom,
+    pub bottom_hash: HashOutput,
+    pub path_to_bottom: PathToBottom,
 }
 
 pub(crate) trait LeafDataTrait {

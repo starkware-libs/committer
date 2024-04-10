@@ -1,5 +1,6 @@
 use crate::patricia_merkle_tree::types::{EdgeData, LeafDataTrait};
 use crate::{hash::types::HashOutput, types::Felt};
+use crate::types::FeltTrait;
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 #[allow(dead_code)]
 pub(crate) struct ClassHash(pub Felt);
@@ -53,5 +54,35 @@ impl LeafDataTrait for LeafData {
                     && *contract_state_root_hash == Felt::ZERO
             }
         }
+    }
+}
+
+impl FilledNode<LeafData>{
+
+    #[allow(dead_code)]
+    pub(crate) fn serialise(&self,) -> Vec<u8> {
+        // This method serialises the filled node into a byte vector, where:
+        // - For binary nodes: Concatenates left and right hashes.
+        // - For edge nodes: Concatenates bottom hash, path, and path length.
+        // - For leaf nodes: Concatenates the node's hash.
+
+        let mut serialised = vec![];
+        match &self.data {
+            NodeData::Binary(data) => {
+                serialised.extend_from_slice(&data.left_hash.0.to_bytes());
+                serialised.extend_from_slice(&data.right_hash.0.to_bytes());
+            }
+
+            NodeData::Edge(data) => {
+                serialised.extend_from_slice(&data.bottom_hash.0.to_bytes());
+                serialised.extend_from_slice(&data.path_to_bottom.path.0.to_bytes());
+                serialised.extend_from_slice(&data.path_to_bottom.length.0.to_be_bytes());
+            }
+
+            NodeData::Leaf(_data) => {
+                serialised.extend_from_slice(&self.hash.0.to_bytes());
+                }
+            }
+        serialised
     }
 }

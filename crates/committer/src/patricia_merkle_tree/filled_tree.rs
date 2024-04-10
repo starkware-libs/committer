@@ -15,6 +15,7 @@ pub(crate) trait FilledTree<L: LeafDataTrait> {
     /// Serializes the tree into storage. Returns hash set of keys of the serialized nodes,
     /// if successful.
     fn serialize(&self, storage: impl Storage) -> Result<HashSet<&[u8]>, FilledTreeError>;
+    fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError>;
 }
 
 pub(crate) struct FilledTreeImpl<L: LeafDataTrait> {
@@ -28,6 +29,12 @@ impl<L: LeafDataTrait> FilledTreeImpl<L> {
     }
     fn get_all_nodes(&self) -> &HashMap<NodeIndex, Mutex<FilledNode<L>>> {
         &self.tree_map
+    }
+}
+
+impl<L: LeafDataTrait> FilledTree<L> for FilledTreeImpl<L> {
+    fn serialize(&self, _storage: impl Storage) -> Result<HashSet<&[u8]>, FilledTreeError> {
+        todo!()
     }
 
     fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError> {

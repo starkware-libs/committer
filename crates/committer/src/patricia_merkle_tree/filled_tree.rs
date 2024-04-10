@@ -6,6 +6,7 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::errors::FilledTreeError;
 use crate::patricia_merkle_tree::filled_node::FilledNode;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex};
+use crate::storage;
 use crate::storage::storage_trait::Storage;
 use crate::storage::storage_trait::StorageKey;
 
@@ -17,6 +18,7 @@ pub(crate) trait FilledTree<L: LeafDataTrait> {
     /// if successful.
     fn serialize(&self, storage: &mut impl Storage)
         -> Result<HashSet<StorageKey>, FilledTreeError>;
+    fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError>;
 }
 
 pub(crate) struct FilledTreeImpl<L: LeafDataTrait> {
@@ -30,6 +32,18 @@ impl<L: LeafDataTrait> FilledTreeImpl<L> {
     }
     fn get_all_nodes(&self) -> &HashMap<NodeIndex, Mutex<FilledNode<L>>> {
         &self.tree_map
+    }
+}
+
+impl<L: LeafDataTrait> FilledTree<L> for FilledTreeImpl<L> {
+    fn serialize(
+        &self,
+        _storage: &mut impl Storage,
+    ) -> std::result::Result<
+        std::collections::HashSet<storage::storage_trait::StorageKey>,
+        FilledTreeError,
+    > {
+        todo!()
     }
 
     fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError> {

@@ -63,24 +63,28 @@ impl NodeIndex {
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct EdgePath(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct EdgePathLength(pub u8);
 
 #[allow(dead_code)]
 pub(crate) struct TreeHeight(pub u8);
 
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 pub(crate) struct EdgeData {
-    bottom_hash: HashOutput,
-    path_to_bottom: PathToBottom,
+    pub(crate) bottom_hash: HashOutput,
+    pub(crate) path_to_bottom: PathToBottom,
 }
 
 pub(crate) trait LeafDataTrait {

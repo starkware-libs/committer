@@ -13,7 +13,11 @@ pub(crate) type OriginalSkeletonTreeResult<T> = Result<T, OriginalSkeletonTreeEr
 /// This trait represents the structure of the subtree which will be modified in the
 /// update. It also contains the hashes (for edge siblings - also the edge data) of the Sibling
 /// nodes on the Merkle paths from the updated leaves to the root.
-pub(crate) trait OriginalSkeletonTree<L: LeafDataTrait, H: HashFunction, TH: TreeHashFunction<L, H>>
+pub(crate) trait OriginalSkeletonTree<
+    L: LeafDataTrait + std::clone::Clone,
+    H: HashFunction,
+    TH: TreeHashFunction<L, H>,
+>
 {
     fn compute_original_skeleton_tree(
         storage: impl Storage,

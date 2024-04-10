@@ -50,8 +50,8 @@ pub(crate) struct PathToBottom {
 
 #[allow(dead_code)]
 pub(crate) struct EdgeData {
-    bottom_hash: HashOutput,
-    path_to_bottom: PathToBottom,
+    pub(crate) bottom_hash: HashOutput,
+    pub(crate) path_to_bottom: PathToBottom,
 }
 
 pub(crate) trait LeafDataTrait {

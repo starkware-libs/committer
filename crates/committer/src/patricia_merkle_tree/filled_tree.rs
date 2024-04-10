@@ -37,3 +37,5 @@ impl<L: LeafDataTrait> FilledTreeImpl<L> {
         }
     }
 }
+
+pub(crate) type FilledTreeResult<T> = Result<T, FilledTreeError>;

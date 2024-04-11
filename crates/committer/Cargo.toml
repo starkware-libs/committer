@@ -14,5 +14,7 @@ pretty_assertions.workspace = true
 rstest.workspace = true
 
 [dependencies]
+bisection.workspace = true
 derive_more.workspace = true
 starknet-types-core.workspace = true
+

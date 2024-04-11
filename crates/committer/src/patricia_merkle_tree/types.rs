@@ -47,7 +47,19 @@ impl<H: HashFunction> TreeHashFunction<LeafData, H> for TreeHashFunctionImpl<H> 
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    derive_more::Add,
+    derive_more::Mul,
+    derive_more::Sub,
+    PartialOrd,
+    Ord,
+)]
 pub(crate) struct NodeIndex(pub Felt);
 
 #[allow(dead_code)]
@@ -63,30 +75,61 @@ impl NodeIndex {
         let PathToBottom { path, length } = path_to_bottom;
         NodeIndex(index.0 * Felt::TWO.pow(length.0) + path.0)
     }
+
+    pub(crate) fn times_two_to_the_power(&self, steps: u8) -> Self {
+        NodeIndex(self.0.times_two_to_the_power(steps))
+    }
+}
+
+impl From<u128> for NodeIndex {
+    fn from(value: u128) -> Self {
+        Self(Felt::from(value))
+    }
 }
 
 #[allow(dead_code)]
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) struct EdgePath(pub Felt);
 
 #[allow(dead_code)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct EdgePathLength(pub u8);
 
 #[allow(dead_code)]
+#[derive(derive_more::Sub)]
 pub(crate) struct TreeHeight(pub u8);
 
 #[allow(dead_code)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,
 }
 
 #[allow(dead_code)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct EdgeData {
-    bottom_hash: HashOutput,
-    path_to_bottom: PathToBottom,
+    pub(crate) bottom_hash: HashOutput,
+    pub(crate) path_to_bottom: PathToBottom,
 }
 
 pub(crate) trait LeafDataTrait {
     /// Returns true if leaf is empty.
     fn is_empty(&self) -> bool;
+}
+
+impl TreeHeight {
+    pub(crate) fn is_leaf_height(&self) -> bool {
+        self.0 == 0
+    }
+
+    pub(crate) fn is_of_height_one(&self) -> bool {
+        self.0 == 1
+    }
+}
+
+impl PathToBottom {
+    pub(crate) fn bottom_index(&self, root_index: NodeIndex) -> NodeIndex {
+        root_index.times_two_to_the_power(self.length.0) + NodeIndex(self.path.0)
+    }
 }

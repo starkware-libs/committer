@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::hash::types::HashOutput;
 use crate::patricia_merkle_tree::errors::OriginalSkeletonTreeError;
+use crate::patricia_merkle_tree::filled_node::LeafData;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::UpdatedSkeletonTree;
 use crate::storage::storage_trait::Storage;
@@ -16,7 +17,7 @@ pub(crate) type OriginalSkeletonTreeResult<T> = Result<T, OriginalSkeletonTreeEr
 pub(crate) trait OriginalSkeletonTree<L: LeafDataTrait> {
     fn compute_original_skeleton_tree(
         storage: impl Storage,
-        leaf_indices: &[NodeIndex],
+        leaf_indices: &HashMap<NodeIndex, LeafData>,
         root_hash: HashOutput,
         tree_height: TreeHeight,
     ) -> OriginalSkeletonTreeResult<Box<Self>>;

@@ -1,6 +1,10 @@
 // TODO(Amos, 01/04/2024): Add error types.
 #[derive(Debug)]
-pub(crate) enum OriginalSkeletonTreeError {}
+#[allow(dead_code)]
+pub(crate) enum OriginalSkeletonTreeError {
+    Deserializtion(String),
+    StorageRead,
+}
 
 #[derive(Debug)]
 pub(crate) enum UpdatedSkeletonTreeError {

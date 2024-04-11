@@ -1,6 +1,18 @@
 use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
 
-#[derive(Eq, PartialEq, Clone, Copy, Debug, Default, Hash, derive_more::Add)]
+#[derive(
+    Eq,
+    PartialEq,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Hash,
+    derive_more::Add,
+    PartialOrd,
+    Ord,
+    derive_more::Sub,
+)]
 pub(crate) struct Felt(StarknetTypesFelt);
 
 #[macro_export]
@@ -42,6 +54,22 @@ impl Felt {
     /// Raises `self` to the power of `exponent`.
     pub fn pow(&self, exponent: impl Into<u128>) -> Self {
         Self(self.0.pow(exponent.into()))
+    }
+    pub fn bits(&self) -> u8 {
+        self.0
+            .bits()
+            .try_into()
+            .expect("Should not fail as it takes less than 252 bits to represent a felt.")
+    }
+
+    pub fn shift_left(&self, steps: u8) -> Self {
+        *self * Felt::TWO.pow(steps)
+    }
+    pub fn from_bytes_be_slice(bytes: &[u8]) -> Self {
+        Self(StarknetTypesFelt::from_bytes_be_slice(bytes))
+    }
+    pub(crate) fn to_bytes_be(self) -> [u8; 32] {
+        self.0.to_bytes_be()
     }
 
     /// Parse a hex-encoded number into `Felt`.

@@ -5,6 +5,7 @@ pub(crate) enum OriginalSkeletonTreeError {}
 #[derive(Debug)]
 pub(crate) enum UpdatedSkeletonTreeError {
     MissingNode,
+    PoisonedLock,
 }
 
 #[derive(Debug)]

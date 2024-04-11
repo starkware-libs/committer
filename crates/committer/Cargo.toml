@@ -16,3 +16,4 @@ rstest.workspace = true
 [dependencies]
 derive_more.workspace = true
 starknet-types-core.workspace = true
+rayon.workspace = true

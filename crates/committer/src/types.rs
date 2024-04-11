@@ -15,6 +15,12 @@ impl From<u128> for Felt {
     }
 }
 
+impl From<u8> for Felt {
+    fn from(value: u8) -> Self {
+        Self(value.into())
+    }
+}
+
 impl From<Felt> for StarknetTypesFelt {
     fn from(felt: Felt) -> Self {
         felt.0

@@ -16,7 +16,7 @@ pub(crate) type OriginalSkeletonTreeResult<T> = Result<T, OriginalSkeletonTreeEr
 pub(crate) trait OriginalSkeletonTree<L: LeafDataTrait> {
     fn compute_original_skeleton_tree(
         storage: impl Storage,
-        leaf_indices: &[NodeIndex],
+        leaf_indices: [NodeIndex],
         root_hash: HashOutput,
         tree_height: TreeHeight,
     ) -> OriginalSkeletonTreeResult<Box<Self>>;

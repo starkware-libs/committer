@@ -1,6 +1,18 @@
 use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
 
-#[derive(Eq, PartialEq, Clone, Copy, Debug, Default, Hash, derive_more::Add)]
+#[derive(
+    Eq,
+    PartialEq,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Hash,
+    derive_more::Add,
+    derive_more::Sub,
+    PartialOrd,
+    Ord,
+)]
 pub(crate) struct Felt(StarknetTypesFelt);
 
 #[macro_export]
@@ -35,17 +47,36 @@ impl std::ops::Mul for Felt {
 
 #[allow(dead_code)]
 impl Felt {
-    pub const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
-    pub const ONE: Felt = Felt(StarknetTypesFelt::ONE);
-    pub const TWO: Felt = Felt(StarknetTypesFelt::TWO);
+    pub(crate) const ZERO: Felt = Felt(StarknetTypesFelt::ZERO);
+    pub(crate) const ONE: Felt = Felt(StarknetTypesFelt::ONE);
+    pub(crate) const TWO: Felt = Felt(StarknetTypesFelt::TWO);
 
     /// Raises `self` to the power of `exponent`.
-    pub fn pow(&self, exponent: impl Into<u128>) -> Self {
+    pub(crate) fn pow(&self, exponent: impl Into<u128>) -> Self {
         Self(self.0.pow(exponent.into()))
     }
 
+    pub(crate) fn bits(&self) -> u8 {
+        self.0
+            .bits()
+            .try_into()
+            .expect("Should not fail as it takes less than 252 bits to represent a felt.")
+    }
+
+    pub(crate) fn shift_left(&self, steps: u8) -> Self {
+        *self * Felt::TWO.pow(steps)
+    }
+
+    pub(crate) fn from_bytes_be_slice(bytes: &[u8]) -> Self {
+        Self(StarknetTypesFelt::from_bytes_be_slice(bytes))
+    }
+
+    pub(crate) fn to_bytes_be(self) -> [u8; 32] {
+        self.0.to_bytes_be()
+    }
+
     /// Parse a hex-encoded number into `Felt`.
-    pub fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
+    pub(crate) fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
         Ok(StarknetTypesFelt::from_hex(hex_string)?.into())
     }
 }

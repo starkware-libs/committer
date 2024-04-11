@@ -1,10 +1,7 @@
-use crate::hash::types::{HashFunction, HashOutput};
-use crate::patricia_merkle_tree::filled_node::NodeData;
+use crate::hash::types::{HashFunction, HashInputPair, HashOutput, PedersenHashFunction};
+use crate::patricia_merkle_tree::filled_node::{BinaryData, LeafData, NodeData};
 use crate::types::Felt;
 
-#[cfg(test)]
-#[path = "test_utils.rs"]
-mod test_utils;
 #[cfg(test)]
 #[path = "types_test.rs"]
 pub mod types_test;
@@ -12,6 +9,38 @@ pub mod types_test;
 pub(crate) trait TreeHashFunction<L: LeafDataTrait, H: HashFunction> {
     /// Computes the hash of given node data.
     fn compute_node_hash(node_data: NodeData<L>) -> HashOutput;
+}
+
+pub(crate) struct TreeHashFunctionImpl;
+
+/// Implementation of TreeHashFunction.
+// TODO(Aner, 11/4/25): Implement the function for LeafData::StorageValue and LeafData::StateTreeTuple
+// TODO(Aner, 11/4/24): Verify the correctness of the implementation.
+impl TreeHashFunction<LeafData, PedersenHashFunction> for TreeHashFunctionImpl {
+    fn compute_node_hash(node_data: NodeData<LeafData>) -> HashOutput {
+        match node_data {
+            NodeData::Binary(BinaryData {
+                left_hash,
+                right_hash,
+            }) => PedersenHashFunction::compute_hash(HashInputPair(left_hash.0, right_hash.0)),
+            NodeData::Edge(EdgeData {
+                bottom_hash: hash_output,
+                path_to_bottom: PathToBottom { path, length },
+            }) => HashOutput(
+                PedersenHashFunction::compute_hash(HashInputPair(hash_output.0, path.0)).0
+                    + Felt::from(length.0),
+            ),
+            NodeData::Leaf(leaf_data) => match leaf_data {
+                LeafData::StorageValue(_) => todo!(),
+                LeafData::CompiledClassHash(compiled_class_hash) => {
+                    HashOutput(compiled_class_hash.0)
+                }
+                LeafData::StateTreeTuple { .. } => {
+                    todo!()
+                }
+            },
+        }
+    }
 }
 
 #[allow(dead_code)]

@@ -1,4 +1,4 @@
-use starknet_types_core::felt::Felt as StarknetTypesFelt;
+use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug, Default, Hash, derive_more::Add)]
 pub(crate) struct Felt(StarknetTypesFelt);
@@ -44,5 +44,12 @@ impl Felt {
     /// Raises `self` to the power of `exponent`.
     pub fn pow(&self, exponent: impl Into<u128>) -> Self {
         Self(self.0.pow(exponent.into()))
+    }
+
+    /// Parse a hex-encoded number into `Felt`.
+    pub fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
+        StarknetTypesFelt::from_hex(hex_string)
+            .map(Self)
+            .map_err(|_| FromStrError)
     }
 }

@@ -2,6 +2,7 @@ use crate::storage::errors::StorageError;
 use std::collections::HashMap;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub(crate) struct StorageKey(Vec<u8>);
 
 #[allow(dead_code)]

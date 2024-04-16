@@ -33,6 +33,8 @@ fn test_filled_tree_sanity() {
     assert_eq!(root_hash, HashOutput(Felt::ONE), "Root hash mismatch");
 }
 
+// TODO(Aner, 11/4/25): Add test with sibling nodes.
+
 #[test]
 /// This test is a small test for testing the root hash computation of the patricia merkle tree.
 /// The tree structure & results were computed seperately and tested for regression.

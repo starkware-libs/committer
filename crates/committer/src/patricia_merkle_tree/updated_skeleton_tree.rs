@@ -79,16 +79,24 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                 });
                 let hash_value = TH::compute_node_hash(&data);
                 // TODO (Aner, 15/4/21): Change to use interior mutability.
-                let mut write_locked_map = output_map.write().map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock("Cannot write to output map.".to_owned())
+                let read_map = output_map.read().map_err(|_| {
+                    UpdatedSkeletonTreeError::PoisonedLock(
+                        "Cannot read from output map.".to_owned(),
+                    )
                 })?;
-                write_locked_map.insert(
-                    index,
-                    Mutex::new(FilledNode {
-                        hash: hash_value,
-                        data,
-                    }),
-                );
+
+                match read_map.get(&index) {
+                    Some(node) => {
+                        node.lock()
+                            .map_err(|_| {
+                                UpdatedSkeletonTreeError::PoisonedLock(
+                                    "Cannot lock node.".to_owned(),
+                                )
+                            })?
+                            .data = data;
+                    }
+                    None => return Err(UpdatedSkeletonTreeError::MissingNode),
+                }
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Edge { path_to_bottom } => {
@@ -101,16 +109,24 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                 });
                 let hash_value = TH::compute_node_hash(&data);
                 // TODO (Aner, 15/4/21): Change to use interior mutability.
-                let mut write_locked_map = output_map.write().map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock("Cannot write to output map.".to_owned())
+                let read_map = output_map.read().map_err(|_| {
+                    UpdatedSkeletonTreeError::PoisonedLock(
+                        "Cannot read from output map.".to_owned(),
+                    )
                 })?;
-                write_locked_map.insert(
-                    index,
-                    Mutex::new(FilledNode {
-                        hash: hash_value,
-                        data,
-                    }),
-                );
+
+                match read_map.get(&index) {
+                    Some(node) => {
+                        node.lock()
+                            .map_err(|_| {
+                                UpdatedSkeletonTreeError::PoisonedLock(
+                                    "Cannot lock node.".to_owned(),
+                                )
+                            })?
+                            .data = data;
+                    }
+                    None => return Err(UpdatedSkeletonTreeError::MissingNode),
+                }
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Sibling(hash_result) => Ok(*hash_result),

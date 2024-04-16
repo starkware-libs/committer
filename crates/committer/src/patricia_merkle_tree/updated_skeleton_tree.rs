@@ -31,7 +31,6 @@ struct UpdatedSkeletonTreeImpl<L: LeafDataTrait + std::clone::Clone> {
     skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode<L>>,
 }
 
-#[allow(dead_code)]
 impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Send>
     UpdatedSkeletonTreeImpl<L>
 {
@@ -43,6 +42,56 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
             Some(node) => Ok(node),
             None => Err(UpdatedSkeletonTreeError::MissingNode),
         }
+    }
+
+    fn write_to_output_map_with_interior_mutuability(
+        output_map: Arc<RwLock<HashMap<NodeIndex, Mutex<FilledNode<L>>>>>,
+        index: NodeIndex,
+        hash: HashOutput,
+        data: NodeData<L>,
+    ) -> Result<(), UpdatedSkeletonTreeError> {
+        let read_map = output_map.read().map_err(|_| {
+            UpdatedSkeletonTreeError::PoisonedLock("Cannot read from output map.".to_owned())
+        })?;
+
+        match read_map.get(&index) {
+            Some(node) => {
+                let mut node = node.lock().map_err(|_| {
+                    UpdatedSkeletonTreeError::PoisonedLock("Cannot lock node.".to_owned())
+                })?;
+                node.hash = hash;
+                node.data = data;
+                Ok(())
+            }
+            None => Err(UpdatedSkeletonTreeError::MissingNode),
+        }
+    }
+
+    fn create_dummy_filled_tree_map(&self) -> HashMap<NodeIndex, Mutex<FilledNode<L>>> {
+        let mut filled_tree_map = HashMap::new();
+        for (index, node) in &self.skeleton_tree {
+            if !matches!(node, UpdatedSkeletonNode::Sibling(_)) {
+                let dummy_node = FilledNode {
+                    hash: HashOutput::default(),
+                    data: match node {
+                        UpdatedSkeletonNode::Binary => NodeData::Binary(BinaryData {
+                            left_hash: HashOutput::default(),
+                            right_hash: HashOutput::default(),
+                        }),
+                        UpdatedSkeletonNode::Edge { path_to_bottom } => NodeData::Edge(EdgeData {
+                            path_to_bottom: *path_to_bottom,
+                            bottom_hash: HashOutput::default(),
+                        }),
+                        UpdatedSkeletonNode::Leaf(node_data) => NodeData::Leaf(node_data.clone()),
+                        UpdatedSkeletonNode::Sibling(_) => {
+                            unimplemented!("Sibling nodes should not be copied to the filled tree.")
+                        }
+                    },
+                };
+                filled_tree_map.insert(*index, Mutex::new(dummy_node));
+            }
+        }
+        filled_tree_map
     }
 
     fn compute_filled_tree_rec<H: HashFunction, TH: TreeHashFunction<L, H>>(
@@ -78,17 +127,12 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                     right_hash,
                 });
                 let hash_value = TH::compute_node_hash(&data);
-                // TODO (Aner, 15/4/21): Change to use interior mutability.
-                let mut write_locked_map = output_map.write().map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock("Cannot write to output map.".to_owned())
-                })?;
-                write_locked_map.insert(
-                    index,
-                    Mutex::new(FilledNode {
-                        hash: hash_value,
-                        data,
-                    }),
-                );
+                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
+                // inserting all nodes as "unknown nodes" in advance, so they are only edited
+                // here.
+                Self::write_to_output_map_with_interior_mutuability(
+                    output_map, index, hash_value, data,
+                )?;
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Edge { path_to_bottom } => {
@@ -100,33 +144,24 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                     bottom_hash,
                 });
                 let hash_value = TH::compute_node_hash(&data);
-                // TODO (Aner, 15/4/21): Change to use interior mutability.
-                let mut write_locked_map = output_map.write().map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock("Cannot write to output map.".to_owned())
-                })?;
-                write_locked_map.insert(
-                    index,
-                    Mutex::new(FilledNode {
-                        hash: hash_value,
-                        data,
-                    }),
-                );
+                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
+                // inserting all nodes as "unknown nodes" in advance, so they are only edited
+                // here.
+                Self::write_to_output_map_with_interior_mutuability(
+                    output_map, index, hash_value, data,
+                )?;
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Sibling(hash_result) => Ok(*hash_result),
             UpdatedSkeletonNode::Leaf(node_data) => {
-                let hash_value = TH::compute_node_hash(&NodeData::Leaf(node_data.clone()));
-                // TODO (Aner, 15/4/21): Change to use interior mutability.
-                let mut write_locked_map = output_map.write().map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock("Cannot write to output map.".to_owned())
-                })?;
-                write_locked_map.insert(
-                    index,
-                    Mutex::new(FilledNode {
-                        hash: hash_value,
-                        data: NodeData::Leaf(node_data.clone()),
-                    }),
-                );
+                let data = NodeData::Leaf(node_data.clone());
+                let hash_value = TH::compute_node_hash(&data);
+                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
+                // inserting all nodes as "unknown nodes" in advance, so they are only edited
+                // here.
+                Self::write_to_output_map_with_interior_mutuability(
+                    output_map, index, hash_value, data,
+                )?;
                 Ok(hash_value)
             }
         }
@@ -140,8 +175,10 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
         &self,
     ) -> Result<impl FilledTree<L>, UpdatedSkeletonTreeError> {
         // 1. Create a new hashmap for the filled tree.
-        // TODO (Aner, 15/4/21): Change to use interior mutability.
-        let filled_tree_map = Arc::new(RwLock::new(HashMap::new()));
+        // Dummy filled tree map is created with all nodes as unknown nodes, in order to allow
+        // interior mutability.
+        let dummy_filled_tree_map = self.create_dummy_filled_tree_map();
+        let filled_tree_map = Arc::new(RwLock::new(dummy_filled_tree_map));
         // 2. Compute the filled tree hashmap from the skeleton_tree.
         self.compute_filled_tree_rec::<H, TH>(
             NodeIndex::root_index(),

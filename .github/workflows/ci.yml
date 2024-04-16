@@ -79,6 +79,42 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test
 
+  s3-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build CLI binary
+        run: cargo build -p committer_cli -r --bin committer_cli --target-dir ${{ github.sha }}
+
+      - name: Get commit hash prefix
+        id: commit_prefix
+        run: echo "::set-output name=commit_prefix::$(echo ${{ github.sha }} | cut -c 1-7)"
+
+      # - name: Upload binary to S3
+      #   uses: shallwefootball/s3-upload-action@master
+      #   id: S3
+      #   with:
+      #     aws_key_id: ${{ secrets.AWS_KEY_ID }}
+      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+      #     aws_bucket: ${{ secrets.AWS_BUCKET }}
+      #     source_dir: "${{ github.sha }}/release/committer_cli"
+      #     destination_dir: "${{ steps.commit_prefix.output.commit_prefix }}/release/committer_cli"
+      - id: auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: ${{ secrets.COMMITER_PRODUCTS_EXT_WRITER_JSON }}
+          service_account: "commiter-products-ext-writer@starkware-dev.iam.gserviceaccount.com"
+
+      - name: Upload binary to GCP
+        id: upload_file
+        uses: "google-github-actions/upload-cloud-storage@v2"
+        with:
+          path: "${{ github.sha }}/release/committer_cli"
+          destination: "committer-products-external/${{ steps.commit_prefix.output.commit_prefix }}/release/"
+
   udeps:
     runs-on: ubuntu-latest
     steps:
@@ -96,7 +132,6 @@ jobs:
           cargo-udeps-*/cargo-udeps udeps
         env:
           RUSTUP_TOOLCHAIN: nightly-2024-01-12
-
 
   all-tests:
     runs-on: ubuntu-latest

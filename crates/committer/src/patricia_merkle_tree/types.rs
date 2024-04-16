@@ -65,22 +65,22 @@ impl NodeIndex {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct EdgePath(pub Felt);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct EdgePathLength(pub u8);
 
 #[allow(dead_code)]
 pub(crate) struct TreeHeight(pub u8);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct EdgeData {
     pub(crate) bottom_hash: HashOutput,
     pub(crate) path_to_bottom: PathToBottom,

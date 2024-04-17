@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
 use crate::hash::hash_trait::{HashFunction, HashOutput};
 use crate::patricia_merkle_tree::errors::UpdatedSkeletonTreeError;
@@ -44,17 +44,15 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
         }
     }
 
-    fn write_to_output_map_with_interior_mutuability(
-        output_map: Arc<RwLock<HashMap<NodeIndex, Mutex<FilledNode<L>>>>>,
+    /// Writes the hash and data to the output map. The writing is done in a thread-safe manner with
+    /// interior mutability to avoid thread contention.
+    fn write_to_output_map(
+        output_map: Arc<HashMap<NodeIndex, Mutex<FilledNode<L>>>>,
         index: NodeIndex,
         hash: HashOutput,
         data: NodeData<L>,
     ) -> Result<(), UpdatedSkeletonTreeError> {
-        let read_map = output_map.read().map_err(|_| {
-            UpdatedSkeletonTreeError::PoisonedLock("Cannot read from output map.".to_owned())
-        })?;
-
-        match read_map.get(&index) {
+        match output_map.get(&index) {
             Some(node) => {
                 let mut node = node.lock().map_err(|_| {
                     UpdatedSkeletonTreeError::PoisonedLock("Cannot lock node.".to_owned())
@@ -67,28 +65,11 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
         }
     }
 
-    fn create_dummy_filled_tree_map(&self) -> HashMap<NodeIndex, Mutex<FilledNode<L>>> {
+    fn initialize_with_placeholders(&self) -> HashMap<NodeIndex, Mutex<FilledNode<L>>> {
         let mut filled_tree_map = HashMap::new();
         for (index, node) in &self.skeleton_tree {
             if !matches!(node, UpdatedSkeletonNode::Sibling(_)) {
-                let dummy_node = FilledNode {
-                    hash: HashOutput::default(),
-                    data: match node {
-                        UpdatedSkeletonNode::Binary => NodeData::Binary(BinaryData {
-                            left_hash: HashOutput::default(),
-                            right_hash: HashOutput::default(),
-                        }),
-                        UpdatedSkeletonNode::Edge { path_to_bottom } => NodeData::Edge(EdgeData {
-                            path_to_bottom: *path_to_bottom,
-                            bottom_hash: HashOutput::default(),
-                        }),
-                        UpdatedSkeletonNode::Leaf(node_data) => NodeData::Leaf(node_data.clone()),
-                        UpdatedSkeletonNode::Sibling(_) => {
-                            unimplemented!("Sibling nodes should not be copied to the filled tree.")
-                        }
-                    },
-                };
-                filled_tree_map.insert(*index, Mutex::new(dummy_node));
+                filled_tree_map.insert(*index, Mutex::new(FilledNode::default()));
             }
         }
         filled_tree_map
@@ -97,7 +78,7 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
     fn compute_filled_tree_rec<H: HashFunction, TH: TreeHashFunction<L, H>>(
         &self,
         index: NodeIndex,
-        output_map: Arc<RwLock<HashMap<NodeIndex, Mutex<FilledNode<L>>>>>,
+        output_map: Arc<HashMap<NodeIndex, Mutex<FilledNode<L>>>>,
     ) -> Result<HashOutput, UpdatedSkeletonTreeError> {
         let node = self.get_node(index)?;
         match node {
@@ -127,12 +108,7 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                     right_hash,
                 });
                 let hash_value = TH::compute_node_hash(&data);
-                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
-                // inserting all nodes as "unknown nodes" in advance, so they are only edited
-                // here.
-                Self::write_to_output_map_with_interior_mutuability(
-                    output_map, index, hash_value, data,
-                )?;
+                Self::write_to_output_map(output_map, index, hash_value, data)?;
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Edge { path_to_bottom } => {
@@ -144,24 +120,14 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
                     bottom_hash,
                 });
                 let hash_value = TH::compute_node_hash(&data);
-                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
-                // inserting all nodes as "unknown nodes" in advance, so they are only edited
-                // here.
-                Self::write_to_output_map_with_interior_mutuability(
-                    output_map, index, hash_value, data,
-                )?;
+                Self::write_to_output_map(output_map, index, hash_value, data)?;
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Sibling(hash_result) => Ok(*hash_result),
             UpdatedSkeletonNode::Leaf(node_data) => {
                 let data = NodeData::Leaf(node_data.clone());
                 let hash_value = TH::compute_node_hash(&data);
-                // TODO (Aner, 15/4/21): Change to use interior mutability. Doing so will require
-                // inserting all nodes as "unknown nodes" in advance, so they are only edited
-                // here.
-                Self::write_to_output_map_with_interior_mutuability(
-                    output_map, index, hash_value, data,
-                )?;
+                Self::write_to_output_map(output_map, index, hash_value, data)?;
                 Ok(hash_value)
             }
         }
@@ -173,31 +139,24 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
 {
     fn compute_filled_tree<H: HashFunction, TH: TreeHashFunction<L, H>>(
         &self,
-    ) -> Result<impl FilledTree<L>, UpdatedSkeletonTreeError> {
-        // 1. Create a new hashmap for the filled tree.
-        // Dummy filled tree map is created with all nodes as unknown nodes, in order to allow
-        // interior mutability.
-        let dummy_filled_tree_map = self.create_dummy_filled_tree_map();
-        let filled_tree_map = Arc::new(RwLock::new(dummy_filled_tree_map));
-        // 2. Compute the filled tree hashmap from the skeleton_tree.
+    ) -> Result<FilledTreeImpl<L>, UpdatedSkeletonTreeError> {
+        // Compute the filled tree in two steps:
+        //   1. Create a map containing the tree structure without hash values.
+        //   2. Fill in the hash values.
+        let dummy_filled_tree_map = self.initialize_with_placeholders();
+        let filled_tree_map = Arc::new(dummy_filled_tree_map);
+
         self.compute_filled_tree_rec::<H, TH>(
             NodeIndex::root_index(),
             Arc::clone(&filled_tree_map),
         )?;
-        // 3. Create and return a new FilledTreeImpl from the hashmap.
+        // Create and return a new FilledTreeImpl from the hashmap.
         Ok(FilledTreeImpl::new(
-            Arc::try_unwrap(filled_tree_map)
-                .map_err(|_| {
-                    UpdatedSkeletonTreeError::NonDroppedPointer(
-                        "Unable to unwrap the arc of the filled_tree_map".to_owned(),
-                    )
-                })?
-                .into_inner()
-                .map_err(|_| {
-                    UpdatedSkeletonTreeError::PoisonedLock(
-                        "Cannot take filled tree map.".to_owned(),
-                    )
-                })?,
+            Arc::try_unwrap(filled_tree_map).map_err(|_| {
+                UpdatedSkeletonTreeError::NonDroppedPointer(
+                    "Unable to unwrap the arc of the filled_tree_map".to_owned(),
+                )
+            })?,
         ))
     }
 }

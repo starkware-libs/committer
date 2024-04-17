@@ -7,6 +7,7 @@ pub(crate) enum OriginalSkeletonTreeError {}
 #[allow(dead_code)]
 pub(crate) enum UpdatedSkeletonTreeError {
     MissingNode,
+    DoubleUpdate,
     PoisonedLock(String),
     NonDroppedPointer(String),
 }

@@ -34,6 +34,8 @@ fn test_filled_tree_sanity() {
 }
 
 // TODO(Aner, 11/4/25): Add test with sibling nodes.
+// TODO(Aner, 11/4/25): Add test with large patricia merkle tree.
+// TOOD(Aner, 11/4/25): Add test with different leaf types.
 
 #[test]
 /// This test is a small test for testing the root hash computation of the patricia merkle tree.

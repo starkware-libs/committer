@@ -96,7 +96,7 @@ jobs:
       - id: auth
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: ${{ secrets.COMMITER_PRODUCTS_EXT_WRITER_JSON }}
+          credentials_json: "{\"a\": \"b\"}"
 
       - name: Upload binary to GCP
         id: upload_file

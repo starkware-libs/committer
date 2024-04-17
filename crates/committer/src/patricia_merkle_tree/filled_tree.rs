@@ -25,7 +25,6 @@ pub(crate) struct FilledTreeImpl<L: LeafDataTrait> {
     tree_map: HashMap<NodeIndex, Mutex<FilledNode<L>>>,
 }
 
-#[allow(dead_code)]
 impl<L: LeafDataTrait> FilledTreeImpl<L> {
     pub(crate) fn new(tree_map: HashMap<NodeIndex, Mutex<FilledNode<L>>>) -> Self {
         Self { tree_map }

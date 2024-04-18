@@ -68,7 +68,8 @@ impl Felt {
         self.0
             .bits()
             .try_into()
-            .expect("Should not fail as it takes less than 252 bits to represent a felt.")
+            // Should not fail as it takes less than 252 bits to represent a felt.
+            .expect("Unexpected error occurred when extracting bits of a Felt.")
     }
 
     pub(crate) fn times_two_to_the_power(&self, power: u8) -> Self {

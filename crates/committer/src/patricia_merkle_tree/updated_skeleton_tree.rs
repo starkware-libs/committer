@@ -24,7 +24,7 @@ pub(crate) trait UpdatedSkeletonTree<L: LeafDataTrait + std::clone::Clone> {
     /// Computes and returns the filled tree.
     fn compute_filled_tree<H: HashFunction, TH: TreeHashFunction<L, H>>(
         &self,
-    ) -> Result<impl FilledTree<L>, UpdatedSkeletonTreeError>;
+    ) -> Result<impl FilledTree<L>, UpdatedSkeletonTreeError<L>>;
 }
 
 struct UpdatedSkeletonTreeImpl<L: LeafDataTrait + std::clone::Clone> {
@@ -37,10 +37,10 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
     fn get_node(
         &self,
         index: NodeIndex,
-    ) -> Result<&UpdatedSkeletonNode<L>, UpdatedSkeletonTreeError> {
+    ) -> Result<&UpdatedSkeletonNode<L>, UpdatedSkeletonTreeError<L>> {
         match self.skeleton_tree.get(&index) {
             Some(node) => Ok(node),
-            None => Err(UpdatedSkeletonTreeError::MissingNode),
+            None => Err(UpdatedSkeletonTreeError::MissingNode(index)),
         }
     }
 
@@ -51,21 +51,24 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
         index: NodeIndex,
         hash: HashOutput,
         data: NodeData<L>,
-    ) -> Result<(), UpdatedSkeletonTreeError> {
+    ) -> Result<(), UpdatedSkeletonTreeError<L>> {
         match output_map.get(&index) {
             Some(node) => {
                 let mut node = node.lock().map_err(|_| {
                     UpdatedSkeletonTreeError::PoisonedLock("Cannot lock node.".to_owned())
                 })?;
                 match node.take() {
-                    Some(_) => Err(UpdatedSkeletonTreeError::DoubleUpdate),
+                    Some(existing_node) => Err(UpdatedSkeletonTreeError::DoubleUpdate {
+                        index,
+                        existing_value: Box::new(existing_node),
+                    }),
                     None => {
                         *node = Some(FilledNode { hash, data });
                         Ok(())
                     }
                 }
             }
-            None => Err(UpdatedSkeletonTreeError::MissingNode),
+            None => Err(UpdatedSkeletonTreeError::MissingNode(index)),
         }
     }
 
@@ -81,22 +84,17 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
 
     fn remove_arc_mutex_and_option(
         hash_map_in: Arc<HashMap<NodeIndex, Mutex<Option<FilledNode<L>>>>>,
-    ) -> Result<HashMap<NodeIndex, FilledNode<L>>, UpdatedSkeletonTreeError> {
+    ) -> Result<HashMap<NodeIndex, FilledNode<L>>, UpdatedSkeletonTreeError<L>> {
         let mut hash_map_out = HashMap::new();
         for (key, value) in hash_map_in.iter() {
-            let mut value = match value.lock() {
-                Ok(value) => value,
-                Err(_) => {
-                    return Err(UpdatedSkeletonTreeError::PoisonedLock(
-                        "Cannot lock node.".to_owned(),
-                    ))
-                }
-            };
+            let mut value = value.lock().map_err(|_| {
+                UpdatedSkeletonTreeError::PoisonedLock("Cannot lock node.".to_owned())
+            })?;
             match value.take() {
                 Some(value) => {
                     hash_map_out.insert(*key, value);
                 }
-                None => return Err(UpdatedSkeletonTreeError::MissingNode),
+                None => return Err(UpdatedSkeletonTreeError::MissingNode(*key)),
             }
         }
         Ok(hash_map_out)
@@ -106,34 +104,23 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
         &self,
         index: NodeIndex,
         output_map: Arc<HashMap<NodeIndex, Mutex<Option<FilledNode<L>>>>>,
-    ) -> Result<HashOutput, UpdatedSkeletonTreeError> {
+    ) -> Result<HashOutput, UpdatedSkeletonTreeError<L>> {
         let node = self.get_node(index)?;
         match node {
             UpdatedSkeletonNode::Binary => {
                 let left_index = NodeIndex(index.0 * Felt::TWO);
                 let right_index = NodeIndex(left_index.0 + Felt::ONE);
 
-                let mut left_hash = Ok(Default::default());
-                let mut right_hash = Ok(Default::default());
-
-                rayon::join(
-                    || {
-                        left_hash = self
-                            .compute_filled_tree_rec::<H, TH>(left_index, Arc::clone(&output_map));
-                    },
-                    || {
-                        right_hash = self
-                            .compute_filled_tree_rec::<H, TH>(right_index, Arc::clone(&output_map));
-                    },
+                let (left_hash, right_hash) = rayon::join(
+                    || self.compute_filled_tree_rec::<H, TH>(left_index, Arc::clone(&output_map)),
+                    || self.compute_filled_tree_rec::<H, TH>(right_index, Arc::clone(&output_map)),
                 );
 
-                let left_hash = left_hash?;
-                let right_hash = right_hash?;
-
                 let data = NodeData::Binary(BinaryData {
-                    left_hash,
-                    right_hash,
+                    left_hash: left_hash?,
+                    right_hash: right_hash?,
                 });
+
                 let hash_value = TH::compute_node_hash(&data);
                 Self::write_to_output_map(output_map, index, hash_value, data)?;
                 Ok(hash_value)
@@ -166,7 +153,7 @@ impl<L: LeafDataTrait + std::clone::Clone + std::marker::Sync + std::marker::Sen
 {
     fn compute_filled_tree<H: HashFunction, TH: TreeHashFunction<L, H>>(
         &self,
-    ) -> Result<FilledTreeImpl<L>, UpdatedSkeletonTreeError> {
+    ) -> Result<FilledTreeImpl<L>, UpdatedSkeletonTreeError<L>> {
         // Compute the filled tree in two steps:
         //   1. Create a map containing the tree structure without hash values.
         //   2. Fill in the hash values.

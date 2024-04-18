@@ -26,3 +26,8 @@ pub(crate) trait Storage {
     /// Deletes value from storage and returns its value if it exists. Returns None if not.
     fn delete(&mut self, key: &StorageKey) -> Option<StorageValue>;
 }
+
+/// Returns a `StorageKey` from a prefix and a suffix.
+pub(crate) fn db_key_from_suffix(prefix: &[u8], suffix: &[u8]) -> StorageKey {
+    StorageKey([prefix.to_vec(), b":".to_vec(), suffix.to_vec()].concat())
+}

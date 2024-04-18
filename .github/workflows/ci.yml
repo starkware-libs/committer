@@ -21,7 +21,7 @@ on:
 
 jobs:
   commitlint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,7 +39,7 @@ jobs:
         run: echo "${{ github.event.pull_request.title }}" | commitlint --verbose
 
   format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -50,7 +50,7 @@ jobs:
       - run: scripts/rust_fmt.sh --check
 
   clippy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -60,7 +60,7 @@ jobs:
       - run: scripts/clippy.sh
 
   run-python-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
@@ -72,7 +72,7 @@ jobs:
       - run: pytest scripts/merge_paths_test.py
 
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -80,7 +80,7 @@ jobs:
       - run: cargo test
 
   gcs-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -106,7 +106,7 @@ jobs:
           destination: "committer-products-external/${{ steps.commit_prefix.outputs.short_hash }}/release/"
 
   udeps:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -124,7 +124,7 @@ jobs:
           RUSTUP_TOOLCHAIN: nightly-2024-01-12
 
   all-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
     - clippy
     - commitlint

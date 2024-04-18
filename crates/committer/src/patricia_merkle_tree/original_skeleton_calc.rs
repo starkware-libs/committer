@@ -4,6 +4,7 @@ use crate::patricia_merkle_tree::filled_node::FilledNode;
 use crate::patricia_merkle_tree::filled_node::NodeData;
 use crate::patricia_merkle_tree::original_skeleton_tree::OriginalSkeletonTreeResult;
 use crate::patricia_merkle_tree::types::EdgeData;
+use crate::patricia_merkle_tree::types::PathToBottom;
 use crate::patricia_merkle_tree::types::TreeHeight;
 use crate::patricia_merkle_tree::{
     filled_node::LeafData, original_skeleton_node::OriginalSkeletonNode, types::NodeIndex,
@@ -58,6 +59,52 @@ impl<'a> SubTree<'a> {
     pub(crate) fn is_sibling(&self) -> bool {
         self.sorted_leaf_indices.is_empty()
     }
+
+    fn get_bottom_subtree(
+        &self,
+        path_to_bottom: &PathToBottom,
+        total_tree_height: &TreeHeight,
+        bottom_hash: HashOutput,
+    ) -> Self {
+        let bottom_index = path_to_bottom.bottom_index(self.root_index);
+        let bottom_height =
+            self.get_height(total_tree_height) - TreeHeight(path_to_bottom.length.0);
+        let leftmost_in_subtree = bottom_index.times_two_to_the_power(bottom_height.0);
+        let rightmost_in_subtree = leftmost_in_subtree
+            + (NodeIndex(Felt::ONE).times_two_to_the_power(bottom_height.0))
+            - NodeIndex(Felt::ONE);
+        let bottom_leaves =
+            &self.sorted_leaf_indices[bisect_left(self.sorted_leaf_indices, &leftmost_in_subtree)
+                ..bisect_right(self.sorted_leaf_indices, &rightmost_in_subtree)];
+
+        Self {
+            sorted_leaf_indices: bottom_leaves,
+            root_index: bottom_index,
+            root_hash: bottom_hash,
+        }
+    }
+
+    fn get_children_subtrees(
+        &self,
+        left_hash: HashOutput,
+        right_hash: HashOutput,
+        total_tree_height: &TreeHeight,
+    ) -> (Self, Self) {
+        let (left_leaves, right_leaves) = self.split_leaves(total_tree_height);
+        let left_root_index = self.root_index * Felt::TWO;
+        (
+            SubTree {
+                sorted_leaf_indices: left_leaves,
+                root_index: left_root_index,
+                root_hash: left_hash,
+            },
+            SubTree {
+                sorted_leaf_indices: right_leaves,
+                root_index: left_root_index + NodeIndex(Felt::ONE),
+                root_hash: right_hash,
+            },
+        )
+    }
 }
 
 #[allow(dead_code)]
@@ -93,18 +140,8 @@ impl OriginalSkeletonTreeImpl {
                     }
                     self.nodes
                         .insert(subtree.root_index, OriginalSkeletonNode::Binary);
-                    let (left_leaves, right_leaves) = subtree.split_leaves(&self.tree_height);
-                    let left_root_index = subtree.root_index * Felt::TWO;
-                    let left_subtree = SubTree {
-                        sorted_leaf_indices: left_leaves,
-                        root_index: left_root_index,
-                        root_hash: left_hash,
-                    };
-                    let right_subtree = SubTree {
-                        sorted_leaf_indices: right_leaves,
-                        root_index: left_root_index + NodeIndex(Felt::ONE),
-                        root_hash: right_hash,
-                    };
+                    let (left_subtree, right_subtree) =
+                        subtree.get_children_subtrees(left_hash, right_hash, &self.tree_height);
                     next_subtrees.extend(vec![left_subtree, right_subtree]);
                 }
                 // Edge node.
@@ -124,27 +161,12 @@ impl OriginalSkeletonTreeImpl {
                         continue;
                     }
                     // Parse bottom.
-                    let bottom_index = path_to_bottom.bottom_index(subtree.root_index);
-                    let bottom_height =
-                        subtree.get_height(&self.tree_height) - TreeHeight(path_to_bottom.length.0);
-                    let leftmost_in_subtree = bottom_index.times_two_to_the_power(bottom_height.0);
-                    let rightmost_in_subtree = leftmost_in_subtree
-                        + (NodeIndex(Felt::ONE).times_two_to_the_power(bottom_height.0))
-                        - NodeIndex(Felt::ONE);
-                    let bottom_leaves = &subtree.sorted_leaf_indices[bisect_left(
-                        subtree.sorted_leaf_indices,
-                        &leftmost_in_subtree,
-                    )
-                        ..bisect_right(subtree.sorted_leaf_indices, &rightmost_in_subtree)];
+                    let bottom_subtree =
+                        subtree.get_bottom_subtree(&path_to_bottom, &self.tree_height, bottom_hash);
                     self.nodes.insert(
                         subtree.root_index,
                         OriginalSkeletonNode::Edge { path_to_bottom },
                     );
-                    let bottom_subtree = SubTree {
-                        sorted_leaf_indices: bottom_leaves,
-                        root_index: bottom_index,
-                        root_hash: bottom_hash,
-                    };
                     next_subtrees.push(bottom_subtree);
                 }
                 // Leaf node.

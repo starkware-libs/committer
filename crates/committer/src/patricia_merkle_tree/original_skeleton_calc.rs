@@ -24,7 +24,6 @@ pub mod original_skeleton_calc_test;
 #[allow(dead_code)]
 pub(crate) struct OriginalSkeletonTreeImpl {
     nodes: HashMap<NodeIndex, OriginalSkeletonNode<LeafData>>,
-    leaf_modifications: HashMap<NodeIndex, LeafData>,
     tree_height: TreeHeight,
 }
 

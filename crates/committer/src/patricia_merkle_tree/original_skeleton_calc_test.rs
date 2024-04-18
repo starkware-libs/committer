@@ -240,11 +240,9 @@ fn test_fetch_nodes(
 ) {
     let mut skeleton_tree = OriginalSkeletonTreeImpl {
         nodes: HashMap::new(),
-        leaf_modifications,
         tree_height,
     };
-    let mut sorted_leaf_indices: Vec<NodeIndex> =
-        skeleton_tree.leaf_modifications.keys().copied().collect();
+    let mut sorted_leaf_indices: Vec<NodeIndex> = leaf_modifications.keys().copied().collect();
     sorted_leaf_indices.sort();
     let subtrees = vec![SubTree {
         sorted_leaf_indices: &sorted_leaf_indices,

@@ -1,8 +1,8 @@
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{BinaryData, FilledNode, LeafData, NodeData};
-use crate::patricia_merkle_tree::filled_tree::tree::FilledTreeResult;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeResult;
 use crate::patricia_merkle_tree::types::{EdgeData, EdgePath, EdgePathLength, PathToBottom};
+use crate::storage::errors::SerializationError;
+use crate::storage::serde_trait::Serializable;
 use crate::storage::storage_trait::{create_db_key, StorageKey, StorageValue};
 use crate::types::Felt;
 use serde::{Deserialize, Serialize};
@@ -29,16 +29,6 @@ pub(crate) const STATE_TREE_LEAF_PREFIX: &[u8; 14] = b"contract_state";
 pub(crate) const COMPLIED_CLASS_PREFIX: &[u8; 19] = b"contract_class_leaf";
 pub(crate) const INNER_NODE_PREFIX: &[u8; 13] = b"patricia_node";
 
-/// Enum to describe the serialized node.
-#[allow(dead_code)]
-pub(crate) enum SerializeNode {
-    Binary(Vec<u8>),
-    Edge(Vec<u8>),
-    CompiledClassLeaf(Vec<u8>),
-    StorageLeaf(Vec<u8>),
-    StateTreeLeaf(Vec<u8>),
-}
-
 /// Temporary struct to serialize the leaf CompiledClass.
 /// Required to comply to existing storage layout.
 #[derive(Serialize, Deserialize)]
@@ -46,13 +36,17 @@ pub(crate) struct LeafCompiledClassToSerialize {
     pub(crate) compiled_class_hash: Felt,
 }
 
-impl FilledNode<LeafData> {
+/// Alias for serialization and deserialization results of filled nodes.
+type FilledNodeSerializationResult = Result<StorageValue, SerializationError>;
+type FilledNodeDeserializationResult = Result<FilledNode<LeafData>, SerializationError>;
+
+impl Serializable for FilledNode<LeafData> {
     /// This method serializes the filled node into a byte vector, where:
     /// - For binary nodes: Concatenates left and right hashes.
     /// - For edge nodes: Concatenates bottom hash, path, and path length.
     /// - For leaf nodes: use leaf.serialize() method.
     #[allow(dead_code)]
-    pub(crate) fn serialize(&self) -> FilledTreeResult<SerializeNode> {
+    fn serialize(&self) -> FilledNodeSerializationResult {
         match &self.data {
             NodeData::Binary(BinaryData {
                 left_hash,
@@ -64,7 +58,7 @@ impl FilledNode<LeafData> {
 
                 // Concatenate left and right hashes.
                 let serialized = [left, right].concat();
-                Ok(SerializeNode::Binary(serialized))
+                Ok(StorageValue(serialized))
             }
 
             NodeData::Edge(EdgeData {
@@ -78,22 +72,16 @@ impl FilledNode<LeafData> {
 
                 // Concatenate bottom hash, path, and path length.
                 let serialized = [bottom.to_vec(), path.to_vec(), length.to_vec()].concat();
-                Ok(SerializeNode::Edge(serialized))
+                Ok(StorageValue(serialized))
             }
 
             NodeData::Leaf(leaf_data) => leaf_data.serialize(),
         }
     }
 
-    /// Returns the suffix of the filled node, represented by its hash as a byte array.
-    #[allow(dead_code)]
-    pub(crate) fn suffix(&self) -> [u8; SERIALIZE_HASH_BYTES] {
-        self.hash.0.as_bytes()
-    }
-
     /// Returns the db key of the filled node - [prefix + b":" + suffix].
     #[allow(dead_code)]
-    pub(crate) fn db_key(&self) -> StorageKey {
+    fn db_key(&self) -> StorageKey {
         let suffix = self.suffix();
 
         match &self.data {
@@ -112,10 +100,7 @@ impl FilledNode<LeafData> {
 
     /// Deserializes non-leaf nodes; if a serialized leaf node is given, the hash
     /// is used but the data is ignored.
-    pub(crate) fn deserialize(
-        key: &StorageKey,
-        value: &StorageValue,
-    ) -> OriginalSkeletonTreeResult<Self> {
+    fn deserialize(key: &StorageKey, value: &StorageValue) -> FilledNodeDeserializationResult {
         if value.0.len() == BINARY_BYTES {
             Ok(Self {
                 hash: HashOutput(Felt::from_bytes_be_slice(&key.0)),

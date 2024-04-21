@@ -3,13 +3,12 @@ use crate::patricia_merkle_tree::errors::FilledTreeError;
 use crate::patricia_merkle_tree::filled_tree::FilledTreeResult;
 use crate::patricia_merkle_tree::original_skeleton_tree::OriginalSkeletonTreeResult;
 use crate::patricia_merkle_tree::serialized_node::{
-    LeafCompiledClassToSerialize, SerializeNode, COMPLIED_CLASS_PREFIX, INNER_NODE_PREFIX,
-    SERIALIZE_HASH_BYTES, STATE_TREE_LEAF_PREFIX, STORAGE_LEAF_PREFIX,
+    LeafCompiledClassToSerialize, SerializeNode, SERIALIZE_HASH_BYTES,
 };
 use crate::patricia_merkle_tree::serialized_node::{BINARY_BYTES, EDGE_BYTES, EDGE_PATH_BYTES};
 use crate::patricia_merkle_tree::types::{EdgeData, LeafDataTrait};
 use crate::patricia_merkle_tree::types::{EdgePath, EdgePathLength, PathToBottom};
-use crate::storage::storage_trait::{create_db_key, StorageKey, StorageValue};
+use crate::storage::storage_trait::{create_db_key, StorageKey, StoragePrefix, StorageValue};
 use crate::types::Felt;
 
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
@@ -207,15 +206,17 @@ impl FilledNode<LeafData> {
         let suffix = self.suffix();
 
         match &self.data {
-            NodeData::Binary(_) | NodeData::Edge(_) => create_db_key(INNER_NODE_PREFIX, &suffix),
+            NodeData::Binary(_) | NodeData::Edge(_) => {
+                create_db_key(StoragePrefix::InnerNode, &suffix)
+            }
             NodeData::Leaf(LeafData::StorageValue(_)) => {
-                create_db_key(STORAGE_LEAF_PREFIX, &suffix)
+                create_db_key(StoragePrefix::StorageLeaf, &suffix)
             }
             NodeData::Leaf(LeafData::CompiledClassHash(_)) => {
-                create_db_key(COMPLIED_CLASS_PREFIX, &suffix)
+                create_db_key(StoragePrefix::CompiledClassLeaf, &suffix)
             }
             NodeData::Leaf(LeafData::StateTreeTuple { .. }) => {
-                create_db_key(STATE_TREE_LEAF_PREFIX, &suffix)
+                create_db_key(StoragePrefix::StateTreeLeaf, &suffix)
             }
         }
     }

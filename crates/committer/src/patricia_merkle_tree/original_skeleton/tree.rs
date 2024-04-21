@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::errors::OriginalSkeletonTreeError;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHeight};
-use crate::patricia_merkle_tree::updated_skeleton_tree::UpdatedSkeletonTree;
+use crate::patricia_merkle_tree::updated_skeleton::tree::UpdatedSkeletonTree;
 use crate::storage::storage_trait::Storage;
 
 #[allow(dead_code)]

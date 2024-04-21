@@ -5,7 +5,7 @@ use crate::hash::hash_trait::{HashFunction, HashOutput};
 use crate::patricia_merkle_tree::errors::UpdatedSkeletonTreeError;
 use crate::patricia_merkle_tree::filled_tree::tree::FilledTree;
 use crate::patricia_merkle_tree::types::{LeafDataTrait, NodeIndex, TreeHashFunction};
-use crate::patricia_merkle_tree::updated_skeleton_node::UpdatedSkeletonNode;
+use crate::patricia_merkle_tree::updated_skeleton::node::UpdatedSkeletonNode;
 use crate::types::Felt;
 
 use crate::patricia_merkle_tree::filled_tree::node::{BinaryData, FilledNode, NodeData};

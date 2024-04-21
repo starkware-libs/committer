@@ -188,8 +188,7 @@ impl OriginalSkeletonTreeImpl {
     ) -> OriginalSkeletonTreeResult<Vec<FilledNode<LeafData>>> {
         let mut subtrees_roots = vec![];
         for subtree in subtrees.iter() {
-            let key =
-                StorageKey::from(subtree.root_hash.0).with_prefix(StoragePrefix::PatriciaNode);
+            let key = StorageKey::from(subtree.root_hash.0).with_prefix(StoragePrefix::InnerNode);
             let val = storage.get(&key).ok_or(StorageError::MissingKey(key))?;
             subtrees_roots.push(FilledNode::deserialize(
                 &StorageKey::from(subtree.root_hash.0),

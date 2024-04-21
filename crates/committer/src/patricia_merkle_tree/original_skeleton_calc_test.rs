@@ -259,7 +259,7 @@ fn create_32_bytes_entry(simple_val: u8) -> Vec<u8> {
 }
 
 fn create_patricia_key(val: u8) -> StorageKey {
-    StorageKey(create_32_bytes_entry(val)).with_prefix(StoragePrefix::PatriciaNode)
+    StorageKey(create_32_bytes_entry(val)).with_prefix(StoragePrefix::InnerNode)
 }
 
 fn create_binary_val(left: u8, right: u8) -> StorageValue {

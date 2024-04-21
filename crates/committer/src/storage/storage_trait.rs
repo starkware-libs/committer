@@ -29,22 +29,33 @@ pub(crate) trait Storage {
 }
 
 pub(crate) enum StoragePrefix {
-    PatriciaNode,
+    InnerNode,
+    StorageLeaf,
+    StateTreeLeaf,
+    CompiledClassLeaf,
 }
 
+/// Describes a storage prefix as used in Aerospike DB.
 impl StoragePrefix {
     pub(crate) fn to_bytes(&self) -> &[u8] {
         match self {
-            Self::PatriciaNode => "patricia_node:".as_bytes(),
+            Self::InnerNode => b"patricia_node",
+            Self::StorageLeaf => b"starknet_storage_leaf",
+            Self::StateTreeLeaf => b"contract_state",
+            Self::CompiledClassLeaf => b"contract_class_leaf",
         }
     }
 }
 
 impl StorageKey {
     pub(crate) fn with_prefix(&self, prefix: StoragePrefix) -> Self {
-        let mut prefix = prefix.to_bytes().to_vec();
+        let mut prefix = [prefix.to_bytes().to_vec(), b":".to_vec()].concat();
         prefix.extend(&self.0);
         StorageKey(prefix)
+    }
+
+    pub(crate) fn from_prefix_and_suffix(prefix: StoragePrefix, suffix: &[u8]) -> Self {
+        Self(suffix.to_vec()).with_prefix(prefix)
     }
 }
 
@@ -52,9 +63,4 @@ impl From<Felt> for StorageKey {
     fn from(value: Felt) -> Self {
         StorageKey(value.to_bytes_be().to_vec())
     }
-}
-
-/// Returns a `StorageKey` from a prefix and a suffix.
-pub(crate) fn create_db_key(prefix: &[u8], suffix: &[u8]) -> StorageKey {
-    StorageKey([prefix.to_vec(), b":".to_vec(), suffix.to_vec()].concat())
 }

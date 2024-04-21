@@ -1,9 +1,9 @@
 use crate::hash::hash_trait::HashOutput;
-use crate::patricia_merkle_tree::errors::FilledTreeError;
-use crate::patricia_merkle_tree::filled_tree::node_serde::{
-    LeafCompiledClassToSerialize, SerializeNode,
-};
+use crate::patricia_merkle_tree::filled_tree::node_serde::LeafCompiledClassToSerialize;
+use crate::patricia_merkle_tree::filled_tree::node_serde::SERIALIZE_HASH_BYTES;
 use crate::patricia_merkle_tree::types::{EdgeData, LeafDataTrait};
+use crate::storage::errors::SerializationError;
+use crate::storage::storage_trait::StorageValue;
 use crate::types::Felt;
 
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
@@ -76,11 +76,9 @@ impl LeafData {
     /// - For storage values: serializes the value into a 32-byte vector.
     /// - For compiled class hashes or state tree tuples: creates a  json string
     ///   describing the leaf and cast it into a byte vector.
-    pub(crate) fn serialize(&self) -> Result<SerializeNode, FilledTreeError> {
+    pub(crate) fn serialize(&self) -> Result<StorageValue, SerializationError> {
         match &self {
-            LeafData::StorageValue(value) => {
-                Ok(SerializeNode::StorageLeaf(value.as_bytes().to_vec()))
-            }
+            LeafData::StorageValue(value) => Ok(StorageValue(value.as_bytes().to_vec())),
 
             LeafData::CompiledClassHash(class_hash) => {
                 // Create a temporary object to serialize the leaf into a JSON.
@@ -92,14 +90,20 @@ impl LeafData {
                 let json = serde_json::to_string(&temp_object_to_json)?;
 
                 // Serialize the json into a byte vector.
-                Ok(SerializeNode::CompiledClassLeaf(
-                    json.into_bytes().to_owned(),
-                ))
+                Ok(StorageValue(json.into_bytes().to_owned()))
             }
 
             LeafData::StateTreeTuple { .. } => {
                 todo!("implement.");
             }
         }
+    }
+}
+
+impl FilledNode<LeafData> {
+    /// Returns the suffix of the filled node, represented by its hash as a byte array.
+    #[allow(dead_code)]
+    pub(crate) fn suffix(&self) -> [u8; SERIALIZE_HASH_BYTES] {
+        self.hash.0.as_bytes()
     }
 }

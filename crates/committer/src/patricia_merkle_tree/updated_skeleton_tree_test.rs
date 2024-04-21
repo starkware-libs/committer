@@ -32,7 +32,6 @@ fn test_filled_tree_sanity() {
     assert_eq!(root_hash, HashOutput(Felt::ONE), "Root hash mismatch");
 }
 
-// TODO(Aner, 11/4/25): Add test with sibling nodes.
 // TODO(Aner, 11/4/25): Add test with large patricia merkle tree.
 // TOOD(Aner, 11/4/25): Add test with different leaf types.
 
@@ -163,6 +162,110 @@ fn test_small_filled_tree() {
         create_leaf_entry_for_testing(35, "0x1"),
         create_leaf_entry_for_testing(36, "0x2"),
         create_leaf_entry_for_testing(63, "0x3"),
+    ]);
+    assert_eq!(filled_tree_map, &expected_filled_tree_map);
+    assert_eq!(root_hash, expected_root_hash, "Root hash mismatch");
+}
+
+#[test]
+/// This test is a small test for testing the root hash computation of the patricia merkle tree
+/// with sibling nodes. The tree structure & results are a partial of test_small_filled_tree.
+///                   i=1: binary
+///                   /        \
+///            i=2: edge      i=3: sibling
+///            l=1, p=0       hash=0x2955a96b09495fb2ce4ed65cf679c54e54aefc2c6972d7f3042590000bb7543
+///                /                      
+///            i=4: binary                  
+///          /           \                  
+///      i=8: edge    i=9: sibling           
+///      l=2, p=3     hash=0x39eb7b85bcc9deac314406d6b73154b09b008f8af05e2f58ab623f4201d0b88
+///           \             
+///            \            
+///         i=35: leaf   
+///            v=1    
+fn test_small_tree_with_sibling_nodes() {
+    let mut skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode<LeafData>> = HashMap::new();
+    skeleton_tree.insert(NodeIndex::root_index(), UpdatedSkeletonNode::Binary);
+    skeleton_tree.insert(
+        NodeIndex(Felt::TWO),
+        UpdatedSkeletonNode::Edge {
+            path_to_bottom: PathToBottom {
+                path: EdgePath(Felt::ZERO),
+                length: EdgePathLength(1),
+            },
+        },
+    );
+    skeleton_tree.insert(
+        NodeIndex(Felt::THREE),
+        UpdatedSkeletonNode::Sibling(HashOutput(
+            Felt::from_hex("0x2955a96b09495fb2ce4ed65cf679c54e54aefc2c6972d7f3042590000bb7543")
+                .unwrap(),
+        )),
+    );
+    skeleton_tree.insert(NodeIndex(Felt::from(4_u128)), UpdatedSkeletonNode::Binary);
+    skeleton_tree.insert(
+        NodeIndex(Felt::from(8_u128)),
+        UpdatedSkeletonNode::Edge {
+            path_to_bottom: PathToBottom {
+                path: EdgePath(Felt::THREE),
+                length: EdgePathLength(2),
+            },
+        },
+    );
+    skeleton_tree.insert(
+        NodeIndex(Felt::from(9_u128)),
+        UpdatedSkeletonNode::Sibling(HashOutput(
+            Felt::from_hex("0x39eb7b85bcc9deac314406d6b73154b09b008f8af05e2f58ab623f4201d0b88")
+                .unwrap(),
+        )),
+    );
+
+    // The leaves are the compiled class hashes, with hash values of 1, 2, 3.
+    skeleton_tree.insert(
+        NodeIndex(Felt::from(35_u128)),
+        UpdatedSkeletonNode::Leaf(LeafData::CompiledClassHash(ClassHash(Felt::ONE))),
+    );
+
+    let updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
+
+    let filled_tree = updated_skeleton_tree
+        .compute_filled_tree::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>()
+        .unwrap();
+    let filled_tree_map = filled_tree.get_all_nodes();
+    let root_hash = filled_tree.get_root_hash().unwrap();
+
+    // The expected hash values were computed separately.
+    let expected_root_hash = HashOutput(
+        Felt::from_hex("0xe8899e8c731a35f5e9ce4c4bc32aabadcc81c5cdcc1aeba74fa7509046c338").unwrap(),
+    );
+    let expected_filled_tree_map = HashMap::from([
+        create_binary_entry_for_testing(
+            1,
+            "0xe8899e8c731a35f5e9ce4c4bc32aabadcc81c5cdcc1aeba74fa7509046c338",
+            "0x4e970ad06a06486b44fff5606c4f65486d31e05e323d65a618d4ef8cdf6d3a0",
+            "0x2955a96b09495fb2ce4ed65cf679c54e54aefc2c6972d7f3042590000bb7543",
+        ),
+        create_edge_entry_for_testing(
+            2,
+            "0x4e970ad06a06486b44fff5606c4f65486d31e05e323d65a618d4ef8cdf6d3a0",
+            0,
+            1,
+            "0x5d36a1ae900ef417a5696417dde9a0244b873522f40b552e4a60acde0991bc9",
+        ),
+        create_binary_entry_for_testing(
+            4,
+            "0x5d36a1ae900ef417a5696417dde9a0244b873522f40b552e4a60acde0991bc9",
+            "0x582d984e4005c27b9c886cd00ec9a82ed5323aa629f6ea6b3ed7c0386ae6256",
+            "0x39eb7b85bcc9deac314406d6b73154b09b008f8af05e2f58ab623f4201d0b88",
+        ),
+        create_edge_entry_for_testing(
+            8,
+            "0x582d984e4005c27b9c886cd00ec9a82ed5323aa629f6ea6b3ed7c0386ae6256",
+            3,
+            2,
+            "0x1",
+        ),
+        create_leaf_entry_for_testing(35, "0x1"),
     ]);
     assert_eq!(filled_tree_map, &expected_filled_tree_map);
     assert_eq!(root_hash, expected_root_hash, "Root hash mismatch");

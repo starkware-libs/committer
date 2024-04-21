@@ -3,6 +3,7 @@ use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 use crate::patricia_merkle_tree::node_data::leaf::LeafDataTrait;
 
 #[allow(dead_code)]
+#[derive(Clone, Copy)]
 /// A node in the structure of a Patricia-Merkle tree, after the update.
 pub(crate) enum UpdatedSkeletonNode<L: LeafDataTrait> {
     Binary,

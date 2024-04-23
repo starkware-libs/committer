@@ -8,7 +8,6 @@ use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeResult;
 use crate::storage::storage_trait::{create_db_key, StorageKey, StorageValue};
 use crate::types::Felt;
-use serde::{Deserialize, Serialize};
 
 // Const describe the size of the serialized node.
 pub(crate) const SERIALIZE_HASH_BYTES: usize = 32;
@@ -32,6 +31,7 @@ pub(crate) const STATE_TREE_LEAF_PREFIX: &[u8; 14] = b"contract_state";
 pub(crate) const COMPLIED_CLASS_PREFIX: &[u8; 19] = b"contract_class_leaf";
 pub(crate) const INNER_NODE_PREFIX: &[u8; 13] = b"patricia_node";
 
+// TODO(Amos, 1/5/2024): Delete SerializeNode, as it's no longer needed.
 /// Enum to describe the serialized node.
 #[allow(dead_code)]
 pub(crate) enum SerializeNode {
@@ -40,13 +40,6 @@ pub(crate) enum SerializeNode {
     CompiledClassLeaf(Vec<u8>),
     StorageLeaf(Vec<u8>),
     StateTreeLeaf(Vec<u8>),
-}
-
-/// Temporary struct to serialize the leaf CompiledClass.
-/// Required to comply to existing storage layout.
-#[derive(Serialize, Deserialize)]
-pub(crate) struct LeafCompiledClassToSerialize {
-    pub(crate) compiled_class_hash: Felt,
 }
 
 impl FilledNode<LeafData> {
@@ -94,6 +87,7 @@ impl FilledNode<LeafData> {
         self.hash.0.as_bytes()
     }
 
+    // TODO(Amos, 1/5/2024): move leaf logic to leaf_serde.
     /// Returns the db key of the filled node - [prefix + b":" + suffix].
     #[allow(dead_code)]
     pub(crate) fn db_key(&self) -> StorageKey {

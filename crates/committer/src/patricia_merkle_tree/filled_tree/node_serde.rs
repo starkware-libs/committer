@@ -31,24 +31,13 @@ pub(crate) const STATE_TREE_LEAF_PREFIX: &[u8; 14] = b"contract_state";
 pub(crate) const COMPLIED_CLASS_PREFIX: &[u8; 19] = b"contract_class_leaf";
 pub(crate) const INNER_NODE_PREFIX: &[u8; 13] = b"patricia_node";
 
-// TODO(Amos, 1/5/2024): Delete SerializeNode, as it's no longer needed.
-/// Enum to describe the serialized node.
-#[allow(dead_code)]
-pub(crate) enum SerializeNode {
-    Binary(Vec<u8>),
-    Edge(Vec<u8>),
-    CompiledClassLeaf(Vec<u8>),
-    StorageLeaf(Vec<u8>),
-    StateTreeLeaf(Vec<u8>),
-}
-
 impl FilledNode<LeafData> {
     /// This method serializes the filled node into a byte vector, where:
     /// - For binary nodes: Concatenates left and right hashes.
     /// - For edge nodes: Concatenates bottom hash, path, and path length.
     /// - For leaf nodes: use leaf.serialize() method.
     #[allow(dead_code)]
-    pub(crate) fn serialize(&self) -> FilledTreeResult<SerializeNode> {
+    pub(crate) fn serialize(&self) -> FilledTreeResult<StorageValue> {
         match &self.data {
             NodeData::Binary(BinaryData {
                 left_hash,
@@ -60,7 +49,7 @@ impl FilledNode<LeafData> {
 
                 // Concatenate left and right hashes.
                 let serialized = [left, right].concat();
-                Ok(SerializeNode::Binary(serialized))
+                Ok(StorageValue(serialized))
             }
 
             NodeData::Edge(EdgeData {
@@ -74,7 +63,7 @@ impl FilledNode<LeafData> {
 
                 // Concatenate bottom hash, path, and path length.
                 let serialized = [bottom.to_vec(), path.to_vec(), length.to_vec()].concat();
-                Ok(SerializeNode::Edge(serialized))
+                Ok(StorageValue(serialized))
             }
 
             NodeData::Leaf(leaf_data) => leaf_data.serialize(),

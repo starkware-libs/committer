@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use std::collections::HashMap;
 use std::path::Path;
 
 /// Committer CLI.
@@ -32,6 +33,15 @@ enum Command {
         #[clap(long)]
         contract_state_hash_version: String,
     },
+    PythonTest {
+        /// Test name.
+        #[clap(long)]
+        test_name: String,
+
+        /// Test inputs as a json.
+        #[clap(long)]
+        inputs: String,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -61,6 +71,18 @@ fn main() {
 
             // Output to file.
             std::fs::write(output_file_name, output).expect("Failed to write output");
+        }
+
+        Command::PythonTest { test_name, inputs } => {
+            // Read input json as a hash map.
+            let test_args: HashMap<String, String> = serde_json::from_str(&inputs)
+                .unwrap_or_else(|_| panic!("Failed to parse input json"));
+
+            // Run relevant test.
+            let output = committer::tests::python_tests::run_test(test_name, test_args);
+
+            // Output test result to a file.
+            print!("{}", output);
         }
     }
 }

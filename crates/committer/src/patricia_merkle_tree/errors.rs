@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::storage::errors::{SerializationError, StorageError};
+use crate::storage::errors::{DeserializationError, StorageError};
 
 use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 
@@ -13,7 +13,7 @@ pub(crate) enum OriginalSkeletonTreeError {
     #[error(
         "Failed to deserialize the storage value: {0:?} while building the original skeleton tree."
     )]
-    Deserialization(#[from] SerializationError),
+    Deserialization(#[from] DeserializationError),
     #[error(
         "Unable to read from storage the storage key: {0:?} while building the \
          original skeleton tree."

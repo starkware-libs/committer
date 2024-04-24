@@ -1,9 +1,9 @@
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{BinaryData, FilledNode, LeafData, NodeData};
 use crate::patricia_merkle_tree::types::{EdgeData, EdgePath, EdgePathLength, PathToBottom};
-use crate::storage::errors::SerializationError;
-use crate::storage::serde_trait::Serializable;
-use crate::storage::storage_trait::{create_db_key, StorageKey, StorageValue};
+use crate::storage::errors::{DeserializationError, SerializationError};
+use crate::storage::serde_trait::{Deserializable, Serializable};
+use crate::storage::storage_trait::{StorageKey, StorageValue};
 use crate::types::Felt;
 use serde::{Deserialize, Serialize};
 
@@ -38,14 +38,13 @@ pub(crate) struct LeafCompiledClassToSerialize {
 
 /// Alias for serialization and deserialization results of filled nodes.
 type FilledNodeSerializationResult = Result<StorageValue, SerializationError>;
-type FilledNodeDeserializationResult = Result<FilledNode<LeafData>, SerializationError>;
+type FilledNodeDeserializationResult = Result<FilledNode<LeafData>, DeserializationError>;
 
 impl Serializable for FilledNode<LeafData> {
     /// This method serializes the filled node into a byte vector, where:
     /// - For binary nodes: Concatenates left and right hashes.
     /// - For edge nodes: Concatenates bottom hash, path, and path length.
     /// - For leaf nodes: use leaf.serialize() method.
-    #[allow(dead_code)]
     fn serialize(&self) -> FilledNodeSerializationResult {
         match &self.data {
             NodeData::Binary(BinaryData {
@@ -80,24 +79,27 @@ impl Serializable for FilledNode<LeafData> {
     }
 
     /// Returns the db key of the filled node - [prefix + b":" + suffix].
-    #[allow(dead_code)]
     fn db_key(&self) -> StorageKey {
         let suffix = self.suffix();
 
         match &self.data {
-            NodeData::Binary(_) | NodeData::Edge(_) => create_db_key(INNER_NODE_PREFIX, &suffix),
+            NodeData::Binary(_) | NodeData::Edge(_) => {
+                Self::create_db_key(INNER_NODE_PREFIX, &suffix)
+            }
             NodeData::Leaf(LeafData::StorageValue(_)) => {
-                create_db_key(STORAGE_LEAF_PREFIX, &suffix)
+                Self::create_db_key(STORAGE_LEAF_PREFIX, &suffix)
             }
             NodeData::Leaf(LeafData::CompiledClassHash(_)) => {
-                create_db_key(COMPLIED_CLASS_PREFIX, &suffix)
+                Self::create_db_key(COMPLIED_CLASS_PREFIX, &suffix)
             }
             NodeData::Leaf(LeafData::StateTreeTuple { .. }) => {
-                create_db_key(STATE_TREE_LEAF_PREFIX, &suffix)
+                Self::create_db_key(STATE_TREE_LEAF_PREFIX, &suffix)
             }
         }
     }
+}
 
+impl Deserializable for FilledNode<LeafData> {
     /// Deserializes non-leaf nodes; if a serialized leaf node is given, the hash
     /// is used but the data is ignored.
     fn deserialize(key: &StorageKey, value: &StorageValue) -> FilledNodeDeserializationResult {

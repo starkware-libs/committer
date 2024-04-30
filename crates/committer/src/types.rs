@@ -16,7 +16,7 @@ use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
     Serialize,
     Deserialize,
 )]
-pub(crate) struct Felt(StarknetTypesFelt);
+pub struct Felt(StarknetTypesFelt);
 
 #[macro_export]
 macro_rules! impl_from {
@@ -85,7 +85,7 @@ impl Felt {
         Ok(StarknetTypesFelt::from_hex(hex_string)?.into())
     }
 
-    pub(crate) fn as_bytes(&self) -> [u8; 32] {
+    pub fn as_bytes(&self) -> [u8; 32] {
         self.0.to_bytes_be()
     }
 }

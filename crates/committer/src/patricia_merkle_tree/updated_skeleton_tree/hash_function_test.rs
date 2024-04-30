@@ -1,3 +1,4 @@
+use crate::felt::Felt;
 use crate::hash::hash_trait::{HashFunction, HashInputPair, HashOutput};
 use crate::hash::pedersen::PedersenHashFunction;
 use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
@@ -8,7 +9,6 @@ use crate::patricia_merkle_tree::node_data::inner_node::{
 use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunction;
 use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
-use crate::types::Felt;
 use rstest::rstest;
 
 #[rstest]

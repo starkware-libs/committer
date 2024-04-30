@@ -1,5 +1,5 @@
+use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
-use crate::types::Felt;
 
 #[cfg(test)]
 #[path = "types_test.rs"]

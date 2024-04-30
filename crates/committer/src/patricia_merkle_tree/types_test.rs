@@ -1,6 +1,6 @@
+use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::types::Felt;
 use rstest::rstest;
 
 #[rstest]

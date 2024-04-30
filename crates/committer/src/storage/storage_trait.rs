@@ -9,7 +9,7 @@ pub struct StorageKey(pub Vec<u8>);
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StorageValue(pub Vec<u8>);
 
-pub(crate) trait Storage {
+pub trait Storage {
     /// Returns value from storage, if it exists.
     fn get(&self, key: &StorageKey) -> Option<&StorageValue>;
 

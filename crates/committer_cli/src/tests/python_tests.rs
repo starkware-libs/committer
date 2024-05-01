@@ -31,6 +31,7 @@ pub(crate) enum PythonTest {
     BinarySerialize,
     InputParsing,
     NodeKey,
+    StorageSerialize,
 }
 
 /// Error type for PythonTest enum.
@@ -60,6 +61,7 @@ impl TryFrom<String> for PythonTest {
             "binary_serialize_test" => Ok(Self::BinarySerialize),
             "input_parsing" => Ok(Self::InputParsing),
             "node_db_key_test" => Ok(Self::NodeKey),
+            "storage_serialize_test" => Ok(Self::StorageSerialize),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -84,6 +86,9 @@ impl PythonTest {
             Self::BinarySerialize => {
                 let binary_input: HashMap<String, u128> = serde_json::from_str(input)?;
                 Ok(test_binary_serialize_test(binary_input))
+            Self::StorageSerialize => {
+                let storage_input: HashMap<Vec<u8>, Vec<u8>> = serde_json::from_str(input)?;
+                Ok(storage_serialize_test(storage_input))
             }
             Self::InputParsing => parse_input_test(),
             Self::NodeKey => Ok(test_node_db_key()),
@@ -396,3 +401,6 @@ pub(crate) fn test_node_db_key() -> String {
     serde_json::to_string(&map)
         .unwrap_or_else(|error| panic!("Failed to serialize storage prefix: {}", error))
 }
+
+/// Serializes a map of storage keys and values into a JSON string.
+

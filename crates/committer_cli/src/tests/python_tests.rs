@@ -9,12 +9,10 @@ use committer::patricia_merkle_tree::filled_tree::node::{ClassHash, FilledNode, 
 use committer::patricia_merkle_tree::node_data::inner_node::{BinaryData, EdgeData, NodeData};
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use committer::storage::serde_trait::Serializable;
+use committer::storage::storage_trait::{StorageKey, StorageValue};
 use committer::{
     patricia_merkle_tree::filled_tree::node::CompiledClassHash,
-    storage::{
-        errors::DeserializationError,
-        storage_trait::{StorageKey, StorageValue},
-    },
+    storage::errors::DeserializationError,
 };
 use std::{collections::HashMap, io};
 use thiserror;

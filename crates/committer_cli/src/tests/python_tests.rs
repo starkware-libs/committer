@@ -5,14 +5,11 @@ use committer::hash::pedersen::PedersenHashFunction;
 use committer::patricia_merkle_tree::filled_tree::node::{ClassHash, FilledNode, Nonce};
 use committer::patricia_merkle_tree::node_data::inner_node::{BinaryData, EdgeData, NodeData};
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
+use committer::storage::map_storage::MapStorage;
 use committer::storage::serde_trait::Serializable;
-use committer::{
-    patricia_merkle_tree::filled_tree::node::CompiledClassHash,
-    storage::{
-        errors::DeserializationError,
-        storage_trait::{StorageKey, StorageValue},
-    },
-};
+use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
+use committer::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
+use committer::storage::errors::DeserializationError;
 use std::{collections::HashMap, io};
 use thiserror;
 
@@ -86,11 +83,9 @@ impl PythonTest {
             Self::BinarySerialize => {
                 let binary_input: HashMap<String, u128> = serde_json::from_str(input)?;
                 Ok(test_binary_serialize_test(binary_input))
-            Self::StorageSerialize => {
-                let storage_input: HashMap<Vec<u8>, Vec<u8>> = serde_json::from_str(input)?;
-                Ok(storage_serialize_test(storage_input))
             }
             Self::InputParsing => parse_input_test(),
+            Self::StorageSerialize => Ok(storage_serialize_test()),
             Self::NodeKey => Ok(test_node_db_key()),
         }
     }
@@ -402,5 +397,20 @@ pub(crate) fn test_node_db_key() -> String {
         .unwrap_or_else(|error| panic!("Failed to serialize storage prefix: {}", error))
 }
 
-/// Serializes a map of storage keys and values into a JSON string.
+/// This function storage_serialize_test generates a MapStorage containing StorageKey and StorageValue
+/// pairs for u128 values in the range 0..=1000,
+/// serializes it to a JSON string using Serde,
+/// and returns the serialized JSON string or panics with an error message if serialization fails.
+pub(crate) fn storage_serialize_test() -> String {
+    let mut storage = MapStorage {
+        storage: HashMap::new(),
+    };
+    for i in 0..=99_u128 {
+        let key = StorageKey(Felt::from(i).as_bytes().to_vec());
+        let value = StorageValue(Felt::from(i).as_bytes().to_vec());
+        storage.set(key, value);
+    }
 
+    serde_json::to_string(&storage)
+        .unwrap_or_else(|error| panic!("Failed to serialize storage: {}", error))
+}

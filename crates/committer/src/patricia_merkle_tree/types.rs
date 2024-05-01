@@ -1,3 +1,4 @@
+use crate::block_committer::types::StarknetStorageKey;
 use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 
@@ -44,6 +45,10 @@ impl NodeIndex {
             .try_into()
             .expect("Failed to convert to u8.")
     }
+
+    pub(crate) fn as_full_index(&self, tree_height: &TreeHeight) -> Self {
+        Self(U256::from(2_u8) << tree_height.0) + *self
+    }
 }
 
 impl std::ops::Shl<u8> for NodeIndex {
@@ -74,6 +79,12 @@ impl From<Felt> for NodeIndex {
     }
 }
 
+impl From<StarknetStorageKey> for NodeIndex {
+    fn from(value: StarknetStorageKey) -> Self {
+        NodeIndex::from(value.0)
+    }
+}
+
 #[allow(dead_code)]
-#[derive(Debug, Eq, PartialEq, derive_more::Sub)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, derive_more::Sub)]
 pub struct TreeHeight(pub u8);

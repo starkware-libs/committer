@@ -2,10 +2,13 @@ use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
-use crate::patricia_merkle_tree::original_skeleton_tree::original_skeleton_calc::LeafDataImpl;
+use crate::patricia_merkle_tree::original_skeleton_tree::original_skeleton_calc::{
+    has_leaves_on_both_sides, LeafDataImpl,
+};
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::storage::map_storage::MapStorage;
+use ethnum::U256;
 use pretty_assertions::assert_eq;
 use rstest::rstest;
 use std::collections::HashMap;
@@ -291,4 +294,34 @@ fn create_edge_entry(hash: u8, path: u8, length: u8) -> (StorageKey, StorageValu
         create_patricia_key(hash + path + length),
         create_edge_val(hash, path, length),
     )
+}
+
+#[rstest]
+#[case::small_tree_positive(
+    2,
+    vec![NodeIndex::from(8),NodeIndex::from(10),NodeIndex::from(11)],
+    true)]
+#[case::small_tree_negative(2, vec![NodeIndex::from(10),NodeIndex::from(11)], false)]
+#[case::large_tree_farthest_leaves(
+    251,
+    vec![NodeIndex(U256::ONE << 251),NodeIndex((U256::ONE << 252) - U256::ONE)],
+    true)]
+#[case::large_tree_positive_consecutive_indices_of_different_sides(
+    251,
+    vec![NodeIndex((U256::from(3u8) << 250) - U256::ONE), NodeIndex(U256::from(3u8) << 250)],
+    true)]
+#[case::large_tree_negative_one_shift_of_positive_case(
+    251,
+    vec![NodeIndex(U256::from(3u8) << 250), NodeIndex((U256::from(3u8) << 250)+ U256::ONE)],
+    false)]
+fn test_has_leaves_on_both_sides(
+    #[case] root_height: u8,
+    #[case] leaf_indices: Vec<NodeIndex>,
+    #[case] expected: bool,
+) {
+    let root_height = TreeHeight(root_height);
+    assert_eq!(
+        has_leaves_on_both_sides(&root_height, &leaf_indices),
+        expected
+    );
 }

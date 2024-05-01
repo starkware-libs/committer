@@ -243,3 +243,29 @@ impl OriginalSkeletonTree<LeafDataImpl> for OriginalSkeletonTreeImpl {
         todo!()
     }
 }
+
+/// Returns whether a root of a subtree at the given height has leaves on both sides. Assumes:
+/// * The leaf indices array is sorted.
+/// * All leaves are descendants of the root.
+///
+/// E.g. for a tree of height 2, calling this function with root_height=1, will return true iff
+/// leaf_indices equals exactly [4,5] or [6,7] (not that by assumption it can't have elements of
+/// both groups).
+///       1
+///     /   \
+///    2     3
+///   / \   / \
+///  4   5 6   7
+#[allow(dead_code)]
+fn has_leaves_on_both_sides(root_height: &TreeHeight, leaf_indices: &[NodeIndex]) -> bool {
+    if leaf_indices.len() <= 1 {
+        return false;
+    }
+    let child_direction_mask = U256::ONE << (root_height.0 - 1);
+    (leaf_indices[0].0 & child_direction_mask)
+        != (leaf_indices
+            .last()
+            .expect("leaf_indices unexpectedly empty.")
+            .0
+            & child_direction_mask)
+}

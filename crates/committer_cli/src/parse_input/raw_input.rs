@@ -10,10 +10,8 @@ pub(crate) struct RawInput {
     pub storage: Vec<RawStorageEntry>,
     /// All relevant information for the state diff commitment.
     pub state_diff: RawStateDiff,
-    /// The height of the patricia tree.
-    // TODO(Nimrod,20/4/2024): Strong assumption - all trees have same height. How can I get
-    // rid of it?
-    pub tree_height: u8,
+    /// The height of all patricia trees.
+    pub tree_heights: u8,
     pub global_tree_root_hash: RawFelt,
     pub classes_tree_root_hash: RawFelt,
 }

@@ -43,7 +43,8 @@ pub struct ContractState {
 pub struct Input {
     pub storage: HashMap<StorageKey, StorageValue>,
     pub state_diff: StateDiff,
-    pub tree_height: TreeHeight,
+    // Assuming all trees have the same height.
+    pub tree_heights: TreeHeight,
     pub global_tree_root_hash: HashOutput,
     pub classes_tree_root_hash: HashOutput,
 }

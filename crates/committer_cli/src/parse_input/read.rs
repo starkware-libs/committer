@@ -1,6 +1,6 @@
 use committer::{block_committer::types::Input, storage::errors::DeserializationError};
 
-use crate::parse_input::types::RawInput;
+use crate::parse_input::raw_input::RawInput;
 
 #[cfg(test)]
 #[path = "read_test.rs"]

@@ -84,4 +84,14 @@ impl Felt {
     pub fn as_bytes(&self) -> [u8; 32] {
         self.0.to_bytes_be()
     }
+
+    pub fn to_hex(&self) -> String {
+        self.0.to_hex_string()
+    }
+
+    // Convert to a 64-character hexadecimal string without the "0x" prefix.
+    pub fn to_padded_64_hex(&self) -> String {
+        // Zero-pad the remaining string to 64 characters
+        format!("{:0>64}", self.to_hex().strip_prefix("0x").unwrap_or("0"))
+    }
 }

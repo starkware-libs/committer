@@ -27,9 +27,10 @@ use std::collections::HashMap;
 pub mod create_tree_test;
 
 #[allow(dead_code)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct OriginalSkeletonTreeImpl {
     pub(crate) nodes: HashMap<NodeIndex, OriginalSkeletonNode<LeafDataImpl>>,
-    tree_height: TreeHeight,
+    pub(crate) tree_height: TreeHeight,
 }
 
 struct SubTree<'a> {

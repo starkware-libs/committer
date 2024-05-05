@@ -239,7 +239,7 @@ fn test_fetch_nodes(
     assert_eq!(&skeleton_tree.nodes, &expected_nodes);
 }
 
-fn create_32_bytes_entry(simple_val: u8) -> Vec<u8> {
+pub(crate) fn create_32_bytes_entry(simple_val: u8) -> Vec<u8> {
     let mut res = vec![0; 31];
     res.push(simple_val);
     res
@@ -280,14 +280,14 @@ fn create_modifications(modifications: Vec<(u128, u128)>) -> HashMap<NodeIndex, 
         .collect()
 }
 
-fn create_binary_entry(left: u8, right: u8) -> (StorageKey, StorageValue) {
+pub(crate) fn create_binary_entry(left: u8, right: u8) -> (StorageKey, StorageValue) {
     (
         create_patricia_key(left + right),
         create_binary_val(left, right),
     )
 }
 
-fn create_edge_entry(hash: u8, path: u8, length: u8) -> (StorageKey, StorageValue) {
+pub(crate) fn create_edge_entry(hash: u8, path: u8, length: u8) -> (StorageKey, StorageValue) {
     (
         create_patricia_key(hash + path + length),
         create_edge_val(hash, path, length),

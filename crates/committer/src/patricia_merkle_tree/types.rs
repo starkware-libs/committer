@@ -1,5 +1,6 @@
 use crate::block_committer::input::{ContractAddress, StarknetStorageKey};
 use crate::felt::Felt;
+use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 
 use ethnum::U256;
@@ -58,6 +59,10 @@ impl NodeIndex {
         tree_height: &TreeHeight,
     ) -> Self {
         Self(U256::from(1_u8) << tree_height.0) + Self::from(address.0)
+    }
+
+    pub(crate) fn from_class_hash(class_hash: &ClassHash, tree_height: &TreeHeight) -> Self {
+        Self(U256::from(1_u8) << tree_height.0) + Self::from(class_hash.0)
     }
 }
 

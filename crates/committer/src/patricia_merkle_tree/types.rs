@@ -3,10 +3,14 @@ use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 
 use ethnum::U256;
+use once_cell::sync::Lazy;
 
 #[cfg(test)]
 #[path = "types_test.rs"]
 pub mod types_test;
+
+pub const MAX_HEIGHT: u8 = 251;
+static MAX_INDEX: Lazy<U256> = Lazy::new(|| (U256::ONE << NodeIndex::BITS) - U256::ONE);
 
 #[allow(dead_code)]
 #[derive(
@@ -17,18 +21,34 @@ pub mod types_test;
     Eq,
     Hash,
     derive_more::Add,
+    derive_more::BitAnd,
     derive_more::Mul,
     derive_more::Sub,
     PartialOrd,
     Ord,
 )]
-pub(crate) struct NodeIndex(pub U256);
+pub(crate) struct NodeIndex(U256);
 
 #[allow(dead_code)]
 // Wraps a U256. Maximal possible value is the largest index in a tree of height 251 (2 ^ 252 - 1).
 impl NodeIndex {
-    pub(crate) fn root_index() -> NodeIndex {
-        NodeIndex(U256::ONE)
+    pub const BITS: u8 = MAX_HEIGHT + 1;
+    pub(crate) const ROOT: Self = Self(U256::ONE);
+
+    pub(crate) fn new(index: U256) -> Self {
+        if index > *MAX_INDEX {
+            panic!("Index {index} is too large.");
+        }
+        Self(index)
+    }
+
+    pub(crate) fn highest_index() -> Self {
+        Self(*MAX_INDEX)
+    }
+
+    /// Returns the index as U256.
+    pub(crate) fn index(&self) -> U256 {
+        self.0
     }
 
     // TODO(Amos, 1/5/2024): Move to EdgePath.
@@ -40,24 +60,29 @@ impl NodeIndex {
         (index << length.0) + NodeIndex::from(path.0)
     }
 
-    pub(crate) fn bit_length(&self) -> u8 {
-        (U256::BITS - self.0.leading_zeros())
+    /// Returns the number of leading zeroes when represented with Self::BITS bits.
+    pub(crate) fn leading_zeros(&self) -> u8 {
+        (self.0.leading_zeros() - (U256::BITS - u32::from(Self::BITS)))
             .try_into()
-            .expect("Failed to convert to u8.")
+            .expect("Leading zeroes are unexpectedly larger than a u8.")
+    }
+
+    pub(crate) fn bit_length(&self) -> u8 {
+        Self::BITS - self.leading_zeros()
     }
 
     pub(crate) fn from_starknet_storage_key(
         key: &StarknetStorageKey,
         tree_height: &TreeHeight,
     ) -> Self {
-        Self(U256::from(1_u8) << tree_height.0) + Self::from(key.0)
+        Self::new(U256::ONE << tree_height.0) + Self::from(key.0)
     }
 
     pub(crate) fn from_contract_address(
         address: &ContractAddress,
         tree_height: &TreeHeight,
     ) -> Self {
-        Self(U256::from(1_u8) << tree_height.0) + Self::from(address.0)
+        Self::new(U256::ONE << tree_height.0) + Self::from(address.0)
     }
 }
 
@@ -66,7 +91,7 @@ impl std::ops::Shl<u8> for NodeIndex {
 
     /// Returns the index of the left descendant (child for rhs=1) of the node.
     fn shl(self, rhs: u8) -> Self::Output {
-        NodeIndex(self.0 << rhs)
+        Self::new(self.0 << rhs)
     }
 }
 
@@ -75,7 +100,7 @@ impl std::ops::Shr<u8> for NodeIndex {
 
     /// Returns the index of the ancestor (parent for rhs=1) of the node.
     fn shr(self, rhs: u8) -> Self::Output {
-        NodeIndex(self.0 >> rhs)
+        Self::new(self.0 >> rhs)
     }
 }
 

@@ -203,6 +203,7 @@ dependencies = [
  "derive_more",
  "ethnum",
  "hex",
+ "once_cell",
  "pretty_assertions",
  "rstest",
  "serde",
@@ -554,6 +555,12 @@ checksum = "a6a622008b6e321afc04970976f62ee297fdbaa6f95318ca343e3eebb9648441"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "once_cell"
+version = "1.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "parking_lot"

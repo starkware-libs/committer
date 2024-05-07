@@ -1,6 +1,7 @@
 use crate::block_committer::input::{ContractAddress, StarknetStorageKey};
 use crate::felt::Felt;
-use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
+use crate::patricia_merkle_tree::errors::TypesError;
+use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
 
 use ethnum::U256;
 use once_cell::sync::Lazy;
@@ -89,6 +90,29 @@ impl NodeIndex {
         NodeIndex(lca)
     }
 
+    pub(crate) fn get_path_to_descendant(&self, descendant: NodeIndex) -> PathToBottom {
+        let descendant_bit_length = descendant.bit_length();
+        let bit_length = self.bit_length();
+        if bit_length > descendant_bit_length {
+            panic!("The descendant is not a really descendant of the node.");
+        };
+
+        let distance = descendant_bit_length - bit_length;
+        let delta = descendant - (*self << distance);
+        if descendant >> distance != *self {
+            panic!("The descendant is not a really descendant of the node.");
+        };
+
+        PathToBottom {
+            path: EdgePath(
+                delta
+                    .try_into()
+                    .expect("Delta of two indices is unexpectedly larger than a Felt."),
+            ),
+            length: EdgePathLength(distance),
+        }
+    }
+
     pub(crate) fn from_starknet_storage_key(
         key: &StarknetStorageKey,
         tree_height: &TreeHeight,
@@ -131,6 +155,22 @@ impl From<u128> for NodeIndex {
 impl From<Felt> for NodeIndex {
     fn from(value: Felt) -> Self {
         Self(U256::from_be_bytes(value.to_bytes_be()))
+    }
+}
+
+impl TryInto<Felt> for NodeIndex {
+    type Error = TypesError;
+
+    fn try_into(self) -> Result<Felt, Self::Error> {
+        if self.0 > U256::from_be_bytes(Felt::MAX.to_bytes_be()) {
+            return Err(TypesError::ConversionError {
+                from: "NodeIndex",
+                to: "Felt",
+                reason: "NodeIndex is too large.",
+            });
+        }
+        let bytes = self.0.to_be_bytes();
+        Ok(Felt::from_bytes_be_slice(&bytes))
     }
 }
 

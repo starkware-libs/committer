@@ -94,3 +94,19 @@ fn test_get_lca_big() {
     let right_descendant = random_extension(right_child);
     assert_eq!(left_descendant.get_lca(&right_descendant), lca);
 }
+
+#[rstest]
+fn test_get_path_to_descendant() {
+    let root_index = NodeIndex(U256::from(rand::thread_rng().gen::<u128>()));
+    let max_bits = NodeIndex::BITS - 128;
+    let extension: u128 = rand::thread_rng().gen_range(0..1 << max_bits);
+    let extension_index = NodeIndex(U256::from(extension));
+
+    let descendant = (root_index << extension_index.bit_length()) + extension_index;
+    let path_to_bottom = root_index.get_path_to_descendant(descendant);
+    assert_eq!(path_to_bottom.path, EdgePath(Felt::from(extension)));
+    assert_eq!(
+        path_to_bottom.length,
+        EdgePathLength(extension_index.bit_length())
+    );
+}

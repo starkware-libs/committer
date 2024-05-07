@@ -3,10 +3,15 @@ use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 
 use ethnum::U256;
+use once_cell::sync::Lazy;
+use std::cmp::Ordering;
 
 #[cfg(test)]
 #[path = "types_test.rs"]
 pub mod types_test;
+
+pub const MAX_HEIGHT: u8 = 251;
+static MAX_INDEX: Lazy<U256> = Lazy::new(|| U256::ONE << MAX_HEIGHT);
 
 #[allow(dead_code)]
 #[derive(
@@ -27,6 +32,14 @@ pub(crate) struct NodeIndex(pub U256);
 #[allow(dead_code)]
 // Wraps a U256. Maximal possible value is the largest index in a tree of height 251 (2 ^ 252 - 1).
 impl NodeIndex {
+    pub const BITS: u8 = MAX_HEIGHT + 1;
+
+    pub(crate) fn new(index: U256) -> Self {
+        if index > *MAX_INDEX {
+            panic!("Index is too large.");
+        }
+        Self(index)
+    }
     pub(crate) fn root_index() -> NodeIndex {
         NodeIndex(U256::ONE)
     }
@@ -40,10 +53,37 @@ impl NodeIndex {
         (index << length.0) + NodeIndex::from(path.0)
     }
 
-    pub(crate) fn bit_length(&self) -> u8 {
-        (U256::BITS - self.0.leading_zeros())
+    /// Returns the number of leading zeroes when represented with Self::BITS bits (252).
+    pub(crate) fn leading_zeros(&self) -> u8 {
+        (self.0.leading_zeros() - (U256::BITS - u32::from(Self::BITS)))
             .try_into()
-            .expect("Failed to convert to u8.")
+            .expect("Leading zeroes are unexpectedly larger than a u8.")
+    }
+
+    pub(crate) fn bit_length(&self) -> u8 {
+        Self::BITS - self.leading_zeros()
+    }
+
+    /// Get the LCA (Lowest Common Ancestor) of the two nodes.
+    pub(crate) fn get_lca(&self, other: &NodeIndex) -> NodeIndex {
+        let bit_length = self.bit_length();
+        let other_bit_length = other.bit_length();
+
+        // Bring self to the level of other.
+        let mut adapted_self = *self;
+        match adapted_self.cmp(other) {
+            Ordering::Less => adapted_self = adapted_self << (other_bit_length - bit_length),
+            Ordering::Greater => adapted_self = adapted_self >> (bit_length - other_bit_length),
+            Ordering::Equal => return *self,
+        }
+
+        let xor = adapted_self.0 ^ other.0;
+        println!("xor: {:?}, adapted: {:?}", xor, adapted_self);
+        // The length of the reminder after removing the common prefix of the two nodes.
+        let post_common_prefix_len = NodeIndex(xor).bit_length();
+        println!("post_common_prefix_len: {:?}", post_common_prefix_len);
+        let lca = adapted_self.0 >> post_common_prefix_len;
+        NodeIndex(lca)
     }
 
     pub(crate) fn from_starknet_storage_key(
@@ -60,7 +100,6 @@ impl NodeIndex {
         Self(U256::from(1_u8) << tree_height.0) + Self::from(address.0)
     }
 }
-
 impl std::ops::Shl<u8> for NodeIndex {
     type Output = Self;
 

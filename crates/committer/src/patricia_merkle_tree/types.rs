@@ -4,6 +4,7 @@ use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 
 use ethnum::U256;
 use once_cell::sync::Lazy;
+use std::cmp::Ordering;
 
 #[cfg(test)]
 #[path = "types_test.rs"]
@@ -66,6 +67,26 @@ impl NodeIndex {
 
     pub(crate) fn bit_length(&self) -> u8 {
         Self::BITS - self.leading_zeros()
+    }
+
+    /// Get the LCA (Lowest Common Ancestor) of the two nodes.
+    pub(crate) fn get_lca(&self, other: &NodeIndex) -> NodeIndex {
+        let bit_length = self.bit_length();
+        let other_bit_length = other.bit_length();
+
+        // Bring self to the level of other.
+        let mut adapted_self = *self;
+        match adapted_self.cmp(other) {
+            Ordering::Less => adapted_self = adapted_self << (other_bit_length - bit_length),
+            Ordering::Greater => adapted_self = adapted_self >> (bit_length - other_bit_length),
+            Ordering::Equal => return *self,
+        }
+
+        let xor = adapted_self.0 ^ other.0;
+        // The length of the reminder after removing the common prefix of the two nodes.
+        let post_common_prefix_len = NodeIndex(xor).bit_length();
+        let lca = adapted_self.0 >> post_common_prefix_len;
+        NodeIndex(lca)
     }
 
     pub(crate) fn from_starknet_storage_key(

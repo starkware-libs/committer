@@ -12,6 +12,7 @@ workspace = true
 [dev-dependencies]
 pretty_assertions.workspace = true
 rstest.workspace = true
+rand.workspace = true
 
 [dependencies]
 async-recursion.workspace = true

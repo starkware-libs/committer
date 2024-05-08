@@ -38,7 +38,7 @@ impl NodeIndex {
         path_to_bottom: &PathToBottom,
     ) -> NodeIndex {
         let PathToBottom { path, length } = path_to_bottom;
-        (index << length.0) + NodeIndex::from(path.0)
+        (index << length.0) + NodeIndex(U256::from_be_bytes(path.0.to_bytes_be()))
     }
 
     pub(crate) fn bit_length(&self) -> u8 {
@@ -66,7 +66,7 @@ impl NodeIndex {
     }
 
     fn from_felt(felt: &Felt, tree_height: &TreeHeight) -> Self {
-        Self(U256::from(1_u8) << tree_height.0) + Self::from(*felt)
+        Self(U256::from(1_u8) << tree_height.0) + NodeIndex(U256::from_be_bytes(felt.to_bytes_be()))
     }
 }
 
@@ -91,12 +91,6 @@ impl std::ops::Shr<u8> for NodeIndex {
 impl From<u128> for NodeIndex {
     fn from(value: u128) -> Self {
         Self(U256::from(value))
-    }
-}
-
-impl From<Felt> for NodeIndex {
-    fn from(value: Felt) -> Self {
-        Self(U256::from_be_bytes(value.to_bytes_be()))
     }
 }
 

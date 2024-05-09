@@ -72,10 +72,6 @@ impl Felt {
             .expect("Unexpected error occurred when extracting bits of a Felt.")
     }
 
-    pub fn to_bytes_be(self) -> [u8; 32] {
-        self.0.to_bytes_be()
-    }
-
     /// Parse a hex-encoded number into `Felt`.
     pub(crate) fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
         Ok(StarknetTypesFelt::from_hex(hex_string)?.into())

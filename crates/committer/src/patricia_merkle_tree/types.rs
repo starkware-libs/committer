@@ -107,7 +107,7 @@ impl NodeIndex {
     }
 
     fn from_felt_value(felt: &Felt) -> Self {
-        NodeIndex(U256::from_be_bytes(felt.to_bytes_be()))
+        NodeIndex(U256::from_be_bytes(felt.as_bytes()))
     }
 }
 

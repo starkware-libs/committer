@@ -55,7 +55,7 @@ impl StoragePrefix {
 
 impl From<Felt> for StorageKey {
     fn from(value: Felt) -> Self {
-        StorageKey(value.to_bytes_be().to_vec())
+        StorageKey(value.as_bytes().to_vec())
     }
 }
 

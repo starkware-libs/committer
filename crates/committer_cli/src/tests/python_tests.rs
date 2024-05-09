@@ -221,8 +221,8 @@ fn create_output_to_python(actual_input: Input) -> String {
         actual_input.current_contract_state_leaves.len(),
         actual_input.state_diff.storage_updates.len(),
         actual_input.tree_heights.0,
-        actual_input.global_tree_root_hash.0.to_bytes_be(),
-        actual_input.classes_tree_root_hash.0.to_bytes_be(),
+        actual_input.global_tree_root_hash.0.as_bytes(),
+        actual_input.classes_tree_root_hash.0.as_bytes(),
         storage_keys_hash,
         storage_values_hash,
         state_diff_keys_hash,
@@ -280,10 +280,10 @@ fn hash_current_contract_states(
     let mut keys_hash = vec![0; 32];
     let mut values_hash = vec![0; 32];
     for (key, state_leaf) in current_contract_state_leaves {
-        keys_hash = xor_hash(&keys_hash, &key.0.to_bytes_be());
-        values_hash = xor_hash(&values_hash, &state_leaf.nonce.0.to_bytes_be());
-        values_hash = xor_hash(&values_hash, &state_leaf.class_hash.0.to_bytes_be());
-        values_hash = xor_hash(&values_hash, &state_leaf.storage_root_hash.0.to_bytes_be());
+        keys_hash = xor_hash(&keys_hash, &key.0.as_bytes());
+        values_hash = xor_hash(&values_hash, &state_leaf.nonce.0.as_bytes());
+        values_hash = xor_hash(&values_hash, &state_leaf.class_hash.0.as_bytes());
+        values_hash = xor_hash(&values_hash, &state_leaf.storage_root_hash.0.as_bytes());
     }
     (keys_hash, values_hash)
 }
@@ -294,7 +294,7 @@ fn hash_storage_updates(
     let mut keys_hash = vec![0; 32];
     let mut values_hash = vec![0; 32];
     for (key, inner_map) in storage_updates {
-        keys_hash = xor_hash(&keys_hash, &key.0.to_bytes_be());
+        keys_hash = xor_hash(&keys_hash, &key.0.as_bytes());
         let (inner_map_keys_hash, inner_map_values_hash) = hash_storage_updates_map(inner_map);
         values_hash = xor_hash(&values_hash, &inner_map_keys_hash);
         values_hash = xor_hash(&values_hash, &inner_map_values_hash);
@@ -308,8 +308,8 @@ macro_rules! generate_storage_map_xor_hasher {
             let mut keys_hash = vec![0; 32];
             let mut values_hash = vec![0; 32];
             for (key, value) in inner_map {
-                keys_hash = xor_hash(&keys_hash, &key.0.to_bytes_be());
-                values_hash = xor_hash(&values_hash, &value.0.to_bytes_be());
+                keys_hash = xor_hash(&keys_hash, &key.0.as_bytes());
+                values_hash = xor_hash(&values_hash, &value.0.as_bytes());
             }
             (keys_hash, values_hash)
         }
@@ -440,5 +440,5 @@ pub(crate) fn storage_serialize_test() -> Result<String, PythonTestError> {
 
 fn python_hash_constants_compare() -> String {
     // TODO(Nimrod, 15/5/2024): Compare contract class leaf version.
-    format!("{:?}", CONTRACT_STATE_HASH_VERSION.to_bytes_be())
+    format!("{:?}", CONTRACT_STATE_HASH_VERSION.as_bytes())
 }

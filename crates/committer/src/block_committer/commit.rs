@@ -29,8 +29,11 @@ pub(crate) fn commit_block(input: Input) -> BlockCommitmentResult<()> {
                 &input.state_diff.class_hash_to_compiled_class_hash,
                 input.tree_heights,
             ),
-            &input.state_diff.accessed_addresses(),
-            &input.state_diff.actual_storage_updates(input.tree_heights),
+            input.state_diff.actual_storage_updates(input.tree_heights),
+            &input.current_contract_state_leaves,
+            &input.state_diff.address_to_class_hash,
+            &input.state_diff.address_to_nonce,
+            input.tree_heights,
         )?;
 
     todo!()

@@ -16,3 +16,18 @@ pub(crate) struct UpdatedSkeletonForest<L: LeafData + std::clone::Clone, T: Upda
     contract_states: HashMap<ContractAddress, T>,
     leaf_data: PhantomData<L>,
 }
+
+impl<L: LeafData + std::clone::Clone, T: UpdatedSkeletonTree<L>> UpdatedSkeletonForest<L, T> {
+    pub(crate) fn new(
+        classes_tree: T,
+        global_state_tree: T,
+        contract_states: HashMap<ContractAddress, T>,
+    ) -> Self {
+        Self {
+            classes_tree,
+            global_state_tree,
+            contract_states,
+            leaf_data: PhantomData,
+        }
+    }
+}

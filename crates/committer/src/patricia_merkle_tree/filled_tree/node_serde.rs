@@ -4,7 +4,7 @@ use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 use crate::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePath, EdgePathLength, NodeData, PathToBottom,
 };
-use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
+use crate::patricia_merkle_tree::node_data::leaf::{LeafData, LeafDataImpl};
 use crate::storage::errors::{DeserializationError, SerializationError};
 use crate::storage::serde_trait::{Deserializable, Serializable};
 use crate::storage::storage_trait::{create_db_key, StorageKey, StoragePrefix, StorageValue};
@@ -31,13 +31,13 @@ pub(crate) struct LeafCompiledClassToSerialize {
 type FilledNodeSerializationResult = Result<StorageValue, SerializationError>;
 type FilledNodeDeserializationResult = Result<FilledNode<LeafDataImpl>, DeserializationError>;
 
-impl FilledNode<LeafDataImpl> {
+impl<L: LeafData> FilledNode<L> {
     pub(crate) fn suffix(&self) -> [u8; SERIALIZE_HASH_BYTES] {
         self.hash.0.to_bytes_be()
     }
 }
 
-impl Serializable for FilledNode<LeafDataImpl> {
+impl<L: LeafData> Serializable for FilledNode<L> {
     /// This method serializes the filled node into a byte vector, where:
     /// - For binary nodes: Concatenates left and right hashes.
     /// - For edge nodes: Concatenates bottom hash, path, and path length.
@@ -83,15 +83,7 @@ impl Serializable for FilledNode<LeafDataImpl> {
             NodeData::Binary(_) | NodeData::Edge(_) => {
                 create_db_key(StoragePrefix::InnerNode, &suffix)
             }
-            NodeData::Leaf(LeafDataImpl::StorageValue(_)) => {
-                create_db_key(StoragePrefix::StorageLeaf, &suffix)
-            }
-            NodeData::Leaf(LeafDataImpl::CompiledClassHash(_)) => {
-                create_db_key(StoragePrefix::CompiledClassLeaf, &suffix)
-            }
-            NodeData::Leaf(LeafDataImpl::ContractState { .. }) => {
-                create_db_key(StoragePrefix::StateTreeLeaf, &suffix)
-            }
+            NodeData::Leaf(leaf_data) => create_db_key(leaf_data.storage_prefix(), &suffix),
         }
     }
 }

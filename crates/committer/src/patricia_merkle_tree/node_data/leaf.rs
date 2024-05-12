@@ -1,11 +1,13 @@
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
+use crate::patricia_merkle_tree::node_data::leaf_serde::{HasSerialize, HasStoragePrefix};
 
-pub trait LeafData {
+pub trait LeafData: HasStoragePrefix + HasSerialize {
     /// Returns true if leaf is empty.
     fn is_empty(&self) -> bool;
 }
+
 #[allow(dead_code)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ContractState {

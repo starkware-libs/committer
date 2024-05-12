@@ -193,7 +193,7 @@ pub(crate) fn test_binary_serialize_test(binary_input: HashMap<String, u128>) ->
     };
 
     // Create a filled node with binary data and zero hash.
-    let filled_node = FilledNode {
+    let filled_node: FilledNode<LeafDataImpl> = FilledNode {
         data: NodeData::Binary(binary_data),
         hash: HashOutput(Felt::ZERO),
     };
@@ -385,7 +385,7 @@ pub(crate) fn test_node_db_key() -> String {
     let hash = HashOutput(zero);
 
     let binary_node_key = FilledNode {
-        data: NodeData::Binary(BinaryData {
+        data: NodeData::<LeafDataImpl>::Binary(BinaryData {
             left_hash: hash,
             right_hash: hash,
         }),
@@ -395,7 +395,7 @@ pub(crate) fn test_node_db_key() -> String {
     .0;
 
     let edge_node_key = FilledNode {
-        data: NodeData::Edge(EdgeData {
+        data: NodeData::<LeafDataImpl>::Edge(EdgeData {
             bottom_hash: hash,
             path_to_bottom: Default::default(),
         }),
@@ -493,7 +493,7 @@ fn test_storage_node(data: HashMap<String, String>) -> Result<String, PythonTest
 
     // Create a binary node from the parsed data.
     let binary_rust = FilledNode {
-        data: NodeData::Binary(BinaryData {
+        data: NodeData::<LeafDataImpl>::Binary(BinaryData {
             left_hash: HashOutput(Felt::from(*get_or_key_not_found(&binary_data, "left")?)),
             right_hash: HashOutput(Felt::from(*get_or_key_not_found(&binary_data, "right")?)),
         }),
@@ -509,7 +509,7 @@ fn test_storage_node(data: HashMap<String, String>) -> Result<String, PythonTest
 
     // Create an edge node from the parsed data.
     let edge_rust = FilledNode {
-        data: NodeData::Edge(EdgeData {
+        data: NodeData::<LeafDataImpl>::Edge(EdgeData {
             bottom_hash: HashOutput(Felt::from(*get_or_key_not_found(&edge_data, "bottom")?)),
             path_to_bottom: PathToBottom {
                 path: EdgePath(Felt::from(*get_or_key_not_found(&edge_data, "path")?)),

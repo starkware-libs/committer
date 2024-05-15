@@ -23,8 +23,28 @@ use std::collections::HashSet;
 #[path = "skeleton_forest_test.rs"]
 pub mod skeleton_forest_test;
 
+pub(crate) trait OriginalSkeletonForest<L: LeafData + std::clone::Clone> {
+    fn create_original_skeleton_forest<S: Storage>(
+        storage: S,
+        global_tree_root_hash: HashOutput,
+        classes_tree_root_hash: HashOutput,
+        tree_heights: TreeHeight,
+        current_contract_state_leaves: &HashMap<ContractAddress, ContractState>,
+        state_diff: &StateDiff,
+    ) -> OriginalSkeletonTreeResult<Self>
+    where
+        Self: std::marker::Sized;
+
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L>>(
+        &self,
+        class_hash_to_compiled_class_hash: HashMap<NodeIndex, L>,
+        contracts_to_commit: &HashSet<&ContractAddress>,
+        storage_updates: &HashMap<ContractAddress, HashMap<NodeIndex, L>>,
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>>;
+}
+
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct OriginalSkeletonForest<
+pub(crate) struct OriginalSkeletonForestImpl<
     L: LeafData + std::clone::Clone,
     T: OriginalSkeletonTree<L>,
 > {
@@ -37,7 +57,58 @@ pub(crate) struct OriginalSkeletonForest<
     leaf_data: PhantomData<L>,
 }
 
-impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkeletonForest<L, T> {
+impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkeletonForest<L>
+    for OriginalSkeletonForestImpl<L, T>
+{
+    fn create_original_skeleton_forest<S: Storage>(
+        storage: S,
+        global_tree_root_hash: HashOutput,
+        classes_tree_root_hash: HashOutput,
+        tree_heights: TreeHeight,
+        current_contract_state_leaves: &HashMap<ContractAddress, ContractState>,
+        state_diff: &StateDiff,
+    ) -> OriginalSkeletonTreeResult<OriginalSkeletonForestImpl<L, T>>
+    where
+        Self: std::marker::Sized,
+    {
+        let accessed_addresses = state_diff.accessed_addresses();
+        let global_state_tree = OriginalSkeletonForestImpl::create_global_state_tree(
+            &accessed_addresses,
+            global_tree_root_hash,
+            &storage,
+            tree_heights,
+        )?;
+        let contract_states = OriginalSkeletonForestImpl::create_lower_trees_skeleton(
+            &accessed_addresses,
+            current_contract_state_leaves,
+            &state_diff.storage_updates,
+            &storage,
+            tree_heights,
+        )?;
+        let classes_tree = OriginalSkeletonForestImpl::create_classes_tree(
+            &state_diff.class_hash_to_compiled_class_hash,
+            classes_tree_root_hash,
+            &storage,
+            tree_heights,
+        )?;
+
+        Ok(OriginalSkeletonForestImpl::new(
+            classes_tree,
+            global_state_tree,
+            contract_states,
+        ))
+    }
+
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L>>(
+        &self,
+        _class_hash_to_compiled_class_hash: HashMap<NodeIndex, L>,
+        _contracts_to_commit: &HashSet<&ContractAddress>,
+        _storage_updates: &HashMap<ContractAddress, HashMap<NodeIndex, L>>,
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>> {
+        todo!()
+    }
+}
+impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkeletonForestImpl<L, T> {
     pub(crate) fn new(
         classes_tree: T,
         global_state_tree: T,
@@ -49,43 +120,6 @@ impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkelet
             contract_states,
             leaf_data: PhantomData,
         }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn create_original_skeleton_forest<S: Storage>(
-        storage: S,
-        global_tree_root_hash: HashOutput,
-        classes_tree_root_hash: HashOutput,
-        tree_heights: TreeHeight,
-        current_contract_state_leaves: &HashMap<ContractAddress, ContractState>,
-        state_diff: &StateDiff,
-    ) -> OriginalSkeletonTreeResult<OriginalSkeletonForest<L, T>> {
-        let accessed_addresses = state_diff.accessed_addresses();
-        let global_state_tree = Self::create_global_state_tree(
-            &accessed_addresses,
-            global_tree_root_hash,
-            &storage,
-            tree_heights,
-        )?;
-        let contract_states = Self::create_lower_trees_skeleton(
-            &accessed_addresses,
-            current_contract_state_leaves,
-            &state_diff.storage_updates,
-            &storage,
-            tree_heights,
-        )?;
-        let classes_tree = Self::create_classes_tree(
-            &state_diff.class_hash_to_compiled_class_hash,
-            classes_tree_root_hash,
-            &storage,
-            tree_heights,
-        )?;
-
-        Ok(OriginalSkeletonForest::new(
-            classes_tree,
-            global_state_tree,
-            contract_states,
-        ))
     }
 
     fn create_global_state_tree<S: Storage>(
@@ -157,15 +191,5 @@ impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkelet
             classes_tree_root_hash,
             tree_height,
         )
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L>>(
-        &self,
-        _class_hash_to_compiled_class_hash: HashMap<NodeIndex, L>,
-        _contracts_to_commit: &HashSet<&ContractAddress>,
-        _storage_updates: &HashMap<ContractAddress, HashMap<NodeIndex, L>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>> {
-        todo!()
     }
 }

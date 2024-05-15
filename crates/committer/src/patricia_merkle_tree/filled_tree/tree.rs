@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -18,8 +17,9 @@ use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunction;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
-use crate::storage::storage_trait::Storage;
+use crate::storage::serde_trait::DBObject;
 use crate::storage::storage_trait::StorageKey;
+use crate::storage::storage_trait::StorageValue;
 
 /// Consider a Patricia-Merkle Tree which has been updated with new leaves.
 /// FilledTree consists of all nodes which were modified in the update, including their updated
@@ -35,10 +35,7 @@ pub(crate) trait FilledTree<L: LeafData>: Sized {
     /// Serializes the tree into storage. Returns hash set of keys of the serialized nodes,
     /// if successful.
     #[allow(dead_code)]
-    fn serialize(
-        &self,
-        storage: &mut impl Storage,
-    ) -> Result<HashSet<StorageKey>, FilledTreeError<L>>;
+    fn serialize(&self) -> HashMap<StorageKey, StorageValue>;
     #[allow(dead_code)]
     fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError<L>>;
 }
@@ -190,7 +187,7 @@ impl<L: LeafData> FilledTreeImpl<L> {
     }
 }
 
-impl<L: LeafData> FilledTree<L> for FilledTreeImpl<L> {
+impl<L: LeafData + DBObject> FilledTree<L> for FilledTreeImpl<L> {
     async fn create<H: HashFunction, TH: TreeHashFunction<L, H>>(
         updated_skeleton: impl UpdatedSkeletonTree,
         leaf_modifications: &LeafModifications<L>,
@@ -214,12 +211,15 @@ impl<L: LeafData> FilledTree<L> for FilledTreeImpl<L> {
         })
     }
 
-    fn serialize(
-        &self,
-        _storage: &mut impl Storage,
-    ) -> Result<HashSet<StorageKey>, FilledTreeError<L>> {
-        todo!()
+    fn serialize(&self) -> HashMap<StorageKey, StorageValue> {
+        // This function iterates over each node in the tree, using the node's `db_key` as the hashmap key
+        // and the result of the node's `serialize` method as the value.
+        self.get_all_nodes()
+            .iter()
+            .map(|(_, node)| (node.get_db_key(&node.suffix()), node.serialize()))
+            .collect::<HashMap<StorageKey, StorageValue>>()
     }
+
     fn get_root_hash(&self) -> Result<HashOutput, FilledTreeError<L>> {
         match self.tree_map.get(&NodeIndex::ROOT) {
             Some(root_node) => Ok(root_node.hash),

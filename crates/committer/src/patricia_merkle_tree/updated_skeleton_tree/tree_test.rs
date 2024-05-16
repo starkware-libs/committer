@@ -4,17 +4,16 @@ use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::hash::pedersen::PedersenHashFunction;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, FilledNode};
-use crate::patricia_merkle_tree::filled_tree::tree::FilledTree;
+use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePath, EdgePathLength, NodeData, PathToBottom,
 };
 use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
+use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::{
-    UpdatedSkeletonTree, UpdatedSkeletonTreeImpl,
-};
+use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
 
 #[tokio::test(flavor = "multi_thread")]
 /// This test is a sanity test for computing the root hash of the patricia merkle tree with a single node that is a leaf with hash==1.
@@ -25,12 +24,17 @@ async fn test_filled_tree_sanity() {
         UpdatedSkeletonNode::Leaf(LeafDataImpl::CompiledClassHash(ClassHash(Felt::ONE))),
     );
     let updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
-    let root_hash = updated_skeleton_tree
-        .compute_filled_tree::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>()
-        .await
-        .unwrap()
-        .get_root_hash()
-        .unwrap();
+    let root_hash = FilledTreeImpl::<
+        LeafDataImpl,
+        OriginalSkeletonTreeImpl<LeafDataImpl>,
+        UpdatedSkeletonTreeImpl<LeafDataImpl>,
+    >::create::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>(
+        updated_skeleton_tree,
+    )
+    .await
+    .unwrap()
+    .get_root_hash()
+    .unwrap();
     assert_eq!(root_hash, HashOutput(Felt::ONE), "Root hash mismatch");
 }
 
@@ -72,10 +76,15 @@ async fn test_small_filled_tree() {
     let updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
 
     // Compute the hash values.
-    let filled_tree = updated_skeleton_tree
-        .compute_filled_tree::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>()
-        .await
-        .unwrap();
+    let filled_tree: FilledTreeImpl<
+        LeafDataImpl,
+        OriginalSkeletonTreeImpl<LeafDataImpl>,
+        UpdatedSkeletonTreeImpl<LeafDataImpl>,
+    > = FilledTreeImpl::create::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>(
+        updated_skeleton_tree,
+    )
+    .await
+    .unwrap();
     let filled_tree_map = filled_tree.get_all_nodes();
     let root_hash = filled_tree.get_root_hash().unwrap();
 
@@ -139,15 +148,15 @@ async fn test_small_filled_tree() {
 ///                   /        \
 ///            i=2: edge      i=3: sibling
 ///            l=1, p=0       hash=0x2955a96b09495fb2ce4ed65cf679c54e54aefc2c6972d7f3042590000bb7543
-///                /                      
-///            i=4: binary                  
-///          /           \                  
-///      i=8: edge    i=9: sibling           
+///                /
+///            i=4: binary
+///          /           \
+///      i=8: edge    i=9: sibling
 ///      l=2, p=3     hash=0x39eb7b85bcc9deac314406d6b73154b09b008f8af05e2f58ab623f4201d0b88
-///           \             
-///            \            
-///         i=35: leaf   
-///            v=1    
+///           \
+///            \
+///         i=35: leaf
+///            v=1
 async fn test_small_tree_with_sibling_nodes() {
     // Set up the updated skeleton tree.
     let nodes_in_skeleton_tree = [
@@ -171,10 +180,15 @@ async fn test_small_tree_with_sibling_nodes() {
     let updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
 
     // Compute the hash values.
-    let filled_tree = updated_skeleton_tree
-        .compute_filled_tree::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>()
-        .await
-        .unwrap();
+    let filled_tree: FilledTreeImpl<
+        LeafDataImpl,
+        OriginalSkeletonTreeImpl<LeafDataImpl>,
+        UpdatedSkeletonTreeImpl<LeafDataImpl>,
+    > = FilledTreeImpl::create::<PedersenHashFunction, TreeHashFunctionImpl<PedersenHashFunction>>(
+        updated_skeleton_tree,
+    )
+    .await
+    .unwrap();
     let filled_tree_map = filled_tree.get_all_nodes();
     let root_hash = filled_tree.get_root_hash().unwrap();
 

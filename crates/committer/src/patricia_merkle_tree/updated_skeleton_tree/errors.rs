@@ -5,7 +5,7 @@ use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub(crate) enum UpdatedSkeletonTreeError<L: LeafData> {
+pub(crate) enum UpdatedSkeletonTreeError<L: LeafData + Sync + Send> {
     MissingNode(NodeIndex),
     DoubleUpdate {
         index: NodeIndex,

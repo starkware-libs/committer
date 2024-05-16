@@ -39,7 +39,17 @@ impl<H: HashFunction> TreeHashFunction<LeafDataImpl, H> for TreeHashFunctionImpl
             ),
             NodeData::Leaf(LeafDataImpl::StorageValue(storage_value)) => HashOutput(*storage_value),
             NodeData::Leaf(LeafDataImpl::CompiledClassHash(compiled_class_hash)) => {
-                HashOutput(compiled_class_hash.0)
+                let contract_class_leaf_version: Felt = Felt::from_hex(
+                    // The hex string corresponding to b'CONTRACT_CLASS_LEAF_V0'.
+                    "0x434f4e54524143545f434c4153535f4c4541465f5630",
+                )
+                .expect(
+                    "could not parse hex string corresponding to b'CONTRACT_CLASS_LEAF_V0' to Felt",
+                );
+                H::compute_hash(HashInputPair(
+                    contract_class_leaf_version,
+                    compiled_class_hash.0,
+                ))
             }
             NodeData::Leaf(LeafDataImpl::ContractState(contract_state)) => {
                 H::compute_hash(HashInputPair(

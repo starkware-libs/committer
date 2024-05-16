@@ -62,7 +62,8 @@ fn test_tree_hash_function_impl_edge_node(
 }
 
 #[rstest]
-#[case(NodeData::Leaf(LeafDataImpl::CompiledClassHash(ClassHash(Felt::from_hex("0xACDC").unwrap()))), Felt::from_hex("0xACDC").unwrap())]
+// TODO (Aner, 16/05/2024): compute the expected value in python and add it here.
+// #[case(NodeData::Leaf(LeafDataImpl::CompiledClassHash(ClassHash(Felt::from_hex("0xACDC").unwrap()))), Felt::from_hex("0xACDC").unwrap())]
 #[case(NodeData::Leaf(LeafDataImpl::StorageValue(Felt::from_hex("0xDEAFBEEF").unwrap())), Felt::from_hex("0xDEAFBEEF").unwrap())]
 // Random StateTreeTuples and the expected hash results were generated and computed elsewhere.
 #[case(

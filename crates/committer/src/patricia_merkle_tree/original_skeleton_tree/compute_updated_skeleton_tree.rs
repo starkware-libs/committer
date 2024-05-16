@@ -1,27 +1,15 @@
-use std::collections::HashMap;
-
 use ethnum::U256;
 
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 use crate::patricia_merkle_tree::node_data::leaf::LeafData;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::{
-    OriginalSkeletonTreeImpl, OriginalSkeletonTreeResult,
-};
+use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
 
 #[cfg(test)]
 #[path = "compute_updated_skeleton_tree_test.rs"]
 pub mod compute_updated_skeleton_tree_test;
 
 impl<L: LeafData + std::clone::Clone> OriginalSkeletonTreeImpl<L> {
-    pub(crate) fn compute_updated_skeleton_tree_impl(
-        &self,
-        _index_to_updated_leaf: HashMap<NodeIndex, L>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonTreeImpl<L>> {
-        todo!()
-    }
-
     fn get_node_height(&self, index: &NodeIndex) -> TreeHeight {
         TreeHeight::new(u8::from(self.tree_height) - index.bit_length() + 1)
     }

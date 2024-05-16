@@ -23,7 +23,11 @@ use std::collections::HashSet;
 #[path = "skeleton_forest_test.rs"]
 pub mod skeleton_forest_test;
 
-pub(crate) trait OriginalSkeletonForest<L: LeafData + std::clone::Clone> {
+pub(crate) trait OriginalSkeletonForest<
+    L: LeafData + std::clone::Clone + Send + Sync,
+    O: OriginalSkeletonTree<L>,
+>
+{
     fn create_original_skeleton_forest<S: Storage>(
         storage: S,
         global_tree_root_hash: HashOutput,
@@ -35,12 +39,12 @@ pub(crate) trait OriginalSkeletonForest<L: LeafData + std::clone::Clone> {
     where
         Self: std::marker::Sized;
 
-    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L>>(
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L, O>>(
         &self,
         class_hash_to_compiled_class_hash: HashMap<NodeIndex, L>,
         contracts_to_commit: &HashSet<&ContractAddress>,
         storage_updates: &HashMap<ContractAddress, HashMap<NodeIndex, L>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>>;
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, O, U>>;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -57,8 +61,8 @@ pub(crate) struct OriginalSkeletonForestImpl<
     leaf_data: PhantomData<L>,
 }
 
-impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkeletonForest<L>
-    for OriginalSkeletonForestImpl<L, T>
+impl<L: LeafData + std::clone::Clone + Send + Sync, T: OriginalSkeletonTree<L>>
+    OriginalSkeletonForest<L, T> for OriginalSkeletonForestImpl<L, T>
 {
     fn create_original_skeleton_forest<S: Storage>(
         storage: S,
@@ -99,12 +103,12 @@ impl<L: LeafData + std::clone::Clone, T: OriginalSkeletonTree<L>> OriginalSkelet
         ))
     }
 
-    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L>>(
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree<L, T>>(
         &self,
         _class_hash_to_compiled_class_hash: HashMap<NodeIndex, L>,
         _contracts_to_commit: &HashSet<&ContractAddress>,
         _storage_updates: &HashMap<ContractAddress, HashMap<NodeIndex, L>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>> {
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, T, U>> {
         todo!()
     }
 }

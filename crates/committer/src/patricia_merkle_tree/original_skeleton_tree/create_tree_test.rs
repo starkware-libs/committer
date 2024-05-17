@@ -3,6 +3,7 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::inner_node::{
     EdgeData, EdgePath, EdgePathLength, PathToBottom,
 };
+use crate::patricia_merkle_tree::node_data::leaf::Modifications;
 use crate::patricia_merkle_tree::original_skeleton_tree::create_tree::LeafDataImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
@@ -173,7 +174,7 @@ use super::OriginalSkeletonTreeImpl;
 )]
 fn test_fetch_nodes(
     #[case] storage: MapStorage,
-    #[case] leaf_modifications: HashMap<NodeIndex, LeafDataImpl>,
+    #[case] leaf_modifications: Modifications<LeafDataImpl>,
     #[case] root_hash: HashOutput,
     #[case] expected_nodes: HashMap<NodeIndex, OriginalSkeletonNode<LeafDataImpl>>,
     #[case] tree_height: TreeHeight,
@@ -221,7 +222,7 @@ fn create_edge_val(hash: u8, path: u8, length: u8) -> StorageValue {
     )
 }
 
-fn create_modifications(modifications: Vec<(u128, u128)>) -> HashMap<NodeIndex, LeafDataImpl> {
+fn create_modifications(modifications: Vec<(u128, u128)>) -> Modifications<LeafDataImpl> {
     modifications
         .into_iter()
         .map(|(idx, val)| {

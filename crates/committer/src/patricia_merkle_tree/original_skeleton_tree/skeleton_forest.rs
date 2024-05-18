@@ -6,7 +6,6 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
 use crate::patricia_merkle_tree::node_data::leaf::ContractState;
-use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 use crate::patricia_merkle_tree::node_data::leaf::Modifications;
 use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 use crate::patricia_merkle_tree::original_skeleton_tree::errors::OriginalSkeletonTreeError;
@@ -36,12 +35,12 @@ pub(crate) trait OriginalSkeletonForest {
     where
         Self: std::marker::Sized;
 
-    fn compute_updated_skeleton_forest<L: LeafData, U: UpdatedSkeletonTree<L>>(
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree>(
         &self,
         class_hash_to_compiled_class_hash: &Modifications<SkeletonLeaf>,
         contracts_to_commit: &HashSet<&ContractAddress>,
         storage_updates: &HashMap<ContractAddress, Modifications<SkeletonLeaf>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>>;
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<U>>;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -94,12 +93,12 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForest for OriginalSkeletonForestI
         ))
     }
 
-    fn compute_updated_skeleton_forest<L: LeafData, U: UpdatedSkeletonTree<L>>(
+    fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree>(
         &self,
         _class_hash_to_compiled_class_hash: &Modifications<SkeletonLeaf>,
         _contracts_to_commit: &HashSet<&ContractAddress>,
         _storage_updates: &HashMap<ContractAddress, Modifications<SkeletonLeaf>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<L, U>> {
+    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<U>> {
         todo!()
     }
 }

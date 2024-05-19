@@ -108,9 +108,9 @@ impl NodeIndex {
 
         let xor = adapted_self.0 ^ other.0;
         // The length of the remainder after removing the common prefix of the two nodes.
-        let post_common_prefix_len = NodeIndex(xor).bit_length();
+        let post_common_prefix_len = NodeIndex::new(xor).bit_length();
         let lca = adapted_self.0 >> post_common_prefix_len;
-        NodeIndex(lca)
+        NodeIndex::new(lca)
     }
 
     /// Returns the path from the node to its given descendant.

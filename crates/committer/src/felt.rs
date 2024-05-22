@@ -95,4 +95,8 @@ impl Felt {
             .unwrap_or("0")
             .to_string()
     }
+
+    pub fn to_string(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(&self.to_bytes_be().to_vec())
+    }
 }

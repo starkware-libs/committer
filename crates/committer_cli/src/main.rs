@@ -4,6 +4,7 @@ use std::path::Path;
 
 pub mod parse_input;
 pub mod tests;
+pub mod patricia_merkle_tree;
 
 /// Committer CLI.
 #[derive(Debug, Parser)]

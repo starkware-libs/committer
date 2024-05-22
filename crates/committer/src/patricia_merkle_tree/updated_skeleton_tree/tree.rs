@@ -44,6 +44,13 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         _original_skeleton: impl OriginalSkeletonTree,
         _leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> Result<Self, UpdatedSkeletonTreeError> {
+        // Finalize all leaf modifications in the skeleton.
+        let mut skeleton_tree = HashMap::new();
+        for (index, leaf) in _leaf_modifications.iter() {
+            if !leaf.is_zero() {
+                skeleton_tree.insert(index, UpdatedSkeletonNode::Leaf(*leaf));
+            }
+        }
         todo!()
     }
 

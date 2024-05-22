@@ -173,7 +173,7 @@ fn test_get_path_to_lca(
     TempSkeletonNode::Original(
         OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::RIGHT_CHILD}
     ),
-    &[(NodeIndex::from(7), UpdatedSkeletonNode::Leaf(SkeletonLeaf::NonZero))]
+    &[]
 )]
 fn test_node_from_edge_data(
     mut updated_skeleton: UpdatedSkeletonTreeImpl,

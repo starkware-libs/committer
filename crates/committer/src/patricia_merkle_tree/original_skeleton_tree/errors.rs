@@ -9,7 +9,7 @@ use crate::{
 
 #[allow(dead_code)]
 #[derive(Debug, Error)]
-pub(crate) enum OriginalSkeletonTreeError {
+pub enum OriginalSkeletonTreeError {
     #[error(
         "Failed to deserialize the storage value: {0:?} while building the original skeleton tree."
     )]

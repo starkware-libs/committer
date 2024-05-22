@@ -2,6 +2,28 @@ use ethnum::U256;
 use rand::Rng;
 use rstest::rstest;
 
+use crate::felt::Felt;
+use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
+
+impl From<&str> for PathToBottom {
+    fn from(value: &str) -> Self {
+        let mut path = 0u128;
+        let mut length = 0u8;
+        for c in value.chars() {
+            path <<= 1;
+            path |= match c {
+                '0' => 0,
+                '1' => 1,
+                _ => panic!("Invalid character in path: {}", c),
+            };
+            length += 1;
+        }
+        PathToBottom {
+            path: EdgePath(Felt::from(path)),
+            length: EdgePathLength(length),
+        }
+    }
+}
 /// Generates a random U256 number between low and high (exclusive).
 /// Panics if low > high.
 pub(crate) fn get_random_u256(low: U256, high: U256) -> U256 {

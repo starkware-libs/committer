@@ -275,7 +275,7 @@ pub(crate) fn create_edge_skeleton_node(
         NodeIndex::from(idx),
         OriginalSkeletonNode::Edge {
             path_to_bottom: PathToBottom {
-                path: EdgePath(Felt::from(path)),
+                path: EdgePath(path.into()),
                 length: EdgePathLength(length),
             },
         },
@@ -303,7 +303,7 @@ pub(crate) fn create_edge_sibling_skeleton_node(
         OriginalSkeletonNode::EdgeSibling(EdgeData {
             bottom_hash: HashOutput(Felt::from(hash_output)),
             path_to_bottom: PathToBottom {
-                path: EdgePath(Felt::from(path)),
+                path: EdgePath(path.into()),
                 length: EdgePathLength(length),
             },
         }),

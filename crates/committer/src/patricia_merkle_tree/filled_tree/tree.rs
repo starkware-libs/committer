@@ -24,9 +24,11 @@ use crate::storage::storage_trait::StorageValue;
 /// Consider a Patricia-Merkle Tree which has been updated with new leaves.
 /// FilledTree consists of all nodes which were modified in the update, including their updated
 /// data and hashes.
-pub(crate) trait FilledTree<L: LeafData>: Sized {
+#[allow(async_fn_in_trait)]
+pub trait FilledTree<L: LeafData>: Sized {
     /// Computes and returns the filled tree.
     #[allow(dead_code)]
+
     async fn create<H: HashFunction, TH: TreeHashFunction<L, H>>(
         updated_skeleton: impl UpdatedSkeletonTree,
         leaf_modifications: &LeafModifications<L>,

@@ -14,7 +14,7 @@ pub mod tree_test;
 /// This trait represents the structure of the subtree which was modified in the update.
 /// It also contains the hashes of the Sibling nodes on the Merkle paths from the updated leaves
 /// to the root.
-pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
+pub trait UpdatedSkeletonTree: Sized + Send + Sync {
     /// Creates an updated tree from an original tree and modifications.
     #[allow(dead_code)]
     fn create(

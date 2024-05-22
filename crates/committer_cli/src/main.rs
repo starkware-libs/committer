@@ -3,6 +3,7 @@ use clap::{Args, Parser, Subcommand};
 use std::path::Path;
 
 pub mod parse_input;
+pub mod patricia_merkle_tree;
 pub mod tests;
 
 /// Committer CLI.

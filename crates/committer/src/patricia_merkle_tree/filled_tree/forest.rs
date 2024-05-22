@@ -7,7 +7,7 @@ use crate::storage::storage_trait::Storage;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-pub(crate) trait FilledForest<L: LeafData> {
+pub trait FilledForest<L: LeafData> {
     #[allow(dead_code)]
     /// Serialize each tree and store it.
     fn write_to_storage(&self, storage: &mut impl Storage);
@@ -17,7 +17,7 @@ pub(crate) trait FilledForest<L: LeafData> {
     fn get_contract_root_hash(&self) -> Result<HashOutput, FilledTreeError<L>>;
 }
 
-pub(crate) struct FilledForestImpl<L: LeafData, T: FilledTree<L>> {
+pub struct FilledForestImpl<L: LeafData, T: FilledTree<L>> {
     storage_trees: HashMap<NodeIndex, T>,
     contract_tree: T,
     compiled_class_tree: T,

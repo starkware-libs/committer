@@ -5,7 +5,7 @@ use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 #[allow(dead_code)]
 /// A node in the structure of a Patricia-Merkle tree, after the update.
 #[derive(Clone)]
-pub(crate) enum UpdatedSkeletonNode {
+pub enum UpdatedSkeletonNode {
     Binary,
     Edge { path_to_bottom: PathToBottom },
     // All unmodified nodes on the merkle paths of modified leaves.

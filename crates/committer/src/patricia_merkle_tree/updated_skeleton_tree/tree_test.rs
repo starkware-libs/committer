@@ -256,7 +256,7 @@ fn create_path_to_bottom_edge_updated_skeleton_node_for_testing(
         NodeIndex::from(index),
         UpdatedSkeletonNode::Edge {
             path_to_bottom: PathToBottom {
-                path: EdgePath(Felt::from(path)),
+                path: EdgePath(path.into()),
                 length: EdgePathLength(length),
             },
         },
@@ -315,7 +315,7 @@ fn create_edge_entry_for_testing(
             data: NodeData::Edge(EdgeData {
                 bottom_hash: HashOutput(Felt::from_hex(bottom_hash).unwrap()),
                 path_to_bottom: PathToBottom {
-                    path: EdgePath(Felt::from(path)),
+                    path: EdgePath(path.into()),
                     length: EdgePathLength(length),
                 },
             }),

@@ -23,7 +23,7 @@ fn test_compute_bottom_index(
     let bottom_index = NodeIndex::compute_bottom_index(
         NodeIndex::from(node_index),
         &PathToBottom {
-            path: EdgePath(Felt::from(path)),
+            path: EdgePath(path.into()),
             length: EdgePathLength(length),
         },
     );
@@ -111,7 +111,7 @@ fn test_get_path_to_descendant(
     let root_index = NodeIndex(root_index.into());
     let descendant = NodeIndex(descendant.into());
     let path_to_bottom = root_index.get_path_to_descendant(descendant);
-    assert_eq!(path_to_bottom.path, EdgePath(Felt::from(expected_path)));
+    assert_eq!(path_to_bottom.path, EdgePath(U256::from(expected_path)));
     assert_eq!(path_to_bottom.length, EdgePathLength(expected_length));
 }
 
@@ -124,7 +124,7 @@ fn test_get_path_to_descendant_big() {
 
     let descendant = (root_index << extension_index.bit_length()) + extension_index;
     let path_to_bottom = root_index.get_path_to_descendant(descendant);
-    assert_eq!(path_to_bottom.path, EdgePath(Felt::from(extension)));
+    assert_eq!(path_to_bottom.path, EdgePath(U256::from(extension)));
     assert_eq!(
         path_to_bottom.length,
         EdgePathLength(extension_index.bit_length())

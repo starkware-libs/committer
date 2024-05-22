@@ -69,7 +69,7 @@ impl<L: LeafData> DBObject for FilledNode<L> {
             }) => {
                 // Serialize bottom hash, path, and path length to byte arrays.
                 let bottom: [u8; SERIALIZE_HASH_BYTES] = bottom_hash.0.to_bytes_be();
-                let path: [u8; SERIALIZE_HASH_BYTES] = path_to_bottom.path.0.to_bytes_be();
+                let path: [u8; SERIALIZE_HASH_BYTES] = path_to_bottom.path.0.to_be_bytes();
                 let length: [u8; 1] = path_to_bottom.length.0.to_be_bytes();
 
                 // Concatenate bottom hash, path, and path length.
@@ -113,9 +113,13 @@ impl Deserializable for FilledNode<LeafDataImpl> {
                         &value.0[..SERIALIZE_HASH_BYTES],
                     )),
                     path_to_bottom: PathToBottom {
-                        path: EdgePath(Felt::from_bytes_be_slice(
-                            &value.0[SERIALIZE_HASH_BYTES..SERIALIZE_HASH_BYTES + EDGE_PATH_BYTES],
-                        )),
+                        path: EdgePath(
+                            Felt::from_bytes_be_slice(
+                                &value.0
+                                    [SERIALIZE_HASH_BYTES..SERIALIZE_HASH_BYTES + EDGE_PATH_BYTES],
+                            )
+                            .into(),
+                        ),
                         length: EdgePathLength(value.0[EDGE_BYTES - 1]),
                     },
                 }),

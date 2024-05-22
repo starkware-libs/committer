@@ -1,7 +1,7 @@
-use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 use crate::patricia_merkle_tree::types::NodeIndex;
+use ethnum::U256;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 // A Patricia-Merkle tree node's data, i.e., the pre-image of its hash.
@@ -18,7 +18,7 @@ pub struct BinaryData {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct EdgePath(pub Felt);
+pub struct EdgePath(pub U256);
 
 #[derive(Clone, Copy, Debug, Default, derive_more::Add, PartialEq, Eq, Hash)]
 pub struct EdgePathLength(pub u8);
@@ -38,13 +38,13 @@ pub struct EdgeData {
 impl PathToBottom {
     #[allow(dead_code)]
     pub(crate) const LEFT_CHILD: Self = Self {
-        path: EdgePath(Felt::ZERO),
+        path: EdgePath(U256::ZERO),
         length: EdgePathLength(1),
     };
 
     #[allow(dead_code)]
     pub(crate) const RIGHT_CHILD: Self = Self {
-        path: EdgePath(Felt::ONE),
+        path: EdgePath(U256::ONE),
         length: EdgePathLength(1),
     };
 
@@ -54,7 +54,7 @@ impl PathToBottom {
 
     pub(crate) fn concat_paths(&self, other: Self) -> Self {
         Self {
-            path: EdgePath((self.path.0 * Felt::TWO.pow(other.length.0)) + other.path.0),
+            path: EdgePath((self.path.0 << other.length.0) + other.path.0),
             length: self.length + other.length,
         }
     }

@@ -1,3 +1,4 @@
+use ethnum::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
 
@@ -37,6 +38,18 @@ impl_from!(Felt, StarknetTypesFelt, u128, u8);
 impl From<Felt> for StarknetTypesFelt {
     fn from(felt: Felt) -> Self {
         felt.0
+    }
+}
+
+impl From<U256> for Felt {
+    fn from(value: U256) -> Self {
+        Felt(StarknetTypesFelt::from_bytes_be(&value.to_be_bytes()))
+    }
+}
+
+impl From<Felt> for U256 {
+    fn from(felt: Felt) -> Self {
+        U256::from_be_bytes(felt.to_bytes_be())
     }
 }
 

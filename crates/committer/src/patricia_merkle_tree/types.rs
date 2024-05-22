@@ -66,7 +66,7 @@ impl NodeIndex {
         path_to_bottom: &PathToBottom,
     ) -> NodeIndex {
         let PathToBottom { path, length } = path_to_bottom;
-        (index << length.0) + Self::from_felt_value(&path.0)
+        (index << length.0) + NodeIndex::new(path.0)
     }
 
     /// Returns the number of leading zeroes when represented with Self::BITS bits.
@@ -119,11 +119,7 @@ impl NodeIndex {
         };
 
         PathToBottom {
-            path: EdgePath(
-                delta
-                    .try_into()
-                    .expect("Delta of two indices is unexpectedly larger than a Felt."),
-            ),
+            path: EdgePath(delta.0),
             length: EdgePathLength(distance),
         }
     }
@@ -151,7 +147,7 @@ impl NodeIndex {
     }
 
     fn from_felt_value(felt: &Felt) -> Self {
-        NodeIndex(U256::from_be_bytes(felt.to_bytes_be()))
+        NodeIndex(U256::from(*felt))
     }
 }
 

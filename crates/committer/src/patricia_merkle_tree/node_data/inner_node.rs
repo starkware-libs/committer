@@ -23,6 +23,14 @@ pub struct EdgePath(pub Felt);
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct EdgePathLength(pub u8);
 
+impl std::ops::Add for EdgePathLength {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        Self(self.0 + rhs.0)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PathToBottom {
     pub path: EdgePath,
@@ -36,7 +44,25 @@ pub struct EdgeData {
 }
 
 impl PathToBottom {
+    #[cfg(test)]
+    pub(crate) const LEFT_CHILD: Self = PathToBottom {
+        path: EdgePath(Felt::ZERO),
+        length: EdgePathLength(1),
+    };
+    #[cfg(test)]
+    pub(crate) const RIGHT_CHILD: Self = PathToBottom {
+        path: EdgePath(Felt::ONE),
+        length: EdgePathLength(1),
+    };
+
     pub(crate) fn bottom_index(&self, root_index: NodeIndex) -> NodeIndex {
         NodeIndex::compute_bottom_index(root_index, self)
+    }
+
+    pub(crate) fn concat_paths(&self, other: PathToBottom) -> PathToBottom {
+        PathToBottom {
+            path: EdgePath((self.path.0 * Felt::TWO.pow(other.length.0)) + other.path.0),
+            length: self.length + other.length,
+        }
     }
 }

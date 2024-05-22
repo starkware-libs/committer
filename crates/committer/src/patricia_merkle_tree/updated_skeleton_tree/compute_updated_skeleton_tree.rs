@@ -1,11 +1,20 @@
+use crate::patricia_merkle_tree::node_data::inner_node::EdgeData;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
+use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::utils::split_leaves;
 use crate::patricia_merkle_tree::types::NodeIndex;
+use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
+
+use std::collections::HashMap;
 
 #[cfg(test)]
 #[path = "compute_updated_skeleton_tree_test.rs"]
 pub mod compute_updated_skeleton_tree_test;
+
+#[derive(Debug, PartialEq, Eq)]
+/// A temporary skeleton node used to during the computation of the updated skeleton tree.
+struct TempSkeletonNode(OriginalSkeletonNode);
 
 impl OriginalSkeletonTreeImpl {
     #[allow(dead_code)]
@@ -37,4 +46,47 @@ impl OriginalSkeletonTreeImpl {
             .iter()
             .all(|leaves_in_side| !leaves_in_side.is_empty())
     }
+}
+
+#[allow(dead_code)]
+// Builds a (probably edge) node from its given descendant. Returns the TempSkeletonNode matching
+// the given root (the source for the path to bottom) for the subtree it is the root of. If bottom
+// is empty, returns an empty node.
+fn node_from_edge_data(
+    path: &PathToBottom,
+    bottom_index: &NodeIndex,
+    bottom: &TempSkeletonNode,
+    skeleton_tree: &mut HashMap<NodeIndex, UpdatedSkeletonNode>,
+) -> TempSkeletonNode {
+    let bottom_inner = &bottom.0;
+    let res = match bottom_inner {
+        OriginalSkeletonNode::Leaf(leaf) => {
+            // Finalize bottom leaf node.
+            skeleton_tree.insert(*bottom_index, UpdatedSkeletonNode::Leaf(*leaf));
+            OriginalSkeletonNode::Edge {
+                path_to_bottom: *path,
+            }
+        }
+        OriginalSkeletonNode::Edge { path_to_bottom } => OriginalSkeletonNode::Edge {
+            path_to_bottom: path.concat_paths(*path_to_bottom),
+        },
+        OriginalSkeletonNode::EdgeSibling(edge_data) => {
+            OriginalSkeletonNode::EdgeSibling(EdgeData {
+                bottom_hash: edge_data.bottom_hash,
+                path_to_bottom: path.concat_paths(edge_data.path_to_bottom),
+            })
+        }
+        OriginalSkeletonNode::Binary => {
+            // Finalize bottom - a binary descendant cannot change form.
+            skeleton_tree.insert(*bottom_index, UpdatedSkeletonNode::Binary);
+            OriginalSkeletonNode::Edge {
+                path_to_bottom: *path,
+            }
+        }
+        OriginalSkeletonNode::LeafOrBinarySibling(_) => OriginalSkeletonNode::Edge {
+            path_to_bottom: *path,
+        },
+        OriginalSkeletonNode::Empty => OriginalSkeletonNode::Empty,
+    };
+    TempSkeletonNode(res)
 }

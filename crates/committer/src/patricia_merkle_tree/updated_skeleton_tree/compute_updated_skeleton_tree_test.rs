@@ -1,10 +1,17 @@
 use crate::felt::Felt;
-use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
+use crate::hash::hash_trait::HashOutput;
+use crate::patricia_merkle_tree::node_data::inner_node::{
+    EdgeData, EdgePath, EdgePathLength, PathToBottom,
+};
+use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::types::NodeIndex;
-use std::collections::HashMap;
+use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::node_from_edge_data;
+use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::TempSkeletonNode;
+use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
 
 use ethnum::U256;
 use rstest::rstest;
+use std::collections::HashMap;
 
 use crate::patricia_merkle_tree::{
     original_skeleton_tree::tree::OriginalSkeletonTreeImpl, types::TreeHeight,
@@ -98,4 +105,53 @@ fn test_get_path_to_lca(
         ),
         expected
     );
+}
+
+#[rstest]
+#[case::to_empty(
+    &PathToBottom::LEFT_CHILD,
+    &NodeIndex::ROOT,
+    &TempSkeletonNode(OriginalSkeletonNode::Empty),
+    &mut HashMap::new(),
+    TempSkeletonNode(OriginalSkeletonNode::Empty),
+    HashMap::new()
+)]
+#[case::to_edge(
+    &PathToBottom::LEFT_CHILD,
+    &NodeIndex::from(2),
+    &TempSkeletonNode(OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::LEFT_CHILD}),
+    &mut HashMap::new(),
+    TempSkeletonNode(OriginalSkeletonNode::Edge { path_to_bottom: (PathToBottom::LEFT_CHILD.concat_paths(PathToBottom::LEFT_CHILD)) }),
+    HashMap::new()
+)]
+#[case::to_edge_sibling(
+    &PathToBottom::RIGHT_CHILD,
+    &NodeIndex::from(5),
+    &TempSkeletonNode(OriginalSkeletonNode::EdgeSibling(EdgeData {bottom_hash: HashOutput::ZERO, path_to_bottom: PathToBottom::LEFT_CHILD})),
+    &mut HashMap::new(),
+    TempSkeletonNode(OriginalSkeletonNode::EdgeSibling(EdgeData {bottom_hash: HashOutput::ZERO, path_to_bottom: (PathToBottom::RIGHT_CHILD.concat_paths(PathToBottom::LEFT_CHILD))})),
+    HashMap::new())]
+#[case::to_binary(
+    &PathToBottom::RIGHT_CHILD,
+    &NodeIndex::from(7),
+    &TempSkeletonNode(OriginalSkeletonNode::Binary),
+    &mut HashMap::new(),
+    TempSkeletonNode(OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::RIGHT_CHILD}),
+    HashMap::from([
+        (NodeIndex::from(7),
+        UpdatedSkeletonNode::Binary)]
+))]
+fn test_node_from_edge_data(
+    #[case] path: &PathToBottom,
+    #[case] bottom_index: &NodeIndex,
+    #[case] bottom: &TempSkeletonNode,
+    #[case] skeleton_tree: &mut HashMap<NodeIndex, UpdatedSkeletonNode>,
+    #[case] expected: TempSkeletonNode,
+    #[case] expected_skeleton_additions: HashMap<NodeIndex, UpdatedSkeletonNode>,
+) {
+    let mut expected_skeleton_tree = skeleton_tree.clone();
+    expected_skeleton_tree.extend(expected_skeleton_additions);
+    let temp_node = node_from_edge_data(path, bottom_index, bottom, skeleton_tree);
+    assert_eq!(temp_node, expected);
+    assert_eq!(skeleton_tree, &expected_skeleton_tree);
 }

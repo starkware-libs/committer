@@ -12,11 +12,12 @@ use crate::patricia_merkle_tree::node_data::leaf::{LeafData, LeafDataImpl};
 #[path = "hash_function_test.rs"]
 pub mod hash_function_test;
 
-pub(crate) trait TreeHashFunction<L: LeafData, H: HashFunction> {
+pub trait TreeHashFunction<L: LeafData, H: HashFunction> {
     /// Computes the hash of given node data.
     fn compute_node_hash(node_data: &NodeData<L>) -> HashOutput;
 }
 
+#[allow(dead_code)]
 pub(crate) struct TreeHashFunctionImpl<H: HashFunction> {
     _hash_function: PhantomData<H>,
 }

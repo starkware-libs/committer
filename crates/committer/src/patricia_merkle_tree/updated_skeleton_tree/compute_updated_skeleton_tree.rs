@@ -21,6 +21,12 @@ enum TempSkeletonNode {
     Original(OriginalSkeletonNode),
 }
 
+impl TempSkeletonNode {
+    fn is_empty(&self) -> bool {
+        *self == TempSkeletonNode::Empty
+    }
+}
+
 impl OriginalSkeletonTreeImpl {
     #[allow(dead_code)]
     /// Returns the path from the given root_index to the LCA of the leaves. Assumes the leaves are:
@@ -55,9 +61,73 @@ impl OriginalSkeletonTreeImpl {
 
 impl UpdatedSkeletonTreeImpl {
     #[allow(dead_code)]
-    /// Builds a (probably edge) node from its given descendant. Returns the TempSkeletonNode
-    /// matching the given root (the source for the path to bottom) for the subtree it is the root
-    /// of. If bottom is empty, returns an empty node.
+    /// Builds a (probably binary) node from its two updated children. Returns the TempSkeletonNode
+    /// matching the given root for the subtree it is the root of. If one or more children are
+    /// empty, the resulting node will not be binary.
+    fn node_from_binary_data(
+        &mut self,
+        root_index: &NodeIndex,
+        left: &TempSkeletonNode,
+        right: &TempSkeletonNode,
+        leaf_modifications: &LeafModifications<SkeletonLeaf>,
+    ) -> TempSkeletonNode {
+        let [left_index, right_index] = root_index.get_children_indices();
+
+        if !left.is_empty() && !right.is_empty() {
+            // Both children are non-empty - a binary node.
+            // Finalize children, as a binary node cannot change form.
+            for (index, node) in [(left_index, left), (right_index, right)] {
+                let updated = match node {
+                    TempSkeletonNode::Empty => unreachable!("Unexpected empty node."),
+                    // Leaf is finalized upon updated skeleton creation.
+                    TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(_)) => continue,
+                    TempSkeletonNode::Original(OriginalSkeletonNode::Binary) => {
+                        UpdatedSkeletonNode::Binary
+                    }
+                    TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom }) => {
+                        UpdatedSkeletonNode::Edge {
+                            path_to_bottom: *path_to_bottom,
+                        }
+                    }
+                    TempSkeletonNode::Original(OriginalSkeletonNode::LeafOrBinarySibling(hash)) => {
+                        UpdatedSkeletonNode::Sibling(*hash)
+                    }
+                    TempSkeletonNode::Original(OriginalSkeletonNode::EdgeSibling(EdgeData {
+                        path_to_bottom,
+                        bottom_hash,
+                    })) => {
+                        self.skeleton_tree.insert(
+                            path_to_bottom.bottom_index(index),
+                            UpdatedSkeletonNode::Sibling(*bottom_hash),
+                        );
+                        UpdatedSkeletonNode::Edge {
+                            path_to_bottom: *path_to_bottom,
+                        }
+                    }
+                };
+                self.skeleton_tree.insert(index, updated);
+            }
+
+            return TempSkeletonNode::Original(OriginalSkeletonNode::Binary);
+        }
+
+        // At least one of the children is empty.
+        let (child_node, child_index, child_direction) = if *right == TempSkeletonNode::Empty {
+            (left, left_index, PathToBottom::LEFT_CHILD)
+        } else {
+            (right, right_index, PathToBottom::RIGHT_CHILD)
+        };
+        self.node_from_edge_data(
+            &child_direction,
+            &child_index,
+            child_node,
+            leaf_modifications,
+        )
+    }
+
+    /// Builds a (probably edge) node from its given updated descendant. Returns the
+    /// TempSkeletonNode matching the given root (the source for the path to bottom) for the subtree
+    /// it is the root of. If bottom is empty, returns an empty node.
     fn node_from_edge_data(
         &mut self,
         path: &PathToBottom,

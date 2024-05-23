@@ -18,7 +18,7 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
     /// Creates an updated tree from an original tree and modifications.
     #[allow(dead_code)]
     fn create(
-        original_skeleton: impl OriginalSkeletonTree,
+        original_skeleton: &impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> Result<Self, UpdatedSkeletonTreeError>;
 
@@ -41,7 +41,7 @@ pub(crate) struct UpdatedSkeletonTreeImpl {
 
 impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     fn create(
-        _original_skeleton: impl OriginalSkeletonTree,
+        _original_skeleton: &impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> Result<Self, UpdatedSkeletonTreeError> {
         // Finalize all leaf modifications in the skeleton.

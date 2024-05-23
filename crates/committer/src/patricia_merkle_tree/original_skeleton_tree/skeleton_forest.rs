@@ -2,9 +2,11 @@ use crate::block_committer::input::ContractAddress;
 use crate::block_committer::input::StarknetStorageKey;
 use crate::block_committer::input::StarknetStorageValue;
 use crate::block_committer::input::StateDiff;
+use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
+use crate::patricia_merkle_tree::filled_tree::node::Nonce;
 use crate::patricia_merkle_tree::node_data::leaf::ContractState;
 use crate::patricia_merkle_tree::node_data::leaf::LeafModifications;
 use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
@@ -13,6 +15,7 @@ use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonT
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeResult;
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::types::TreeHeight;
+use crate::patricia_merkle_tree::updated_skeleton_tree::errors::UpdatedSkeletonTreeError;
 use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::UpdatedSkeletonForest;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
 use crate::storage::storage_trait::Storage;
@@ -38,9 +41,12 @@ pub(crate) trait OriginalSkeletonForest {
     fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree>(
         &self,
         class_hash_leaf_modifications: &LeafModifications<SkeletonLeaf>,
-        contracts_to_commit: &HashSet<&ContractAddress>,
         storage_updates: &HashMap<ContractAddress, LeafModifications<SkeletonLeaf>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<U>>;
+        current_contract_state_leaves: &HashMap<ContractAddress, ContractState>,
+        address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
+        address_to_nonce: &HashMap<ContractAddress, Nonce>,
+        tree_heights: TreeHeight,
+    ) -> Result<UpdatedSkeletonForest<U>, UpdatedSkeletonTreeError>;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -95,11 +101,55 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForest for OriginalSkeletonForestI
 
     fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree>(
         &self,
-        _class_hash_leaf_modifications: &LeafModifications<SkeletonLeaf>,
-        _contracts_to_commit: &HashSet<&ContractAddress>,
-        _storage_updates: &HashMap<ContractAddress, LeafModifications<SkeletonLeaf>>,
-    ) -> OriginalSkeletonTreeResult<UpdatedSkeletonForest<U>> {
-        todo!()
+        class_hash_leaf_modifications: &LeafModifications<SkeletonLeaf>,
+        storage_updates: &HashMap<ContractAddress, LeafModifications<SkeletonLeaf>>,
+        current_contracts_trie_leaves: &HashMap<ContractAddress, ContractState>,
+        address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
+        address_to_nonce: &HashMap<ContractAddress, Nonce>,
+        tree_heights: TreeHeight,
+    ) -> Result<UpdatedSkeletonForest<U>, UpdatedSkeletonTreeError> {
+        // Classes trie.
+        let classes_trie = U::create(&self.classes_trie, class_hash_leaf_modifications)?;
+
+        // Storage tries.
+        let mut contracts_trie_leaves = HashMap::new();
+        let mut storage_tries = HashMap::new();
+
+        for (address, updates) in storage_updates {
+            let original_storage_trie = self
+                .storage_tries
+                .get(address)
+                .ok_or(UpdatedSkeletonTreeError::LowerTreeCommitmentError(*address))?;
+
+            let updated_storage_trie = U::create(original_storage_trie, updates)?;
+            let storage_trie_becomes_empty = updated_storage_trie.is_empty();
+
+            storage_tries.insert(*address, updated_storage_trie);
+
+            let current_leaf = current_contracts_trie_leaves
+                .get(address)
+                .ok_or(UpdatedSkeletonTreeError::LowerTreeCommitmentError(*address))?;
+
+            let skeleton_leaf = Self::updated_contract_skeleton_leaf(
+                address_to_nonce.get(address),
+                address_to_class_hash.get(address),
+                current_leaf,
+                storage_trie_becomes_empty,
+            );
+            contracts_trie_leaves.insert(
+                NodeIndex::from_contract_address(address, &tree_heights),
+                skeleton_leaf,
+            );
+        }
+
+        // Contracts trie.
+        let contracts_trie = U::create(&self.contracts_trie, &contracts_trie_leaves)?;
+
+        Ok(UpdatedSkeletonForest {
+            classes_trie,
+            contracts_trie,
+            storage_tries,
+        })
     }
 }
 
@@ -154,9 +204,9 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
                 .map(|key| NodeIndex::from_starknet_storage_key(key, &tree_height))
                 .collect();
             sorted_leaf_indices.sort();
-            let contract_state = current_contracts_trie_leaves
-                .get(address)
-                .ok_or_else(|| OriginalSkeletonTreeError::LowerTreeCommitmentError(**address))?;
+            let contract_state = current_contracts_trie_leaves.get(address).ok_or(
+                OriginalSkeletonTreeError::LowerTreeCommitmentError(**address),
+            )?;
             let original_skeleton = T::create(
                 storage,
                 &sorted_leaf_indices,
@@ -185,5 +235,25 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             classes_trie_root_hash,
             tree_height,
         )
+    }
+
+    /// Given the previous contract state, whether the contract's storage has become empty or not,
+    /// optional new nonce & new class hash, the function creates a skeleton leaf.
+    fn updated_contract_skeleton_leaf(
+        new_nonce: Option<&Nonce>,
+        new_class_hash: Option<&ClassHash>,
+        previous_state: &ContractState,
+        storage_becomes_empty: bool,
+    ) -> SkeletonLeaf {
+        let actual_new_nonce = new_nonce.unwrap_or(&previous_state.nonce);
+        let actual_new_class_hash = new_class_hash.unwrap_or(&previous_state.class_hash);
+        if storage_becomes_empty
+            && actual_new_nonce.0 == Felt::ZERO
+            && actual_new_class_hash.0 == Felt::ZERO
+        {
+            SkeletonLeaf::Zero
+        } else {
+            SkeletonLeaf::NonZero
+        }
     }
 }

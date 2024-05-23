@@ -3,6 +3,17 @@ use rand::Rng;
 use rstest::rstest;
 
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
+use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
+
+impl From<u8> for SkeletonLeaf {
+    fn from(value: u8) -> Self {
+        if value == 0 {
+            Self::Zero
+        } else {
+            Self::NonZero
+        }
+    }
+}
 
 impl From<&str> for PathToBottom {
     fn from(value: &str) -> Self {
@@ -18,16 +29,19 @@ impl From<&str> for PathToBottom {
         }
     }
 }
+
 /// Generates a random U256 number between low and high (exclusive).
 /// Panics if low > high.
-pub(crate) fn get_random_u256(low: U256, high: U256) -> U256 {
+#[cfg(any(feature = "testing", test))]
+#[allow(dead_code)]
+pub fn get_random_u256(low: U256, high: U256) -> U256 {
     assert!(low < high);
     let high_of_low = low.high();
     let high_of_high = high.high();
 
     let delta = high - low;
     if delta <= u128::MAX {
-        let delta = u128::try_from(delta).unwrap();
+        let delta = u128::try_from(delta).expect("Failed to convert delta to u128");
         return low + rand::thread_rng().gen_range(0..delta);
     }
 

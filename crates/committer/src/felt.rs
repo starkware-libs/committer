@@ -17,7 +17,7 @@ use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
     Serialize,
     Deserialize,
 )]
-pub struct Felt(StarknetTypesFelt);
+pub struct Felt(pub StarknetTypesFelt);
 
 #[macro_export]
 macro_rules! impl_from {
@@ -47,6 +47,12 @@ impl From<&Felt> for U256 {
     }
 }
 
+impl From<&U256> for Felt {
+    fn from(value: &U256) -> Self {
+        Self::from_bytes_be(&value.to_be_bytes())
+    }
+}
+
 impl std::ops::Mul for Felt {
     type Output = Self;
 
@@ -61,7 +67,7 @@ impl Felt {
     pub(crate) const ONE: Felt = Felt(StarknetTypesFelt::ONE);
     pub(crate) const TWO: Felt = Felt(StarknetTypesFelt::TWO);
     pub(crate) const THREE: Felt = Felt(StarknetTypesFelt::THREE);
-    pub(crate) const MAX: Felt = Felt(StarknetTypesFelt::MAX);
+    pub const MAX: Felt = Felt(StarknetTypesFelt::MAX);
 
     pub fn from_bytes_be_slice(bytes: &[u8]) -> Self {
         Self(StarknetTypesFelt::from_bytes_be_slice(bytes))

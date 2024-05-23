@@ -5,13 +5,14 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::storage::db_object::DBObject;
+use strum_macros::{EnumDiscriminants, EnumIter};
 
 pub trait LeafData: Clone + Sync + Send + DBObject {
     /// Returns true if leaf is empty.
     fn is_empty(&self) -> bool;
 }
 #[allow(dead_code)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ContractState {
     pub nonce: Nonce,
     pub storage_root_hash: HashOutput,
@@ -19,7 +20,8 @@ pub struct ContractState {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumIter))]
 pub enum LeafDataImpl {
     StorageValue(Felt),
     // TODO(Nimrod, 30/5/2024): Change the inner type to CompiledClassHash.

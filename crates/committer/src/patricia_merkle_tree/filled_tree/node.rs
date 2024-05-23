@@ -5,10 +5,10 @@ use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub struct ClassHash(pub Felt);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub struct Nonce(pub Felt);
 
 #[allow(dead_code)]
@@ -17,7 +17,6 @@ pub struct CompiledClassHash(pub Felt);
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-/// A node in a Patricia-Merkle tree which was modified during an update.
 pub struct FilledNode<L: LeafData> {
     pub hash: HashOutput,
     pub data: NodeData<L>,

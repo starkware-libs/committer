@@ -39,7 +39,7 @@ pub(crate) trait OriginalSkeletonForest {
         Self: std::marker::Sized;
 
     fn compute_updated_skeleton_forest<U: UpdatedSkeletonTree>(
-        &self,
+        self,
         class_hash_leaf_modifications: &LeafModifications<SkeletonLeaf>,
         storage_updates: &HashMap<ContractAddress, LeafModifications<SkeletonLeaf>>,
         current_contract_state_leaves: &HashMap<ContractAddress, ContractState>,

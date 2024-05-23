@@ -5,7 +5,7 @@ use crate::patricia_merkle_tree::{node_data::leaf::LeafData, types::NodeIndex};
 
 #[derive(thiserror::Error, Debug)]
 pub enum FilledTreeError<L: LeafData> {
-    #[error("Double update at node {index:?}. Existing value: {existing_value}.")]
+    #[error("Double update at node {index:?}. Existing value: {existing_value:?}.")]
     DoubleUpdate {
         index: NodeIndex,
         existing_value: Box<FilledNode<L>>,

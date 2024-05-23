@@ -1,6 +1,7 @@
 use ethnum::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
+use std::panic;
 
 #[derive(
     Eq,
@@ -17,7 +18,7 @@ use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
     Serialize,
     Deserialize,
 )]
-pub struct Felt(StarknetTypesFelt);
+pub struct Felt(pub StarknetTypesFelt);
 
 #[macro_export]
 macro_rules! impl_from {
@@ -47,6 +48,14 @@ impl From<&Felt> for U256 {
     }
 }
 
+#[cfg(feature = "testing")]
+impl TryFrom<&U256> for Felt {
+    type Error = FromStrError;
+    fn try_from(value: &U256) -> Result<Self, Self::Error> {
+        panic::catch_unwind(|| Self::from_bytes_be(&value.to_be_bytes())).map_err(|_| FromStrError)
+    }
+}
+
 impl std::ops::Mul for Felt {
     type Output = Self;
 
@@ -61,7 +70,7 @@ impl Felt {
     pub(crate) const ONE: Felt = Felt(StarknetTypesFelt::ONE);
     pub(crate) const TWO: Felt = Felt(StarknetTypesFelt::TWO);
     pub(crate) const THREE: Felt = Felt(StarknetTypesFelt::THREE);
-    pub(crate) const MAX: Felt = Felt(StarknetTypesFelt::MAX);
+    pub const MAX: Felt = Felt(StarknetTypesFelt::MAX);
 
     pub fn from_bytes_be_slice(bytes: &[u8]) -> Self {
         Self(StarknetTypesFelt::from_bytes_be_slice(bytes))

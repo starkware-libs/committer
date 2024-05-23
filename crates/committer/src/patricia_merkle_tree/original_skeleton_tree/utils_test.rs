@@ -1,6 +1,6 @@
 use super::split_leaves;
-use crate::patricia_merkle_tree::test_utils::get_random_u256;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
+use crate::patricia_merkle_tree::utils::random_structs::get_random_u256;
 use ethnum::{uint, U256};
 use rstest::rstest;
 

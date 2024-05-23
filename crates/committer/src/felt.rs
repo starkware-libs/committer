@@ -1,3 +1,4 @@
+use derive_more::Display;
 use ethnum::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
@@ -16,6 +17,7 @@ use starknet_types_core::felt::{Felt as StarknetTypesFelt, FromStrError};
     Ord,
     Serialize,
     Deserialize,
+    Display,
 )]
 pub struct Felt(StarknetTypesFelt);
 

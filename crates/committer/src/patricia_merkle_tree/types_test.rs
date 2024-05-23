@@ -1,9 +1,9 @@
 use crate::block_committer::input::{ContractAddress, StarknetStorageKey};
 use crate::felt::Felt;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
-use crate::patricia_merkle_tree::test_utils::get_random_u256;
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::types::TreeHeight;
+use crate::patricia_merkle_tree::utils::random_structs::get_random_u256;
 
 use ethnum::U256;
 use rand::Rng;

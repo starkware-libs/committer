@@ -44,7 +44,7 @@ pub(crate) trait FilledTree<L: LeafData>: Sized {
 }
 
 pub(crate) struct FilledTreeImpl {
-    tree_map: HashMap<NodeIndex, FilledNode<LeafDataImpl>>,
+    pub(crate) tree_map: HashMap<NodeIndex, FilledNode<LeafDataImpl>>,
 }
 
 impl FilledTreeImpl {

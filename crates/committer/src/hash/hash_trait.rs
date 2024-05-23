@@ -1,8 +1,9 @@
 use crate::felt::Felt;
+use derive_more::Display;
 
 pub struct HashInputPair(pub Felt, pub Felt);
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Display)]
 pub struct HashOutput(pub Felt);
 
 #[allow(dead_code)]

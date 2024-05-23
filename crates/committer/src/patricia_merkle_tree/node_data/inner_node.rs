@@ -20,7 +20,7 @@ pub struct BinaryData {
 
 // Wraps a U256. Maximal possible value is the longest path in a tree of height 251 (2 ^ 251 - 1).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct EdgePath(U256);
+pub struct EdgePath(pub(crate) U256);
 
 impl EdgePath {
     pub const BITS: u8 = TreeHeight::MAX.0;

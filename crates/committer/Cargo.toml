@@ -25,3 +25,4 @@ serde_json.workspace = true
 starknet-types-core.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+rand.workspace = true

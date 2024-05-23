@@ -9,6 +9,7 @@ use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNod
 #[cfg(test)]
 #[path = "tree_test.rs"]
 pub mod tree_test;
+pub(crate) type UpdatedSkeletonTreeResult<T> = Result<T, UpdatedSkeletonTreeError>;
 
 /// Consider a Patricia-Merkle Tree which has been updated with new leaves.
 /// This trait represents the structure of the subtree which was modified in the update.
@@ -20,7 +21,7 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
     fn create(
         original_skeleton: impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
-    ) -> Result<Self, UpdatedSkeletonTreeError>;
+    ) -> UpdatedSkeletonTreeResult<Self>;
 
     /// Does the skeleton represents an empty-tree (i.e. all leaves are empty).
     #[allow(dead_code)]
@@ -32,7 +33,7 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
 
     /// Returns the node with the given index.
     #[allow(dead_code)]
-    fn get_node(&self, index: NodeIndex) -> Result<&UpdatedSkeletonNode, UpdatedSkeletonTreeError>;
+    fn get_node(&self, index: NodeIndex) -> UpdatedSkeletonTreeResult<&UpdatedSkeletonNode>;
 }
 
 pub(crate) struct UpdatedSkeletonTreeImpl {
@@ -43,7 +44,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     fn create(
         _original_skeleton: impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
-    ) -> Result<Self, UpdatedSkeletonTreeError> {
+    ) -> UpdatedSkeletonTreeResult<Self> {
         // Finalize all leaf modifications in the skeleton.
         let mut _skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode> = leaf_modifications
             .iter()
@@ -57,7 +58,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         todo!()
     }
 
-    fn get_node(&self, index: NodeIndex) -> Result<&UpdatedSkeletonNode, UpdatedSkeletonTreeError> {
+    fn get_node(&self, index: NodeIndex) -> UpdatedSkeletonTreeResult<&UpdatedSkeletonNode> {
         match self.skeleton_tree.get(&index) {
             Some(node) => Ok(node),
             None => Err(UpdatedSkeletonTreeError::MissingNode(index)),

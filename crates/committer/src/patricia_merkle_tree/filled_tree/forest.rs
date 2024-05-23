@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 
 use super::tree::FilledTreeImpl;
 
-pub(crate) trait FilledForest<L: LeafData> {
+pub trait FilledForest<L: LeafData> {
     #[allow(dead_code)]
     /// Serialize each tree and store it.
     fn write_to_storage(&self, storage: &mut impl Storage);
@@ -19,7 +19,7 @@ pub(crate) trait FilledForest<L: LeafData> {
     fn get_contract_root_hash(&self) -> Result<HashOutput, FilledTreeError<L>>;
 }
 
-pub(crate) struct FilledForestImpl {
+pub struct FilledForestImpl {
     storage_trees: HashMap<NodeIndex, FilledTreeImpl>,
     contract_tree: FilledTreeImpl,
     compiled_class_tree: FilledTreeImpl,

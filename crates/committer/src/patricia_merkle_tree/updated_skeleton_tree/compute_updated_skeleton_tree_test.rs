@@ -120,6 +120,76 @@ fn test_get_path_to_lca(
 }
 
 #[rstest]
+#[case::two_deleted_leaves(
+    &NodeIndex::from(1),
+    &TempSkeletonNode::Empty,
+    &TempSkeletonNode::Empty,
+    &[(NodeIndex::from(2), SkeletonLeaf::Zero), (NodeIndex::from(3), SkeletonLeaf::Zero)],
+    TempSkeletonNode::Empty,
+    &[]
+)]
+#[case::one_deleted_leaf(
+    &NodeIndex::from(1),
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
+    &TempSkeletonNode::Empty,
+    &[(NodeIndex::from(2), SkeletonLeaf::NonZero), (NodeIndex::from(3), SkeletonLeaf::Zero)],
+    TempSkeletonNode::Original(
+        OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::LEFT_CHILD}
+    ),
+    &[]
+)]
+#[case::two_leaves(
+    &NodeIndex::from(5),
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
+    &[(NodeIndex::from(10), SkeletonLeaf::NonZero), (NodeIndex::from(11), SkeletonLeaf::NonZero)],
+    TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
+    &[]
+)]
+#[case::two_nodes(
+    &NodeIndex::from(5),
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
+    &[],
+    TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
+    &[(NodeIndex::from(10),UpdatedSkeletonNode::Binary), (NodeIndex::from(11), UpdatedSkeletonNode::Binary)]
+)]
+#[case::deleted_left_child(
+    &NodeIndex::from(5),
+    &TempSkeletonNode::Empty,
+    &TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
+    &[(NodeIndex::from(20), SkeletonLeaf::Zero)],
+    TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom: PathToBottom::from("1") }),
+    &[(NodeIndex::from(11),UpdatedSkeletonNode::Binary)]
+)]
+#[case::deleted_two_children(
+    &NodeIndex::from(5),
+    &TempSkeletonNode::Empty,
+    &TempSkeletonNode::Empty,
+    &[(NodeIndex::from(20), SkeletonLeaf::Zero), (NodeIndex::from(22), SkeletonLeaf::Zero)],
+    TempSkeletonNode::Empty,
+    &[]
+)]
+fn test_node_from_binary_data(
+    #[case] root_index: &NodeIndex,
+    #[case] left: &TempSkeletonNode,
+    #[case] right: &TempSkeletonNode,
+    #[case] leaf_modifications: &[(NodeIndex, SkeletonLeaf)],
+    #[case] expected_node: TempSkeletonNode,
+    #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
+    #[with(leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+) {
+    let mut expected_skeleton_tree = updated_skeleton.skeleton_tree.clone();
+    expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
+    let leaf_modifications: HashMap<NodeIndex, SkeletonLeaf> =
+        leaf_modifications.iter().cloned().collect();
+    let temp_node =
+        updated_skeleton.node_from_binary_data(root_index, left, right, &leaf_modifications);
+    assert_eq!(temp_node, expected_node);
+    assert_eq!(updated_skeleton.skeleton_tree, expected_skeleton_tree);
+}
+
+#[rstest]
 #[case::to_empty(
     &PathToBottom::LEFT_CHILD,
     &NodeIndex::ROOT,

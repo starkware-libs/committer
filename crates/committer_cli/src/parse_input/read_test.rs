@@ -185,7 +185,7 @@ fn test_simple_input_parsing() {
         ),
     ]);
 
-    let expected_current_contract_state_leaves = HashMap::from([
+    let expected_current_contracts_trie_leaves = HashMap::from([
         (
             ContractAddress(Felt::from_bytes_be_slice(&[
                 0, 0, 0, 0, 0, 98, 0, 0, 0, 156, 0, 0, 0, 0, 0, 11, 5, 0, 0, 0, 0, 0, 1, 0, 89, 0,
@@ -269,9 +269,9 @@ fn test_simple_input_parsing() {
             storage_updates: expected_storage_updates,
         },
         tree_heights: expected_tree_heights,
-        current_contract_state_leaves: expected_current_contract_state_leaves,
-        global_tree_root_hash: expected_global_tree_root_hash,
-        classes_tree_root_hash: expected_classes_tree_root_hash,
+        current_contracts_trie_leaves: expected_current_contracts_trie_leaves,
+        global_trie_root_hash: expected_global_tree_root_hash,
+        classes_trie_root_hash: expected_classes_tree_root_hash,
     };
     assert_eq!(parse_input(input.to_string()).unwrap(), expected_input);
 }

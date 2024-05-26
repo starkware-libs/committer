@@ -19,6 +19,7 @@ async-recursion.workspace = true
 bisection.workspace = true
 derive_more.workspace = true
 ethnum.workspace = true
+futures.workspace = true
 hex.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -18,6 +18,7 @@ use crate::patricia_merkle_tree::types::TreeHeight;
 use crate::patricia_merkle_tree::updated_skeleton_tree::errors::UpdatedSkeletonTreeError;
 use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::UpdatedSkeletonForest;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
+use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeResult;
 use crate::storage::storage_trait::Storage;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -46,7 +47,7 @@ pub(crate) trait OriginalSkeletonForest {
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
         tree_heights: TreeHeight,
-    ) -> Result<UpdatedSkeletonForest<U>, UpdatedSkeletonTreeError>;
+    ) -> UpdatedSkeletonTreeResult<UpdatedSkeletonForest<U>>;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -107,7 +108,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForest for OriginalSkeletonForestI
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
         tree_heights: TreeHeight,
-    ) -> Result<UpdatedSkeletonForest<U>, UpdatedSkeletonTreeError> {
+    ) -> UpdatedSkeletonTreeResult<UpdatedSkeletonForest<U>> {
         // Classes trie.
         let classes_trie = U::create(&self.classes_trie, class_hash_leaf_modifications)?;
 

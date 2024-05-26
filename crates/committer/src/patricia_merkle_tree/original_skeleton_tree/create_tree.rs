@@ -143,10 +143,11 @@ impl OriginalSkeletonTreeImpl {
                         // Sibling will remain an edge node. No need to open the bottom.
                         self.nodes.insert(
                             subtree.root_index,
-                            OriginalSkeletonNode::EdgeSibling(EdgeData {
-                                bottom_hash,
-                                path_to_bottom,
-                            }),
+                            OriginalSkeletonNode::Edge { path_to_bottom },
+                        );
+                        self.nodes.insert(
+                            subtree.root_index,
+                            OriginalSkeletonNode::UnmodifiedBottom(bottom_hash),
                         );
                         continue;
                     }

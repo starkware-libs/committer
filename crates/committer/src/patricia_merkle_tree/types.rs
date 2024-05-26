@@ -58,6 +58,10 @@ impl NodeIndex {
         Self(index)
     }
 
+    pub(crate) fn is_leaf(&self) -> bool {
+        Self::FIRST_LEAF <= *self && *self <= Self::MAX
+    }
+
     // TODO(Amos, 1/5/2024): Move to EdgePath.
     pub(crate) fn compute_bottom_index(
         index: NodeIndex,

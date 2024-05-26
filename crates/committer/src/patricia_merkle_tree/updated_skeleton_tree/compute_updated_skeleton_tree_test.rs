@@ -15,7 +15,7 @@ use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTre
 #[fixture]
 fn updated_skeleton(
     #[default(TreeHeight::MAX)] tree_height: TreeHeight,
-    #[default(&[])] leaf_modifications: &[(u128, u8)],
+    #[default(&[])] leaf_modifications: &[(U256, u8)],
 ) -> UpdatedSkeletonTreeImpl {
     UpdatedSkeletonTreeImpl {
         tree_height,
@@ -24,7 +24,7 @@ fn updated_skeleton(
             .filter(|(_, leaf_val)| *leaf_val != 0)
             .map(|(index, leaf_val)| {
                 (
-                    NodeIndex::from(*index),
+                    NodeIndex::new(*index),
                     UpdatedSkeletonNode::Leaf(SkeletonLeaf::from(*leaf_val)),
                 )
             })
@@ -126,7 +126,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(1),
     &TempSkeletonNode::Empty,
     &TempSkeletonNode::Empty,
-    &[(2,0), (3,0)],
+    &[(2_u8.into(),0), (3_u8.into(),0)],
     TempSkeletonNode::Empty,
     &[]
 )]
@@ -134,7 +134,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(1),
     &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
     &TempSkeletonNode::Empty,
-    &[(2, 1), (3, 0)],
+    &[(2_u8.into(), 1), (3_u8.into(), 0)],
     TempSkeletonNode::Original(
         OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::LEFT_CHILD}
     ),
@@ -144,7 +144,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(5),
     &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
     &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
-    &[(10,1), (11,1)],
+    &[(10_u8.into(),1), (11_u8.into(),1)],
     TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
     &[]
 )]
@@ -160,7 +160,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(5),
     &TempSkeletonNode::Empty,
     &TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
-    &[(20, 0)],
+    &[(20_u8.into(), 0)],
     TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom: PathToBottom::RIGHT_CHILD }),
     &[(NodeIndex::from(11),UpdatedSkeletonNode::Binary)]
 )]
@@ -168,7 +168,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(5),
     &TempSkeletonNode::Empty,
     &TempSkeletonNode::Empty,
-    &[(20, 0), (22, 0)],
+    &[(20_u8.into(), 0), (22_u8.into(), 0)],
     TempSkeletonNode::Empty,
     &[]
 )]
@@ -176,7 +176,7 @@ fn test_get_path_to_lca(
     &NodeIndex::from(5),
     &TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom: PathToBottom::RIGHT_CHILD }),
     &TempSkeletonNode::Empty,
-    &[(22, 0)],
+    &[(22_u8.into(), 0)],
     TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom: PathToBottom::from("01") }),
     &[]
 )]
@@ -184,7 +184,7 @@ fn test_node_from_binary_data(
     #[case] root_index: &NodeIndex,
     #[case] left: &TempSkeletonNode,
     #[case] right: &TempSkeletonNode,
-    #[case] _leaf_modifications: &[(u128, u8)],
+    #[case] _leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
     #[with(TreeHeight::MAX, _leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
@@ -243,7 +243,7 @@ fn test_node_from_binary_data(
     &PathToBottom::RIGHT_CHILD,
     &NodeIndex::from(7),
     &TempSkeletonNode::Original(OriginalSkeletonNode::Leaf(SkeletonLeaf::NonZero)),
-    &[(7, 1)],
+    &[(7_u8.into(), 1)],
     TempSkeletonNode::Original(
         OriginalSkeletonNode::Edge {path_to_bottom: PathToBottom::RIGHT_CHILD}
     ),
@@ -253,7 +253,7 @@ fn test_node_from_edge_data(
     #[case] path: &PathToBottom,
     #[case] bottom_index: &NodeIndex,
     #[case] bottom: &TempSkeletonNode,
-    #[case] _leaf_modifications: &[(u128, u8)],
+    #[case] _leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
     #[with(TreeHeight::MAX, _leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
@@ -261,6 +261,33 @@ fn test_node_from_edge_data(
     let mut expected_skeleton_tree = updated_skeleton.skeleton_tree.clone();
     expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
     let temp_node = updated_skeleton.node_from_edge_data(path, bottom_index, bottom);
+    assert_eq!(temp_node, expected_node);
+    assert_eq!(updated_skeleton.skeleton_tree, expected_skeleton_tree);
+}
+
+#[rstest]
+#[case::one_leaf(
+    &NodeIndex::ROOT,
+    &[(U256::ONE<<251, 1)],
+    TempSkeletonNode::Original(OriginalSkeletonNode::Edge { path_to_bottom: PathToBottom::from("0".repeat(251).as_str())}),
+    &[],
+    3
+)]
+fn test_update_node_in_empty_tree(
+    #[case] root_index: &NodeIndex,
+    #[case] leaf_modifications: &[(U256, u8)],
+    #[case] expected_node: TempSkeletonNode,
+    #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
+    #[case] _tree_height: u8,
+    #[with(TreeHeight::MAX, leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+) {
+    let leaf_indices: Vec<NodeIndex> = leaf_modifications
+        .iter()
+        .map(|(index, _)| NodeIndex::new(*index))
+        .collect();
+    let mut expected_skeleton_tree = updated_skeleton.skeleton_tree.clone();
+    expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
+    let temp_node = updated_skeleton.update_node_in_empty_tree(root_index, &leaf_indices);
     assert_eq!(temp_node, expected_node);
     assert_eq!(updated_skeleton.skeleton_tree, expected_skeleton_tree);
 }

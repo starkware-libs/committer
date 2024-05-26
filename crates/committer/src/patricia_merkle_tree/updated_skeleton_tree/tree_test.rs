@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use tokio::time::Instant;
+
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::hash::pedersen::PedersenHashFunction;
@@ -331,4 +333,69 @@ fn create_leaf_entry_for_testing(index: u128, hash: &str) -> (NodeIndex, FilledN
             data: NodeData::Leaf(LeafDataImpl::StorageValue(Felt::from_hex(hash).unwrap())),
         },
     )
+}
+
+#[tokio::test(flavor = "multi_thread")]
+/// This test is a benchmark test for testing the root hash computation of the patricia merkle tree.
+async fn benchmark_test() {
+    let tree_height = 20;
+    let now = Instant::now();
+    // Set up the updated skeleton tree.
+    let new_leaves: Vec<(u128, String)> = (0..2u128.pow(tree_height - 1))
+        .map(|index| {
+            (
+                index + 2u128.pow(tree_height - 1),
+                format!("0x{}", index + 1).to_owned(),
+            )
+        })
+        .collect();
+    // print!("{:?}", new_leaves);
+
+    let nodes_in_skeleton_tree: Vec<(NodeIndex, UpdatedSkeletonNode)> = (1..2u128
+        .pow(tree_height - 1))
+        .map(create_binary_updated_skeleton_node_for_testing)
+        .chain(new_leaves.iter().map(|(index, value)| {
+            create_leaf_updated_skeleton_node_for_testing(*index, value.as_str())
+        }))
+        .collect();
+    // print!("{:?}", nodes_in_skeleton_tree);
+
+    let skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode> =
+        nodes_in_skeleton_tree.into_iter().collect();
+
+    let updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
+    let modifications = new_leaves
+        .iter()
+        .map(|(index, value)| {
+            (
+                NodeIndex::from(*index),
+                LeafDataImpl::StorageValue(Felt::from_hex(value).unwrap()),
+            )
+        })
+        .collect();
+    let elapased_time_tree_creation = now.elapsed();
+
+    let now = Instant::now();
+
+    // Compute the hash values.
+    let filled_tree = FilledTreeImpl::create::<
+        PedersenHashFunction,
+        TreeHashFunctionImpl<PedersenHashFunction>,
+    >(updated_skeleton_tree, &modifications)
+    .await
+    .unwrap();
+
+    let _root_hash = filled_tree.get_root_hash().unwrap();
+
+    let elapased_time_main_algorithm = now.elapsed();
+    // // The expected hash values were computed separately.
+    let _expected_root_hash = HashOutput(
+        Felt::from_hex("0xe8899e8c731a35f5e9ce4c4bc32aabadcc81c5cdcc1aeba74fa7509046c338").unwrap(),
+    );
+    println!(
+        "{:?}, {:?}",
+        elapased_time_tree_creation, elapased_time_main_algorithm
+    );
+
+    // assert_eq!(root_hash, expected_root_hash, "Root hash mismatch");
 }

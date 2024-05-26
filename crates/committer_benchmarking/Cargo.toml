@@ -1,0 +1,21 @@
+[package]
+name = "committer_benchmarking"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Benchmarking tests for the committer package."
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+
+[dependencies]
+clap.workspace = true
+committer = { path = "../committer" }
+ethnum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

@@ -202,6 +202,7 @@ dependencies = [
  "bisection",
  "derive_more",
  "ethnum",
+ "futures",
  "hex",
  "pretty_assertions",
  "rand",

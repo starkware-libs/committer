@@ -72,7 +72,7 @@ impl FilledForestImpl {
         tree_heights: TreeHeight,
     ) -> ForestResult<Self> {
         let classes_trie =
-            FilledTreeImpl::create::<TH>(&updated_forest.classes_trie, classes_updates).await?;
+            FilledTreeImpl::create::<TH>(updated_forest.classes_trie, classes_updates).await?;
 
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();
@@ -110,7 +110,7 @@ impl FilledForestImpl {
         }
 
         let contracts_trie = FilledTreeImpl::create::<TH>(
-            &updated_forest.contracts_trie,
+            updated_forest.contracts_trie,
             &contracts_trie_modifications,
         )
         .await?;
@@ -122,7 +122,10 @@ impl FilledForestImpl {
         })
     }
 
-    async fn new_contract_state<T: UpdatedSkeletonTree, TH: TreeHashFunction<LeafDataImpl>>(
+    async fn new_contract_state<
+        T: UpdatedSkeletonTree + 'static,
+        TH: TreeHashFunction<LeafDataImpl> + 'static,
+    >(
         contract_address: ContractAddress,
         new_nonce: Nonce,
         new_class_hash: ClassHash,
@@ -130,7 +133,7 @@ impl FilledForestImpl {
         inner_updates: LeafModifications<LeafDataImpl>,
     ) -> ForestResult<(ContractAddress, ContractState, FilledTreeImpl)> {
         let filled_storage_trie =
-            FilledTreeImpl::create::<TH>(&updated_storage_trie, &inner_updates).await?;
+            FilledTreeImpl::create::<TH>(updated_storage_trie, &inner_updates).await?;
         let new_root_hash = filled_storage_trie.get_root_hash()?;
         Ok((
             contract_address,

@@ -75,7 +75,7 @@ pub fn get_left_child(index: u128, map: &HashMap<Felt, SNTreeNode>) -> Option<&S
 
 pub const TWO: StarknetFelt = StarknetFelt::TWO;
 pub const ONE: StarknetFelt = StarknetFelt::ONE;
-pub const TREE_HEIGHT: u8 = 15;
+pub const TREE_HEIGHT: u8 = 18;
 pub fn create_dummy_tree(height: u8) -> Option<Box<SNTreeNode>> {
     let node = match height {
         TREE_HEIGHT => SNTreeNode {

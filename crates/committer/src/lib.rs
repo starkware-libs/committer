@@ -235,6 +235,29 @@ pub mod test {
         }
     }
 
+    #[async_recursion]
+    pub async fn algorithm_tokio_join(mut node: SNTreeNode) -> StarknetFelt {
+        if node.is_leaf {
+            //TODO: compute/return the leaf hash
+            return node.hash_value.unwrap();
+        }
+        let left_child = node
+            .left_child
+            .expect("Not a leaf node, left child must exist");
+        let right_child = node
+            .right_child
+            .expect("Not a leaf node, right child must exist");
+        if !node.is_path {
+            let (left_value, right_value) =
+                tokio::join!(compute_val(*left_child), compute_val(*right_child));
+            node.hash_value = Some(hash::Pedersen::hash(&left_value, &right_value));
+            return node.hash_value.unwrap();
+        } else {
+            //TODO: compute/return the path hash
+            todo!("Path hash computation")
+        }
+    }
+
     pub fn compute_val_rayon(node: SNTreeNode) -> StarknetFelt {
         match node.hash_value {
             Some(value) => value,
@@ -360,7 +383,8 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn bench_threading() {
         let height = TREE_HEIGHT;
-        let num_repetitions: usize = 3;
+        let num_repetitions: usize = 1;
+        let mut time_tokio_join: Vec<Duration> = Vec::new();
         let mut time_tokio: Vec<Duration> = Vec::new();
         let mut time_rayon: Vec<Duration> = Vec::new();
         let mut time_seq: Vec<Duration> = Vec::new();
@@ -380,6 +404,15 @@ pub mod test {
             let hash_map = tree_to_hashmap(*root_clone_3.unwrap());
             let elapased_time = now.elapsed();
             println!("Hash map creation time: {:?}", elapased_time);
+
+            let now = Instant::now();
+            // Code block to measure.
+            let result_tokio_join = algorithm_tokio_join(*root_clone.clone().unwrap()).await;
+            // End of code block to measure.
+            let elapased_time_tokio_join = now.elapsed();
+            time_tokio_join.push(elapased_time_tokio_join);
+            // Print measurement.
+            println!("Tokio join time: {:?}", elapased_time_tokio_join);
 
             let now = Instant::now();
             // Code block to measure.
@@ -440,6 +473,7 @@ pub mod test {
 
             // Sanity check.
             assert_eq!(result_seq, result_tokio);
+            assert_eq!(result_seq, result_tokio_join);
             assert_eq!(result_seq, result_rayon);
             assert_eq!(result_seq, result_hash);
             assert_eq!(result_seq, result_hash_rayon);
@@ -451,6 +485,12 @@ pub mod test {
             println!("Sanity check passed!");
         }
         // Print statistics.
+        println!(
+            "Average time for {:?} hashes using tokio join: {:?}, Std deviation: {:?}",
+            2_u32.pow(height.into()) - 1,
+            mean(&time_tokio_join),
+            std_deviation(&time_tokio_join),
+        );
         println!(
             "Average time for {:?} hashes using tokio: {:?}, Std deviation: {:?}",
             2_u32.pow(height.into()) - 1,

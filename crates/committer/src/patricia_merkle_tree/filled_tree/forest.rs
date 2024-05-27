@@ -1,5 +1,5 @@
 use crate::block_committer::input::ContractAddress;
-use crate::hash::hash_trait::{HashFunction, HashOutput};
+use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
 use crate::patricia_merkle_tree::filled_tree::tree::FilledTreeResult;
 use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
@@ -62,8 +62,7 @@ impl FilledForestImpl {
     #[allow(dead_code)]
     pub(crate) async fn create<
         T: UpdatedSkeletonTree + 'static,
-        H: HashFunction + 'static,
-        TH: TreeHashFunction<LeafDataImpl, H> + 'static,
+        TH: TreeHashFunction<LeafDataImpl> + 'static,
     >(
         mut updated_forest: UpdatedSkeletonForestImpl<T>,
         storage_updates: HashMap<ContractAddress, LeafModifications<LeafDataImpl>>,
@@ -74,7 +73,7 @@ impl FilledForestImpl {
         tree_heights: TreeHeight,
     ) -> FilledTreeResult<Self, LeafDataImpl> {
         let classes_trie =
-            FilledTreeImpl::create::<H, TH>(&updated_forest.classes_trie, classes_updates).await?;
+            FilledTreeImpl::create::<TH>(&updated_forest.classes_trie, classes_updates).await?;
 
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();
@@ -90,7 +89,7 @@ impl FilledForestImpl {
                 .get(&address)
                 // TODO(Nimrod, 1/6/2024): Add another error variant for that case.
                 .ok_or(UpdatedSkeletonTreeError::LowerTreeCommitmentError(address))?;
-            tasks.spawn(Self::new_contract_state::<T, H, TH>(
+            tasks.spawn(Self::new_contract_state::<T, TH>(
                 address,
                 *(address_to_nonce
                     .get(&address)
@@ -112,7 +111,7 @@ impl FilledForestImpl {
             filled_storage_tries.insert(address, filled_storage_trie);
         }
 
-        let contracts_trie = FilledTreeImpl::create::<H, TH>(
+        let contracts_trie = FilledTreeImpl::create::<TH>(
             &updated_forest.contracts_trie,
             &contracts_trie_modifications,
         )
@@ -125,11 +124,7 @@ impl FilledForestImpl {
         })
     }
 
-    async fn new_contract_state<
-        T: UpdatedSkeletonTree,
-        H: HashFunction,
-        TH: TreeHashFunction<LeafDataImpl, H>,
-    >(
+    async fn new_contract_state<T: UpdatedSkeletonTree, TH: TreeHashFunction<LeafDataImpl>>(
         contract_address: ContractAddress,
         new_nonce: Nonce,
         new_class_hash: ClassHash,
@@ -137,7 +132,7 @@ impl FilledForestImpl {
         inner_updates: LeafModifications<LeafDataImpl>,
     ) -> FilledTreeResult<(ContractAddress, ContractState, FilledTreeImpl), LeafDataImpl> {
         let filled_storage_trie =
-            FilledTreeImpl::create::<H, TH>(&updated_storage_trie, &inner_updates).await?;
+            FilledTreeImpl::create::<TH>(&updated_storage_trie, &inner_updates).await?;
         let new_root_hash = filled_storage_trie.get_root_hash()?;
         Ok((
             contract_address,

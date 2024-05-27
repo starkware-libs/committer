@@ -4,8 +4,6 @@ use committer::block_committer::input::{
 };
 use committer::felt::Felt;
 use committer::hash::hash_trait::HashOutput;
-use committer::hash::hash_trait::{HashFunction, HashInputPair};
-use committer::hash::pedersen::PedersenHashFunction;
 use committer::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
 use committer::patricia_merkle_tree::filled_tree::node::{ClassHash, FilledNode, Nonce};
 use committer::patricia_merkle_tree::node_data::inner_node::{
@@ -20,6 +18,7 @@ use committer::storage::errors::{DeserializationError, SerializationError};
 use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
 use ethnum::U256;
+use starknet_types_core::hash::{Pedersen, StarkHash};
 use std::fmt::Debug;
 use std::{collections::HashMap, io};
 use thiserror;
@@ -160,7 +159,7 @@ pub(crate) fn test_hash_function(hash_input: HashMap<String, u128>) -> String {
     let y_felt = Felt::from(*y);
 
     // Compute the hash.
-    let hash_result = PedersenHashFunction::compute_hash(HashInputPair(x_felt, y_felt)).0;
+    let hash_result = Pedersen::hash(&x_felt.into(), &y_felt.into());
 
     // Serialize the hash result.
     serde_json::to_string(&hash_result)

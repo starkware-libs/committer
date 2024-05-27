@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
-use crate::hash::pedersen::PedersenHashFunction;
 use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::node_data::inner_node::{
@@ -27,14 +26,12 @@ async fn test_filled_tree_sanity() {
         tree_height: TreeHeight(1),
         skeleton_tree,
     };
-    let root_hash = FilledTreeImpl::create::<
-        PedersenHashFunction,
-        TreeHashFunctionImpl<PedersenHashFunction>,
-    >(updated_skeleton_tree, &modifications)
-    .await
-    .unwrap()
-    .get_root_hash()
-    .unwrap();
+    let root_hash =
+        FilledTreeImpl::create::<TreeHashFunctionImpl>(updated_skeleton_tree, &modifications)
+            .await
+            .unwrap()
+            .get_root_hash()
+            .unwrap();
     assert_eq!(root_hash, HashOutput(Felt::ONE), "Root hash mismatch");
 }
 
@@ -93,12 +90,10 @@ async fn test_small_filled_tree() {
         .collect();
 
     // Compute the hash values.
-    let filled_tree = FilledTreeImpl::create::<
-        PedersenHashFunction,
-        TreeHashFunctionImpl<PedersenHashFunction>,
-    >(updated_skeleton_tree, &modifications)
-    .await
-    .unwrap();
+    let filled_tree =
+        FilledTreeImpl::create::<TreeHashFunctionImpl>(updated_skeleton_tree, &modifications)
+            .await
+            .unwrap();
     let filled_tree_map = filled_tree.get_all_nodes();
     let root_hash = filled_tree.get_root_hash().unwrap();
 
@@ -202,12 +197,10 @@ async fn test_small_tree_with_sibling_nodes() {
     )]);
 
     // Compute the hash values.
-    let filled_tree = FilledTreeImpl::create::<
-        PedersenHashFunction,
-        TreeHashFunctionImpl<PedersenHashFunction>,
-    >(updated_skeleton_tree, &modifications)
-    .await
-    .unwrap();
+    let filled_tree =
+        FilledTreeImpl::create::<TreeHashFunctionImpl>(updated_skeleton_tree, &modifications)
+            .await
+            .unwrap();
     let filled_tree_map = filled_tree.get_all_nodes();
     let root_hash = filled_tree.get_root_hash().unwrap();
 

@@ -4,7 +4,6 @@ use std::sync::Mutex;
 
 use async_recursion::async_recursion;
 
-use crate::hash::hash_trait::HashFunction;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::errors::FilledTreeError;
 use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
@@ -28,7 +27,7 @@ use crate::storage::storage_trait::StorageValue;
 pub(crate) trait FilledTree<L: LeafData>: Sized {
     /// Computes and returns the filled tree.
     #[allow(dead_code)]
-    async fn create<H: HashFunction, TH: TreeHashFunction<L, H>>(
+    async fn create<TH: TreeHashFunction<L>>(
         updated_skeleton: impl UpdatedSkeletonTree,
         leaf_modifications: &LeafModifications<L>,
     ) -> Result<Self, FilledTreeError<L>>;
@@ -112,15 +111,14 @@ impl FilledTreeImpl {
     }
 
     #[async_recursion]
-    async fn compute_filled_tree_rec<H, TH>(
+    async fn compute_filled_tree_rec<TH>(
         updated_skeleton: &impl UpdatedSkeletonTree,
         index: NodeIndex,
         leaf_modifications: &LeafModifications<LeafDataImpl>,
         output_map: Arc<HashMap<NodeIndex, Mutex<Option<FilledNode<LeafDataImpl>>>>>,
     ) -> Result<HashOutput, FilledTreeError<LeafDataImpl>>
     where
-        H: HashFunction,
-        TH: TreeHashFunction<LeafDataImpl, H>,
+        TH: TreeHashFunction<LeafDataImpl>,
     {
         let node = updated_skeleton.get_node(index)?;
         match node {
@@ -129,13 +127,13 @@ impl FilledTreeImpl {
                 let right_index = left_index + NodeIndex::ROOT;
 
                 let (left_hash, right_hash) = tokio::join!(
-                    Self::compute_filled_tree_rec::<H, TH>(
+                    Self::compute_filled_tree_rec::<TH>(
                         updated_skeleton,
                         left_index,
                         leaf_modifications,
                         Arc::clone(&output_map)
                     ),
-                    Self::compute_filled_tree_rec::<H, TH>(
+                    Self::compute_filled_tree_rec::<TH>(
                         updated_skeleton,
                         right_index,
                         leaf_modifications,
@@ -154,7 +152,7 @@ impl FilledTreeImpl {
             }
             UpdatedSkeletonNode::Edge { path_to_bottom } => {
                 let bottom_node_index = NodeIndex::compute_bottom_index(index, path_to_bottom);
-                let bottom_hash = Self::compute_filled_tree_rec::<H, TH>(
+                let bottom_hash = Self::compute_filled_tree_rec::<TH>(
                     updated_skeleton,
                     bottom_node_index,
                     leaf_modifications,
@@ -193,7 +191,7 @@ impl FilledTreeImpl {
 }
 
 impl FilledTree<LeafDataImpl> for FilledTreeImpl {
-    async fn create<H: HashFunction, TH: TreeHashFunction<LeafDataImpl, H>>(
+    async fn create<TH: TreeHashFunction<LeafDataImpl>>(
         updated_skeleton: impl UpdatedSkeletonTree,
         leaf_modifications: &LeafModifications<LeafDataImpl>,
     ) -> Result<Self, FilledTreeError<LeafDataImpl>> {
@@ -202,7 +200,7 @@ impl FilledTree<LeafDataImpl> for FilledTreeImpl {
         //   2. Fill in the hash values.
         let filled_tree_map = Arc::new(Self::initialize_with_placeholders(&updated_skeleton));
 
-        Self::compute_filled_tree_rec::<H, TH>(
+        Self::compute_filled_tree_rec::<TH>(
             &updated_skeleton,
             NodeIndex::ROOT,
             leaf_modifications,

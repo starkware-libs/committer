@@ -18,4 +18,5 @@ committer = { path = "../committer" }
 ethnum.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+starknet-types-core.workspace = true
 thiserror.workspace = true

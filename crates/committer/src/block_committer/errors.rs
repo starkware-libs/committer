@@ -1,15 +1,10 @@
 use thiserror::Error;
 
-use crate::patricia_merkle_tree::{
-    original_skeleton_tree::errors::OriginalSkeletonTreeError,
-    updated_skeleton_tree::errors::UpdatedSkeletonTreeError,
-};
+use crate::{forest_errors::ForestError, patricia_merkle_tree::node_data::leaf::LeafData};
 
 #[allow(dead_code)]
 #[derive(Debug, Error)]
-pub(crate) enum BlockCommitmentError {
+pub(crate) enum BlockCommitmentError<L: LeafData> {
     #[error(transparent)]
-    BuildingOriginalSkeletonTree(#[from] OriginalSkeletonTreeError),
-    #[error(transparent)]
-    BuildingUpdatedSkeletonTree(#[from] UpdatedSkeletonTreeError),
+    ForestError(#[from] ForestError<L>),
 }

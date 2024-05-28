@@ -5,6 +5,8 @@ use crate::patricia_merkle_tree::{node_data::leaf::LeafData, types::NodeIndex};
 
 #[derive(thiserror::Error, Debug)]
 pub enum FilledTreeError<L: LeafData> {
+    #[error("Deleted leaf at index {0:?} appears in the skeleton tree.")]
+    DeletedLeafInSkeleton(NodeIndex),
     #[error("Double update at node {index:?}. Existing value: {existing_value}.")]
     DoubleUpdate {
         index: NodeIndex,

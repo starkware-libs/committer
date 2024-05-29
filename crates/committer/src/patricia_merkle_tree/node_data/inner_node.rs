@@ -60,8 +60,9 @@ impl From<&EdgePath> for U256 {
         path.0
     }
 }
-
-#[derive(Clone, Copy, Debug, Default, derive_more::Add, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialOrd, derive_more::Add, derive_more::Sub, PartialEq, Eq, Hash,
+)]
 pub struct EdgePathLength(pub u8);
 
 impl EdgePathLength {
@@ -98,10 +99,25 @@ impl PathToBottom {
         NodeIndex::compute_bottom_index(root_index, self)
     }
 
+    pub(crate) fn is_left_descendant(&self) -> bool {
+        self.path.0 >> (self.length.0 - 1) == 0
+    }
+
     pub(crate) fn concat_paths(&self, other: Self) -> Self {
         Self {
             path: EdgePath::from((self.path.0 << other.length.0) + other.path.0),
             length: self.length + other.length,
         }
+    }
+
+    /// Returns the path after removing the first step (the edge from the path's origin node).
+    pub(crate) fn remove_first_edges(&self, n_edges: EdgePathLength) -> Result<Self, &str> {
+        if self.length < n_edges {
+            return Err("Tried to remove more edges than the path has.");
+        }
+        Ok(Self {
+            path: EdgePath(self.path.0 >> n_edges.0),
+            length: self.length - n_edges,
+        })
     }
 }

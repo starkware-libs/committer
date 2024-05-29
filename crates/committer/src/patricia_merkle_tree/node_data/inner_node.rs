@@ -26,19 +26,24 @@ pub struct BinaryData {
 pub struct EdgePath(pub U256);
 
 impl EdgePath {
-    pub const BITS: u8 = TreeHeight::MAX.0;
+    #[allow(dead_code)]
+    // Number of bits needed to store a path in tree of the given height.
+    pub(crate) fn bits(tree_height: &TreeHeight) -> u8 {
+        tree_height.0
+    }
 
     /// [EdgePath] constant that represents the longest path (from some node) in a tree.
-    #[allow(clippy::as_conversions)]
-    pub const MAX: Self = Self(U256::from_words(
-        u128::MAX >> (U256::BITS - Self::BITS as u32),
-        u128::MAX,
-    ));
+    #[allow(dead_code)]
+    pub fn max(tree_height: &TreeHeight) -> Self {
+        Self(U256::from_words(
+            u128::MAX >> (U256::BITS - u32::from(Self::bits(tree_height))),
+            u128::MAX,
+        ))
+    }
 }
 
 impl From<U256> for EdgePath {
     fn from(value: U256) -> Self {
-        assert!(value <= EdgePath::MAX.0, "Path {value:?} is too long.");
         Self(value)
     }
 }

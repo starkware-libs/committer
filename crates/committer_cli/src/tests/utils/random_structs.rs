@@ -18,6 +18,7 @@ use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImplDiscriminants as LeafDataVariants;
 use committer::patricia_merkle_tree::test_utils::get_random_u256;
 use committer::patricia_merkle_tree::types::NodeIndex;
+use committer::patricia_merkle_tree::types::TreeHeight;
 use ethnum::U256;
 use rand::prelude::IteratorRandom;
 use rand::Rng;
@@ -83,7 +84,8 @@ impl RandomValue for PathToBottom {
         // TODO(Aviv, 27/6/2024): use a built in function once we migrate to a better big-integer library
         // Randomly choose the number of real leading zeros in the path (up to the maximum possible).
         // Real leading zero is a zero that refer to a left node, and not a padding zero.
-        let max_real_leading_zeros = path.0.leading_zeros() - EdgePath::MAX.0.leading_zeros();
+        let max_real_leading_zeros =
+            path.0.leading_zeros() - EdgePath::max(&TreeHeight::MAX).0.leading_zeros();
         let real_leading_zeros = std::cmp::min(
             Geometric::new(0.5)
                 .expect("Failed to create random variable.")
@@ -107,8 +109,8 @@ impl RandomValue for EdgePath {
     fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
         // The maximum value is the maximum between max and EdgePath::MAX.
         let max_value = match max {
-            Some(m) => min(m, EdgePath::MAX.0),
-            None => EdgePath::MAX.0,
+            Some(m) => min(m, EdgePath::max(&TreeHeight::MAX).0),
+            None => EdgePath::max(&TreeHeight::MAX).0,
         };
 
         Self(get_random_u256(rng, U256::ONE, max_value + 1))
@@ -141,8 +143,8 @@ impl RandomValue for NodeIndex {
     fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
         // The maximum value is the maximum between max and NodeIndex::MAX.
         let max_value = match max {
-            Some(m) => min(m, NodeIndex::MAX.0),
-            None => NodeIndex::MAX.0,
+            Some(m) => min(m, NodeIndex::max(&TreeHeight::MAX).0),
+            None => NodeIndex::max(&TreeHeight::MAX).0,
         };
 
         Self::new(get_random_u256(rng, U256::ONE, max_value + 1))

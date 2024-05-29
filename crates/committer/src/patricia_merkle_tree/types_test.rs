@@ -76,16 +76,17 @@ fn test_get_lca(#[case] node_index: u8, #[case] other: u8, #[case] expected: u8)
 
 #[rstest]
 fn test_get_lca_big(mut random: ThreadRng) {
+    let tree_height = TreeHeight::MAX;
     let lca = NodeIndex::new(get_random_u256(
         &mut random,
         U256::ZERO,
-        (NodeIndex::MAX >> 1).into(),
+        (NodeIndex::max(&tree_height) >> 1).into(),
     ));
 
     let left_child = lca << 1;
     let right_child = left_child + 1.into();
     let mut random_extension = |index: NodeIndex| {
-        let extension_bits = index.leading_zeros();
+        let extension_bits = index.leading_zeros(&tree_height);
         let extension: u128 = random.gen_range(0..(1 << extension_bits));
         (index << extension_bits) + NodeIndex(U256::from(extension))
     };
@@ -120,7 +121,7 @@ fn test_get_path_to_descendant(
 #[rstest]
 fn test_get_path_to_descendant_big() {
     let root_index = NodeIndex(U256::from(rand::thread_rng().gen::<u128>()));
-    let max_bits = NodeIndex::BITS - 128;
+    let max_bits = NodeIndex::bits(&TreeHeight::MAX) - 128;
     let extension: u128 = rand::thread_rng().gen_range(0..1 << max_bits);
     let extension_index = NodeIndex(U256::from(extension));
 
@@ -135,6 +136,6 @@ fn test_get_path_to_descendant_big() {
 
 #[rstest]
 fn test_nodeindex_to_felt_conversion() {
-    let index = NodeIndex::MAX;
+    let index = NodeIndex::max(&TreeHeight::MAX);
     assert!(Felt::try_from(index).is_err());
 }

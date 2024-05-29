@@ -66,13 +66,16 @@ fn test_split_leaves_big_tree(mut random: ThreadRng) {
     let left_leaf_indices = create_increasing_random_array(
         &mut random,
         100,
-        NodeIndex::FIRST_LEAF.into(),
+        NodeIndex::first_leaf(&TreeHeight::MAX).into(),
         U256::ONE << 200,
     );
     let right_leaf_indices = create_increasing_random_array(
         &mut random,
         100,
-        (U256::from(NodeIndex::FIRST_LEAF) + U256::from(NodeIndex::MAX)) / 2 + 1,
+        (U256::from(NodeIndex::first_leaf(&TreeHeight::MAX))
+            + U256::from(NodeIndex::max(&TreeHeight::MAX)))
+            / 2
+            + 1,
         U256::ONE << 100,
     );
     test_split_leaves(

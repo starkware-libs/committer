@@ -67,7 +67,7 @@ impl UpdatedSkeletonTreeImpl {
         root_index: &NodeIndex,
         leaf_indices: &[NodeIndex],
     ) -> TempSkeletonNode {
-        if root_index.is_leaf() {
+        if root_index.is_leaf(&self.tree_height) {
             // Leaf. As this is an empty tree, the leaf must be new.
             assert!(
                 leaf_indices.len() == 1

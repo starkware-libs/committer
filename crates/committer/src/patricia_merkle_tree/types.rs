@@ -38,31 +38,39 @@ pub struct NodeIndex(pub U256);
 
 // Wraps a U256. Maximal possible value is the largest index in a tree of height 251 (2 ^ 252 - 1).
 impl NodeIndex {
-    pub const BITS: u8 = TreeHeight::MAX.0 + 1;
-
     /// [NodeIndex] constant that represents the root index.
     pub const ROOT: Self = Self(U256::ONE);
 
-    #[allow(dead_code)]
-    /// [NodeIndex] constant that represents the first leaf index.
-    // TODO(Tzahi, 15/6/2024): Support height < 128 bits.
-    pub const FIRST_LEAF: Self = Self(U256::from_words(1_u128 << (Self::BITS - 1 - 128), 0));
+    /// Number of bits needed to store a node index in a tree of the given height.
+    pub(crate) fn bits(tree_height: &TreeHeight) -> u8 {
+        tree_height.0 + 1
+    }
 
-    #[allow(clippy::as_conversions)]
-    /// [NodeIndex] constant that represents the largest index in a tree.
+    #[allow(dead_code)]
+    /// The index of the leftmost leaf in a tree of the given height.
     // TODO(Tzahi, 15/6/2024): Support height < 128 bits.
-    pub const MAX: Self = Self(U256::from_words(
-        u128::MAX >> (U256::BITS - Self::BITS as u32),
-        u128::MAX,
-    ));
+    pub(crate) fn first_leaf(tree_height: &TreeHeight) -> Self {
+        Self(U256::from_words(
+            1_u128 << (Self::bits(tree_height) - 1 - 128),
+            0,
+        ))
+    }
+
+    /// The index of the rightmost leaf in a tree of the given height.
+    // TODO(Tzahi, 15/6/2024): Support height < 128 bits.
+    pub fn max(tree_height: &TreeHeight) -> Self {
+        Self(U256::from_words(
+            u128::MAX >> (U256::BITS - u32::from(Self::bits(tree_height))),
+            u128::MAX,
+        ))
+    }
 
     pub fn new(index: U256) -> Self {
-        assert!(index <= Self::MAX.0, "Index {index} is too large.");
         Self(index)
     }
 
-    pub(crate) fn is_leaf(&self) -> bool {
-        Self::FIRST_LEAF <= *self && *self <= Self::MAX
+    pub(crate) fn is_leaf(&self, tree_height: &TreeHeight) -> bool {
+        Self::first_leaf(tree_height) <= *self && *self <= Self::max(tree_height)
     }
 
     // TODO(Amos, 1/5/2024): Move to EdgePath.
@@ -78,16 +86,19 @@ impl NodeIndex {
         let left_child = *self << 1;
         [left_child, left_child + 1.into()]
     }
-
-    /// Returns the number of leading zeroes when represented with Self::BITS bits.
-    pub(crate) fn leading_zeros(&self) -> u8 {
-        (self.0.leading_zeros() - (U256::BITS - u32::from(Self::BITS)))
+    #[allow(dead_code)]
+    /// Returns the number of leading zeroes when represented with Self::bits(tree_height) bits.
+    pub(crate) fn leading_zeros(&self, tree_height: &TreeHeight) -> u8 {
+        (self.0.leading_zeros() - (U256::BITS - u32::from(Self::bits(tree_height))))
             .try_into()
-            .expect("Leading zeroes are unexpectedly larger than a u8.")
+            .expect("Leading zeros are unexpectedly larger than a u8.")
     }
 
+    /// Returns the number of bits needed to store the node index represented by self.
     pub(crate) fn bit_length(&self) -> u8 {
-        Self::BITS - self.leading_zeros()
+        (U256::BITS - self.0.leading_zeros())
+            .try_into()
+            .expect("Leading zeros are unexpectedly larger than a u8.")
     }
 
     #[allow(dead_code)]

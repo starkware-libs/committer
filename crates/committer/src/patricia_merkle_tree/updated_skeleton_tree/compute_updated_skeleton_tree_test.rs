@@ -34,7 +34,7 @@ fn updated_skeleton(
 #[case::large_tree_farthest_leaves(
     251,
     1,
-    vec![NodeIndex::ROOT << 251, NodeIndex::MAX],
+    vec![NodeIndex::ROOT << 251, NodeIndex::max(&TreeHeight(251))],
     true)]
 #[case::large_tree_positive_consecutive_indices_of_different_sides(
     251,
@@ -97,11 +97,13 @@ fn test_has_leaves_on_both_sides_assertions(
 #[case::large_tree_positive_consecutive_indices_of_different_sides(
     1,
     vec![(U256::from(3u8) << 250) - U256::ONE, U256::from(3u8) << 250],
-    PathToBottom {path:U256::ZERO.into(), length:EdgePathLength(0)})]
+    PathToBottom {path:U256::ZERO.into(), length:EdgePathLength(0)}
+)]
 #[case::large_tree_positive_consecutive_indices(
     3<<126,
     vec![U256::from(3u8) << 250, (U256::from(3u8) << 250)+ U256::ONE],
-    PathToBottom {path:U256::ZERO.into(), length:EdgePathLength(123)})]
+    PathToBottom {path:U256::ZERO.into(), length:EdgePathLength(123)}
+)]
 fn test_get_path_to_lca(
     #[case] root_index: u128,
     #[case] leaf_indices: Vec<U256>,
@@ -287,8 +289,8 @@ fn test_node_from_edge_data(
         UpdatedSkeletonNode::Edge(PathToBottom::from("1".repeat(250).as_str())))],
 )]
 #[case::root_is_a_leaf(
-    &NodeIndex::FIRST_LEAF,
-    &[(U256::from(NodeIndex::FIRST_LEAF), 1)],
+    &NodeIndex::first_leaf(&TreeHeight::MAX),
+    &[(U256::from(NodeIndex::first_leaf(&TreeHeight::MAX)), 1)],
     TempSkeletonNode::Leaf,
     &[]
 )]

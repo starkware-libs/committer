@@ -120,7 +120,7 @@ fn test_get_path_to_descendant(
 #[rstest]
 fn test_get_path_to_descendant_big() {
     let root_index = NodeIndex(U256::from(rand::thread_rng().gen::<u128>()));
-    let max_bits = NodeIndex::BITS - 128;
+    let max_bits = TreeHeight::ACTUAL_HEIGHT.0 + 1 - 128;
     let extension: u128 = rand::thread_rng().gen_range(0..1 << max_bits);
     let extension_index = NodeIndex(U256::from(extension));
 

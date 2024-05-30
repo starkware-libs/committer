@@ -76,7 +76,7 @@ fn test_split_leaves_big_tree(mut random: ThreadRng) {
         U256::ONE << 100,
     );
     test_split_leaves(
-        TreeHeight::MAX.into(),
+        TreeHeight::ACTUAL_HEIGHT.into(),
         NodeIndex::ROOT.into(),
         &[&left_leaf_indices[..], &right_leaf_indices[..]].concat(),
         left_leaf_indices.as_slice(),

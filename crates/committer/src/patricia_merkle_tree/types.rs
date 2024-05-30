@@ -14,8 +14,9 @@ pub mod types_test;
 pub struct TreeHeight(pub(crate) u8);
 
 impl TreeHeight {
-    // TODO(Tzahi, 15/6/2024): Make height configurable for easy testing.
     pub const MAX: TreeHeight = TreeHeight(251);
+
+    pub const ACTUAL_HEIGHT: TreeHeight = Self::MAX;
 
     pub fn new(height: u8) -> Self {
         if height > Self::MAX.0 {
@@ -38,21 +39,22 @@ pub struct NodeIndex(pub U256);
 
 // Wraps a U256. Maximal possible value is the largest index in a tree of height 251 (2 ^ 252 - 1).
 impl NodeIndex {
-    pub const BITS: u8 = TreeHeight::MAX.0 + 1;
-
     /// [NodeIndex] constant that represents the root index.
     pub const ROOT: Self = Self(U256::ONE);
 
     #[allow(dead_code)]
     /// [NodeIndex] constant that represents the first leaf index.
     // TODO(Tzahi, 15/6/2024): Support height < 128 bits.
-    pub const FIRST_LEAF: Self = Self(U256::from_words(1_u128 << (Self::BITS - 1 - 128), 0));
+    pub const FIRST_LEAF: Self = Self(U256::from_words(
+        1_u128 << (TreeHeight::ACTUAL_HEIGHT.0 - 128),
+        0,
+    ));
 
     #[allow(clippy::as_conversions)]
     /// [NodeIndex] constant that represents the largest index in a tree.
     // TODO(Tzahi, 15/6/2024): Support height < 128 bits.
     pub const MAX: Self = Self(U256::from_words(
-        u128::MAX >> (U256::BITS - Self::BITS as u32),
+        u128::MAX >> (U256::BITS - (TreeHeight::MAX.0 + 1) as u32),
         u128::MAX,
     ));
 
@@ -81,13 +83,13 @@ impl NodeIndex {
 
     /// Returns the number of leading zeroes when represented with Self::BITS bits.
     pub(crate) fn leading_zeros(&self) -> u8 {
-        (self.0.leading_zeros() - (U256::BITS - u32::from(Self::BITS)))
+        (self.0.leading_zeros() - (U256::BITS - u32::from(TreeHeight::ACTUAL_HEIGHT.0 + 1)))
             .try_into()
             .expect("Leading zeroes are unexpectedly larger than a u8.")
     }
 
     pub(crate) fn bit_length(&self) -> u8 {
-        Self::BITS - self.leading_zeros()
+        TreeHeight::ACTUAL_HEIGHT.0 + 1 - self.leading_zeros()
     }
 
     #[allow(dead_code)]

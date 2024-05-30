@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 #[fixture]
 fn updated_skeleton(
-    #[default(TreeHeight::MAX)] tree_height: TreeHeight,
+    #[default(TreeHeight::ACTUAL_HEIGHT)] tree_height: TreeHeight,
     #[default(&[])] leaf_modifications: &[(U256, u8)],
 ) -> UpdatedSkeletonTreeImpl {
     UpdatedSkeletonTreeImpl {
@@ -191,7 +191,8 @@ fn test_node_from_binary_data(
     #[case] _leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
-    #[with(TreeHeight::MAX, _leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[with(TreeHeight::ACTUAL_HEIGHT, _leaf_modifications)]
+    mut updated_skeleton: UpdatedSkeletonTreeImpl,
 ) {
     let mut expected_skeleton_tree = updated_skeleton.skeleton_tree.clone();
     expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
@@ -258,7 +259,8 @@ fn test_node_from_edge_data(
     #[case] _leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
-    #[with(TreeHeight::MAX, _leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[with(TreeHeight::ACTUAL_HEIGHT, _leaf_modifications)]
+    mut updated_skeleton: UpdatedSkeletonTreeImpl,
 ) {
     let mut expected_skeleton_tree = updated_skeleton.skeleton_tree.clone();
     expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
@@ -299,7 +301,8 @@ fn test_update_node_in_empty_tree(
     #[case] leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
-    #[with(TreeHeight::MAX, leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[with(TreeHeight::ACTUAL_HEIGHT, leaf_modifications)]
+    mut updated_skeleton: UpdatedSkeletonTreeImpl,
 ) {
     let leaf_indices: Vec<NodeIndex> = leaf_modifications
         .iter()
@@ -387,7 +390,8 @@ fn test_update_node_in_nonempty_tree(
     #[case] leaf_modifications: &[(U256, u8)],
     #[case] expected_node: TempSkeletonNode,
     #[case] expected_skeleton_additions: &[(NodeIndex, UpdatedSkeletonNode)],
-    #[with(TreeHeight::MAX, leaf_modifications)] mut updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[with(TreeHeight::ACTUAL_HEIGHT, leaf_modifications)]
+    mut updated_skeleton: UpdatedSkeletonTreeImpl,
 ) {
     let leaf_indices: Vec<NodeIndex> = leaf_modifications
         .iter()

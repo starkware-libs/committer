@@ -26,19 +26,26 @@ pub struct BinaryData {
 pub struct EdgePath(pub U256);
 
 impl EdgePath {
-    pub const BITS: u8 = TreeHeight::MAX.0;
-
     /// [EdgePath] constant that represents the longest path (from some node) in a tree.
     #[allow(clippy::as_conversions)]
     pub const MAX: Self = Self(U256::from_words(
-        u128::MAX >> (U256::BITS - Self::BITS as u32),
+        u128::MAX >> (U256::BITS - TreeHeight::MAX.0 as u32),
         u128::MAX,
     ));
 }
 
 impl From<U256> for EdgePath {
+    #[allow(clippy::as_conversions)]
     fn from(value: U256) -> Self {
-        assert!(value <= EdgePath::MAX.0, "Path {value:?} is too long.");
+        assert!(
+            value
+                <= Self(U256::from_words(
+                    u128::MAX >> (U256::BITS - TreeHeight::MAX.0 as u32),
+                    u128::MAX
+                ))
+                .0,
+            "Path {value:?} is too long."
+        );
         Self(value)
     }
 }
@@ -64,11 +71,6 @@ impl From<&EdgePath> for U256 {
 #[derive(Clone, Copy, Debug, Default, derive_more::Add, PartialEq, Eq, Hash)]
 pub struct EdgePathLength(pub u8);
 
-impl EdgePathLength {
-    /// [EdgePathLength] constant that represents the longest path (from some node) in a tree.
-    #[allow(clippy::as_conversions)]
-    pub const MAX: Self = Self(TreeHeight::MAX.0);
-}
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PathToBottom {
     pub path: EdgePath,

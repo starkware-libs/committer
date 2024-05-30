@@ -7,7 +7,6 @@ use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
 
 use crate::storage::storage_trait::Storage;
 
-#[allow(dead_code)]
 pub(crate) type OriginalSkeletonTreeResult<T> = Result<T, OriginalSkeletonTreeError>;
 
 /// Consider a Patricia-Merkle Tree which should be updated with new leaves.
@@ -15,7 +14,6 @@ pub(crate) type OriginalSkeletonTreeResult<T> = Result<T, OriginalSkeletonTreeEr
 /// update. It also contains the hashes (for edge siblings - also the edge data) of the Sibling
 /// nodes on the Merkle paths from the updated leaves to the root.
 pub(crate) trait OriginalSkeletonTree {
-    #[allow(dead_code)]
     fn create(
         storage: &impl Storage,
         leaf_indices: &[NodeIndex],
@@ -26,9 +24,12 @@ pub(crate) trait OriginalSkeletonTree {
         Self: std::marker::Sized;
 
     fn get_nodes(&self) -> &HashMap<NodeIndex, OriginalSkeletonNode>;
+
+    fn get_nodes_mut(&mut self) -> &mut HashMap<NodeIndex, OriginalSkeletonNode>;
+
+    fn get_tree_height(&self) -> &TreeHeight;
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct OriginalSkeletonTreeImpl {
     pub(crate) nodes: HashMap<NodeIndex, OriginalSkeletonNode>,
@@ -47,5 +48,13 @@ impl OriginalSkeletonTree for OriginalSkeletonTreeImpl {
 
     fn get_nodes(&self) -> &HashMap<NodeIndex, OriginalSkeletonNode> {
         &self.nodes
+    }
+
+    fn get_nodes_mut(&mut self) -> &mut HashMap<NodeIndex, OriginalSkeletonNode> {
+        &mut self.nodes
+    }
+
+    fn get_tree_height(&self) -> &TreeHeight {
+        &self.tree_height
     }
 }

@@ -15,7 +15,7 @@ pub mod compute_updated_skeleton_tree_test;
 
 #[derive(Debug, PartialEq, Eq)]
 /// A temporary skeleton node used during the computation of the updated skeleton tree.
-enum TempSkeletonNode {
+pub(crate) enum TempSkeletonNode {
     // A deleted node.
     Empty,
     // A new/modified leaf.
@@ -49,7 +49,6 @@ fn get_path_to_lca(root_index: &NodeIndex, subtree_indices: &[NodeIndex]) -> Pat
 /// Returns whether a root of a subtree has leaves on both sides. Assumes:
 /// * The leaf indices array is sorted.
 /// * All leaves are descendants of the root.
-#[allow(dead_code)]
 fn has_leaves_on_both_sides(
     tree_height: &TreeHeight,
     root_index: &NodeIndex,
@@ -64,11 +63,10 @@ fn has_leaves_on_both_sides(
 }
 
 impl UpdatedSkeletonTreeImpl {
-    #[allow(dead_code)]
     /// Updates the originally empty Patricia-Merkle tree rooted at the given index, with leaf
     /// modifications (already updated in the skeleton mapping) in the given leaf_indices.
     /// Returns the root temporary skeleton node as inferred from the subtree.
-    fn update_node_in_empty_tree(
+    pub(crate) fn update_node_in_empty_tree(
         &mut self,
         root_index: &NodeIndex,
         leaf_indices: &[NodeIndex],
@@ -101,10 +99,9 @@ impl UpdatedSkeletonTreeImpl {
         self.node_from_edge_data(&path_to_lca, &bottom_index, &bottom)
     }
 
-    #[allow(dead_code)]
     /// Updates the Patricia tree rooted at the given index, with the given leaves; returns the root.
     /// Assumes the given list of indices is sorted.
-    fn update_node_in_nonempty_tree(
+    pub(crate) fn update_node_in_nonempty_tree(
         &mut self,
         root_index: &NodeIndex,
         original_skeleton: &mut HashMap<NodeIndex, OriginalSkeletonNode>,

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
-use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
+use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, StorageTrie};
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
@@ -310,7 +310,7 @@ fn test_node_from_edge_data(
     TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
     &[
         (NodeIndex::from(2),
-        UpdatedSkeletonNode::Edge(PathToBottom::from("0".repeat(250).as_str()))), 
+        UpdatedSkeletonNode::Edge(PathToBottom::from("0".repeat(250).as_str()))),
         (NodeIndex::from(3),
         UpdatedSkeletonNode::Edge(PathToBottom::from("1".repeat(250).as_str())))],
 )]
@@ -507,7 +507,7 @@ async fn test_update_non_modified_tree(#[case] root_hash: HashOutput) {
         OriginalSkeletonTreeImpl::create_impl(&MapStorage::default(), &[], root_hash).unwrap();
     let updated =
         UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new()).unwrap();
-    let filled = FilledTreeImpl::create::<TreeHashFunctionImpl>(updated, HashMap::new())
+    let filled = StorageTrie::create::<TreeHashFunctionImpl>(updated, HashMap::new())
         .await
         .unwrap();
     assert_eq!(root_hash, filled.get_root_hash());

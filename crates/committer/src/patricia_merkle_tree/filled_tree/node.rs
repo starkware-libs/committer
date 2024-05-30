@@ -5,13 +5,13 @@ use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct ClassHash(pub Felt);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Nonce(pub Felt);
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct CompiledClassHash(pub Felt);
 
 #[derive(Clone, Debug, PartialEq, Eq)]

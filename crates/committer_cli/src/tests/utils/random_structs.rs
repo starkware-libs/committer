@@ -1,4 +1,5 @@
 use committer::block_committer::input::ContractAddress;
+use committer::block_committer::input::StarknetStorageValue;
 use committer::felt::Felt;
 use committer::hash::hash_trait::HashOutput;
 use committer::patricia_merkle_tree::filled_tree::forest::FilledForestImpl;
@@ -6,7 +7,9 @@ use committer::patricia_merkle_tree::filled_tree::node::ClassHash;
 use committer::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
 use committer::patricia_merkle_tree::filled_tree::node::FilledNode;
 use committer::patricia_merkle_tree::filled_tree::node::Nonce;
-use committer::patricia_merkle_tree::filled_tree::tree::FilledTreeImpl;
+use committer::patricia_merkle_tree::filled_tree::tree::CompiledClassTrie;
+use committer::patricia_merkle_tree::filled_tree::tree::ContractTrie;
+use committer::patricia_merkle_tree::filled_tree::tree::StorageTrie;
 use committer::patricia_merkle_tree::node_data::inner_node::BinaryData;
 use committer::patricia_merkle_tree::node_data::inner_node::EdgeData;
 use committer::patricia_merkle_tree::node_data::inner_node::NodeDataDiscriminants as NodeDataVariants;
@@ -14,8 +17,6 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
     EdgePath, EdgePathLength, NodeData, PathToBottom,
 };
 use committer::patricia_merkle_tree::node_data::leaf::ContractState;
-use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
-use committer::patricia_merkle_tree::node_data::leaf::LeafDataImplDiscriminants as LeafDataVariants;
 use committer::patricia_merkle_tree::test_utils::get_random_u256;
 use committer::patricia_merkle_tree::types::NodeIndex;
 use ethnum::U256;
@@ -48,21 +49,24 @@ impl RandomValue for HashOutput {
     }
 }
 
-impl RandomValue for LeafDataImpl {
+impl RandomValue for StarknetStorageValue {
     fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
-        match LeafDataVariants::iter()
-            .choose(rng)
-            .expect("Failed to choose a random variant for LeafDataImpl")
-        {
-            LeafDataVariants::StorageValue => LeafDataImpl::StorageValue(Felt::random(rng, max)),
-            LeafDataVariants::CompiledClassHash => {
-                LeafDataImpl::CompiledClassHash(CompiledClassHash(Felt::random(rng, max)))
-            }
-            LeafDataVariants::ContractState => LeafDataImpl::ContractState(ContractState {
-                nonce: Nonce(Felt::random(rng, max)),
-                storage_root_hash: HashOutput::random(rng, max),
-                class_hash: ClassHash(Felt::random(rng, max)),
-            }),
+        StarknetStorageValue(Felt::random(rng, max))
+    }
+}
+
+impl RandomValue for CompiledClassHash {
+    fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
+        CompiledClassHash(Felt::random(rng, max))
+    }
+}
+
+impl RandomValue for ContractState {
+    fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
+        ContractState {
+            nonce: Nonce(Felt::random(rng, max)),
+            storage_root_hash: HashOutput::random(rng, max),
+            class_hash: ClassHash(Felt::random(rng, max)),
         }
     }
 }
@@ -122,18 +126,26 @@ impl RandomValue for EdgeData {
     }
 }
 
-impl RandomValue for NodeData<LeafDataImpl> {
-    fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
-        match NodeDataVariants::iter()
-            .choose(rng)
-            .expect("Failed to choose a random variant for NodeData")
-        {
-            NodeDataVariants::Binary => NodeData::Binary(BinaryData::random(rng, max)),
-            NodeDataVariants::Edge => NodeData::Edge(EdgeData::random(rng, max)),
-            NodeDataVariants::Leaf => NodeData::Leaf(LeafDataImpl::random(rng, max)),
+macro_rules! random_node_data {
+    ($leaf:ty) => {
+        impl RandomValue for NodeData<$leaf> {
+            fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
+                match NodeDataVariants::iter()
+                    .choose(rng)
+                    .expect("Failed to choose a random variant for NodeData")
+                {
+                    NodeDataVariants::Binary => NodeData::Binary(BinaryData::random(rng, max)),
+                    NodeDataVariants::Edge => NodeData::Edge(EdgeData::random(rng, max)),
+                    NodeDataVariants::Leaf => NodeData::Leaf(<$leaf>::random(rng, max)),
+                }
+            }
         }
-    }
+    };
 }
+
+random_node_data!(StarknetStorageValue);
+random_node_data!(CompiledClassHash);
+random_node_data!(ContractState);
 
 impl RandomValue for NodeIndex {
     fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
@@ -147,14 +159,22 @@ impl RandomValue for NodeIndex {
     }
 }
 
-impl RandomValue for FilledNode<LeafDataImpl> {
-    fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
-        Self {
-            data: NodeData::random(rng, max),
-            hash: HashOutput::random(rng, max),
+macro_rules! random_filled_node {
+    ($leaf:ty) => {
+        impl RandomValue for FilledNode<$leaf> {
+            fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
+                Self {
+                    data: NodeData::random(rng, max),
+                    hash: HashOutput::random(rng, max),
+                }
+            }
         }
-    }
+    };
 }
+
+random_filled_node!(StarknetStorageValue);
+random_filled_node!(CompiledClassHash);
+random_filled_node!(ContractState);
 
 impl RandomValue for ContractAddress {
     fn random<R: Rng>(rng: &mut R, max: Option<U256>) -> Self {
@@ -162,35 +182,40 @@ impl RandomValue for ContractAddress {
     }
 }
 
-impl DummyRandomValue for FilledTreeImpl {
-    /// Generates a dummy random filled tree.
-    /// The tree contains up to max(m,101) random nodes in random indexes.
-    /// Do not necessary represent a valid tree.
-    fn dummy_random<R: Rng>(rng: &mut R, max_size: Option<U256>) -> Self {
-        // The maximum node number is the maximum between max and 101.
-        let max_node_number = match max_size {
-            Some(m) => m,
-            None => U256::from(101_u8),
+macro_rules! random_filled_tree {
+    ($tree:ty, $leaf:ty) => {
+        impl DummyRandomValue for $tree {
+            fn dummy_random<R: Rng>(rng: &mut R, max_size: Option<U256>) -> Self {
+                // The maximum node number is the maximum between max and 101.
+                let max_node_number = match max_size {
+                    Some(m) => m,
+                    None => U256::from(101_u8),
+                }
+                .as_usize();
+
+                let mut nodes: Vec<(NodeIndex, FilledNode<$leaf>)> = (0..max_node_number)
+                    .map(|_| {
+                        (
+                            NodeIndex::random(rng, max_size),
+                            FilledNode::random(rng, max_size),
+                        )
+                    })
+                    .collect();
+
+                nodes.push((NodeIndex::ROOT, FilledNode::random(rng, max_size)));
+
+                Self {
+                    tree_map: nodes.into_iter().collect(),
+                    root_hash: HashOutput(Felt::random(rng, max_size)),
+                }
+            }
         }
-        .as_usize();
-
-        let mut nodes: Vec<(NodeIndex, FilledNode<LeafDataImpl>)> = (0..max_node_number)
-            .map(|_| {
-                (
-                    NodeIndex::random(rng, max_size),
-                    FilledNode::random(rng, max_size),
-                )
-            })
-            .collect();
-
-        nodes.push((NodeIndex::ROOT, FilledNode::random(rng, max_size)));
-
-        Self {
-            tree_map: nodes.into_iter().collect(),
-            root_hash: HashOutput(Felt::random(rng, max_size)),
-        }
-    }
+    };
 }
+
+random_filled_tree!(StorageTrie, StarknetStorageValue);
+random_filled_tree!(CompiledClassTrie, CompiledClassHash);
+random_filled_tree!(ContractTrie, ContractState);
 
 impl DummyRandomValue for FilledForestImpl {
     /// Generates a dummy random filled forest.
@@ -206,17 +231,17 @@ impl DummyRandomValue for FilledForestImpl {
         }
         .as_usize();
 
-        let storage_tries: HashMap<ContractAddress, FilledTreeImpl> = (0..max_trees_number)
+        let storage_tries: HashMap<ContractAddress, StorageTrie> = (0..max_trees_number)
             .map(|_| {
                 (
                     ContractAddress::random(rng, max_size),
-                    FilledTreeImpl::dummy_random(rng, max_size),
+                    StorageTrie::dummy_random(rng, max_size),
                 )
             })
             .collect::<HashMap<_, _>>();
 
-        let contracts_trie = FilledTreeImpl::dummy_random(rng, max_size);
-        let classes_trie = FilledTreeImpl::dummy_random(rng, max_size);
+        let contracts_trie = ContractTrie::dummy_random(rng, max_size);
+        let classes_trie = CompiledClassTrie::dummy_random(rng, max_size);
 
         Self {
             storage_tries,

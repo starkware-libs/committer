@@ -1,14 +1,12 @@
-use crate::block_committer::input::ContractAddress;
+use crate::block_committer::input::{ContractAddress, StarknetStorageValue};
 use crate::forest_errors::{ForestError, ForestResult};
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
+use crate::patricia_merkle_tree::filled_tree::tree::FilledTree;
 use crate::patricia_merkle_tree::filled_tree::tree::FilledTreeResult;
-use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
-use crate::patricia_merkle_tree::node_data::leaf::{
-    ContractState, LeafData, LeafDataImpl, LeafModifications,
-};
+use crate::patricia_merkle_tree::node_data::leaf::{ContractState, LeafModifications};
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
-use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunction;
+use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::ForestHashFunction;
 use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::UpdatedSkeletonForestImpl;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
 use crate::storage::storage_trait::Storage;
@@ -16,23 +14,26 @@ use crate::storage::storage_trait::Storage;
 use std::collections::HashMap;
 use tokio::task::JoinSet;
 
-pub trait FilledForest<L: LeafData> {
+use super::node::CompiledClassHash;
+use super::tree::{CompiledClassTrie, ContractTrie, StorageTrie};
+
+pub trait FilledForest {
     #[allow(dead_code)]
     /// Serialize each tree and store it.
     fn write_to_storage(&self, storage: &mut impl Storage);
     #[allow(dead_code)]
-    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, L>;
+    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, CompiledClassHash>;
     #[allow(dead_code)]
-    fn get_contract_root_hash(&self) -> FilledTreeResult<HashOutput, L>;
+    fn get_contract_root_hash(&self) -> FilledTreeResult<HashOutput, ContractState>;
 }
 
 pub struct FilledForestImpl {
-    pub storage_tries: HashMap<ContractAddress, FilledTreeImpl>,
-    pub contracts_trie: FilledTreeImpl,
-    pub classes_trie: FilledTreeImpl,
+    pub storage_tries: HashMap<ContractAddress, StorageTrie>,
+    pub contracts_trie: ContractTrie,
+    pub classes_trie: CompiledClassTrie,
 }
 
-impl FilledForest<LeafDataImpl> for FilledForestImpl {
+impl FilledForest for FilledForestImpl {
     #[allow(dead_code)]
     fn write_to_storage(&self, storage: &mut impl Storage) {
         // Serialize all trees to one hash map.
@@ -48,11 +49,11 @@ impl FilledForest<LeafDataImpl> for FilledForestImpl {
         storage.mset(new_db_objects);
     }
 
-    fn get_contract_root_hash(&self) -> FilledTreeResult<HashOutput, LeafDataImpl> {
+    fn get_contract_root_hash(&self) -> FilledTreeResult<HashOutput, ContractState> {
         self.contracts_trie.get_root_hash()
     }
 
-    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, LeafDataImpl> {
+    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, CompiledClassHash> {
         self.classes_trie.get_root_hash()
     }
 }
@@ -61,18 +62,18 @@ impl FilledForestImpl {
     #[allow(dead_code)]
     pub(crate) async fn create<
         T: UpdatedSkeletonTree + 'static,
-        TH: TreeHashFunction<LeafDataImpl> + 'static,
+        TH: ForestHashFunction + 'static,
     >(
         mut updated_forest: UpdatedSkeletonForestImpl<T>,
-        storage_updates: HashMap<ContractAddress, LeafModifications<LeafDataImpl>>,
-        classes_updates: LeafModifications<LeafDataImpl>,
+        storage_updates: HashMap<ContractAddress, LeafModifications<StarknetStorageValue>>,
+        classes_updates: LeafModifications<CompiledClassHash>,
         current_contracts_trie_leaves: &HashMap<ContractAddress, ContractState>,
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
         tree_heights: TreeHeight,
     ) -> ForestResult<Self> {
         let classes_trie =
-            FilledTreeImpl::create::<TH>(updated_forest.classes_trie, classes_updates).await?;
+            CompiledClassTrie::create::<TH>(updated_forest.classes_trie, classes_updates).await?;
 
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();
@@ -104,16 +105,14 @@ impl FilledForestImpl {
             let (address, new_contract_state, filled_storage_trie) = result??;
             contracts_trie_modifications.insert(
                 NodeIndex::from_contract_address(&address, &tree_heights),
-                LeafDataImpl::ContractState(new_contract_state),
+                new_contract_state,
             );
             filled_storage_tries.insert(address, filled_storage_trie);
         }
 
-        let contracts_trie = FilledTreeImpl::create::<TH>(
-            updated_forest.contracts_trie,
-            contracts_trie_modifications,
-        )
-        .await?;
+        let contracts_trie =
+            ContractTrie::create::<TH>(updated_forest.contracts_trie, contracts_trie_modifications)
+                .await?;
 
         Ok(Self {
             storage_tries: filled_storage_tries,
@@ -124,16 +123,16 @@ impl FilledForestImpl {
 
     async fn new_contract_state<
         T: UpdatedSkeletonTree + 'static,
-        TH: TreeHashFunction<LeafDataImpl> + 'static,
+        TH: ForestHashFunction + 'static,
     >(
         contract_address: ContractAddress,
         new_nonce: Nonce,
         new_class_hash: ClassHash,
         updated_storage_trie: T,
-        inner_updates: LeafModifications<LeafDataImpl>,
-    ) -> ForestResult<(ContractAddress, ContractState, FilledTreeImpl)> {
+        inner_updates: LeafModifications<StarknetStorageValue>,
+    ) -> ForestResult<(ContractAddress, ContractState, StorageTrie)> {
         let filled_storage_trie =
-            FilledTreeImpl::create::<TH>(updated_storage_trie, inner_updates).await?;
+            StorageTrie::create::<TH>(updated_storage_trie, inner_updates).await?;
         let new_root_hash = filled_storage_trie.get_root_hash()?;
         Ok((
             contract_address,

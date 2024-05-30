@@ -1,7 +1,7 @@
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::leaf::{
-    ContractState, LeafDataImpl, LeafModifications, SkeletonLeaf,
+    ContractState, LeafModifications, SkeletonLeaf,
 };
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::{
@@ -20,7 +20,7 @@ pub struct ContractAddress(pub Felt);
 pub struct StarknetStorageKey(pub Felt);
 
 #[allow(dead_code)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct StarknetStorageValue(pub Felt);
 
 #[allow(dead_code)]
@@ -100,7 +100,7 @@ impl StateDiff {
     pub(crate) fn actual_storage_updates(
         &self,
         tree_height: TreeHeight,
-    ) -> HashMap<ContractAddress, LeafModifications<LeafDataImpl>> {
+    ) -> HashMap<ContractAddress, LeafModifications<StarknetStorageValue>> {
         self.accessed_addresses()
             .iter()
             .map(|address| {
@@ -110,7 +110,7 @@ impl StateDiff {
                         .map(|(key, value)| {
                             (
                                 NodeIndex::from_starknet_storage_key(key, &tree_height),
-                                LeafDataImpl::StorageValue(value.0),
+                                StarknetStorageValue(value.0),
                             )
                         })
                         .collect(),
@@ -124,13 +124,13 @@ impl StateDiff {
     pub(crate) fn actual_classes_updates(
         class_hash_to_compiled_class_hash: &HashMap<ClassHash, CompiledClassHash>,
         tree_height: TreeHeight,
-    ) -> LeafModifications<LeafDataImpl> {
+    ) -> LeafModifications<CompiledClassHash> {
         class_hash_to_compiled_class_hash
             .iter()
             .map(|(class_hash, compiled_class_hash)| {
                 (
                     NodeIndex::from_class_hash(class_hash, &tree_height),
-                    LeafDataImpl::CompiledClassHash(*compiled_class_hash),
+                    *compiled_class_hash,
                 )
             })
             .collect()

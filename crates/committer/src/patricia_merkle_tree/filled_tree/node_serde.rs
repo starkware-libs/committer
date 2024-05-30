@@ -4,7 +4,7 @@ use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 use crate::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
-use crate::patricia_merkle_tree::node_data::leaf::{LeafData, LeafDataImpl};
+use crate::patricia_merkle_tree::node_data::leaf::LeafData;
 use crate::storage::db_object::{DBObject, Deserializable};
 use crate::storage::errors::{DeserializationError, SerializationError};
 use crate::storage::storage_trait::{StorageKey, StoragePrefix, StorageValue};
@@ -30,7 +30,7 @@ pub(crate) struct LeafCompiledClassToSerialize {
 /// Alias for serialization and deserialization results of filled nodes.
 #[allow(dead_code)]
 type FilledNodeSerializationResult = Result<StorageValue, SerializationError>;
-type FilledNodeDeserializationResult = Result<FilledNode<LeafDataImpl>, DeserializationError>;
+type FilledNodeDeserializationResult<L> = Result<FilledNode<L>, DeserializationError>;
 
 #[allow(dead_code)]
 impl<L: LeafData> FilledNode<L> {
@@ -90,10 +90,10 @@ impl<L: LeafData> DBObject for FilledNode<L> {
     }
 }
 
-impl Deserializable for FilledNode<LeafDataImpl> {
+impl<L: LeafData> Deserializable for FilledNode<L> {
     /// Deserializes non-leaf nodes; if a serialized leaf node is given, the hash
     /// is used but the data is ignored.
-    fn deserialize(key: &StorageKey, value: &StorageValue) -> FilledNodeDeserializationResult {
+    fn deserialize(key: &StorageKey, value: &StorageValue) -> FilledNodeDeserializationResult<L> {
         if value.0.len() == BINARY_BYTES {
             Ok(Self {
                 hash: HashOutput(Felt::from_bytes_be_slice(&key.0)),
@@ -129,7 +129,7 @@ impl Deserializable for FilledNode<LeafDataImpl> {
             return Ok(Self {
                 hash: HashOutput(Felt::from_bytes_be_slice(&key.0)),
                 // Dummy value which will be ignored.
-                data: NodeData::Leaf(LeafDataImpl::StorageValue(Felt::ZERO)),
+                data: NodeData::Leaf(L::default()),
             });
         }
     }

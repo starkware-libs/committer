@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::block_committer::input::StarknetStorageValue;
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
@@ -7,7 +8,6 @@ use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl}
 use crate::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
-use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
@@ -17,7 +17,7 @@ use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTre
 /// This test is a sanity test for computing the root hash of the patricia merkle tree with a single node that is a leaf with hash==1.
 async fn test_filled_tree_sanity() {
     let mut skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode> = HashMap::new();
-    let new_filled_leaf = LeafDataImpl::StorageValue(Felt::ONE);
+    let new_filled_leaf = StarknetStorageValue(Felt::ONE);
     let new_leaf_index = NodeIndex::ROOT;
     skeleton_tree.insert(new_leaf_index, UpdatedSkeletonNode::Leaf);
     let modifications = HashMap::from([(new_leaf_index, new_filled_leaf)]);
@@ -83,7 +83,7 @@ async fn test_small_filled_tree() {
         .map(|(index, value)| {
             (
                 NodeIndex::from(*index),
-                LeafDataImpl::StorageValue(Felt::from_hex(value).unwrap()),
+                StarknetStorageValue(Felt::from_hex(value).unwrap()),
             )
         })
         .collect();
@@ -192,7 +192,7 @@ async fn test_small_tree_with_sibling_nodes() {
     };
     let modifications = HashMap::from([(
         NodeIndex::from(new_leaf_index),
-        LeafDataImpl::StorageValue(Felt::from_hex(new_leaf).unwrap()),
+        StarknetStorageValue(Felt::from_hex(new_leaf).unwrap()),
     )]);
 
     // Compute the hash values.
@@ -276,12 +276,13 @@ fn create_leaf_updated_skeleton_node_for_testing(index: u128) -> (NodeIndex, Upd
     (NodeIndex::from(index), UpdatedSkeletonNode::Leaf)
 }
 
+/// Leaf type is irrelevant.
 fn create_binary_entry_for_testing(
     index: u128,
     hash: &str,
     left_hash: &str,
     right_hash: &str,
-) -> (NodeIndex, FilledNode<LeafDataImpl>) {
+) -> (NodeIndex, FilledNode<StarknetStorageValue>) {
     (
         NodeIndex::from(index),
         FilledNode {
@@ -294,13 +295,14 @@ fn create_binary_entry_for_testing(
     )
 }
 
+/// Leaf type is irrelevant.
 fn create_edge_entry_for_testing(
     index: u128,
     hash: &str,
     path: u128,
     length: u8,
     bottom_hash: &str,
-) -> (NodeIndex, FilledNode<LeafDataImpl>) {
+) -> (NodeIndex, FilledNode<StarknetStorageValue>) {
     (
         NodeIndex::from(index),
         FilledNode {
@@ -316,12 +318,15 @@ fn create_edge_entry_for_testing(
     )
 }
 
-fn create_leaf_entry_for_testing(index: u128, hash: &str) -> (NodeIndex, FilledNode<LeafDataImpl>) {
+fn create_leaf_entry_for_testing(
+    index: u128,
+    hash: &str,
+) -> (NodeIndex, FilledNode<StarknetStorageValue>) {
     (
         NodeIndex::from(index),
         FilledNode {
             hash: HashOutput(Felt::from_hex(hash).unwrap()),
-            data: NodeData::Leaf(LeafDataImpl::StorageValue(Felt::from_hex(hash).unwrap())),
+            data: NodeData::Leaf(StarknetStorageValue(Felt::from_hex(hash).unwrap())),
         },
     )
 }

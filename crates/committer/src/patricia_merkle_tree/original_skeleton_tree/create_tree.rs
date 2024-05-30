@@ -1,11 +1,10 @@
-use crate::felt::Felt;
+use crate::block_committer::input::StarknetStorageValue;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::FilledNode;
 use crate::patricia_merkle_tree::node_data::inner_node::BinaryData;
 use crate::patricia_merkle_tree::node_data::inner_node::EdgeData;
 use crate::patricia_merkle_tree::node_data::inner_node::NodeData;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
-use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeResult;
 use crate::patricia_merkle_tree::original_skeleton_tree::utils::split_leaves;
@@ -169,18 +168,19 @@ impl OriginalSkeletonTreeImpl {
         self.fetch_nodes(next_subtrees, storage)
     }
 
+    /// The leaf type of the returned node is irrelevant, as it will be ignored.
     fn calculate_subtrees_roots(
         subtrees: &[SubTree<'_>],
         storage: &impl Storage,
         total_tree_height: &TreeHeight,
-    ) -> OriginalSkeletonTreeResult<Vec<FilledNode<LeafDataImpl>>> {
+    ) -> OriginalSkeletonTreeResult<Vec<FilledNode<StarknetStorageValue>>> {
         let mut subtrees_roots = vec![];
         for subtree in subtrees.iter() {
             if subtree.is_leaf(total_tree_height) {
                 subtrees_roots.push(FilledNode {
                     hash: subtree.root_hash,
                     // Dummy value that will be ignored.
-                    data: NodeData::Leaf(LeafDataImpl::StorageValue(Felt::ZERO)),
+                    data: NodeData::Leaf(StarknetStorageValue::default()),
                 });
                 continue;
             }

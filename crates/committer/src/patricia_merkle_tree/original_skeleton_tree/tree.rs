@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::original_skeleton_tree::errors::OriginalSkeletonTreeError;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
-use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
+use crate::patricia_merkle_tree::types::NodeIndex;
 
 use crate::storage::storage_trait::Storage;
 
@@ -20,7 +20,6 @@ pub(crate) trait OriginalSkeletonTree {
         storage: &impl Storage,
         leaf_indices: &[NodeIndex],
         root_hash: HashOutput,
-        tree_height: TreeHeight,
     ) -> OriginalSkeletonTreeResult<Self>
     where
         Self: std::marker::Sized;
@@ -32,7 +31,6 @@ pub(crate) trait OriginalSkeletonTree {
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct OriginalSkeletonTreeImpl {
     pub(crate) nodes: HashMap<NodeIndex, OriginalSkeletonNode>,
-    pub(crate) tree_height: TreeHeight,
 }
 
 impl OriginalSkeletonTree for OriginalSkeletonTreeImpl {
@@ -40,9 +38,8 @@ impl OriginalSkeletonTree for OriginalSkeletonTreeImpl {
         storage: &impl Storage,
         sorted_leaf_indices: &[NodeIndex],
         root_hash: HashOutput,
-        tree_height: TreeHeight,
     ) -> OriginalSkeletonTreeResult<Self> {
-        Self::create_impl(storage, sorted_leaf_indices, root_hash, tree_height)
+        Self::create_impl(storage, sorted_leaf_indices, root_hash)
     }
 
     fn get_nodes(&self) -> &HashMap<NodeIndex, OriginalSkeletonNode> {

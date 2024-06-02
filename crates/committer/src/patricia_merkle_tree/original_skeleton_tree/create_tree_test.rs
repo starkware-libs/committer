@@ -187,13 +187,8 @@ fn test_fetch_nodes(
 
     sorted_leaf_indices.sort();
 
-    let skeleton_tree = OriginalSkeletonTreeImpl::create(
-        &storage,
-        &sorted_leaf_indices,
-        root_hash,
-        TreeHeight::MAX,
-    )
-    .unwrap();
+    let skeleton_tree =
+        OriginalSkeletonTreeImpl::create(&storage, &sorted_leaf_indices, root_hash).unwrap();
 
     let mut expected_nodes: HashMap<NodeIndex, OriginalSkeletonNode> = expected_nodes
         .into_iter()
@@ -285,7 +280,6 @@ pub(crate) fn create_expected_skeleton(
                 }),
             )])
             .collect(),
-        tree_height: TreeHeight::MAX,
     }
 }
 

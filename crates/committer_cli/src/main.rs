@@ -52,7 +52,8 @@ enum Command {
 struct GlobalOptions {}
 
 /// Main entry point of the committer CLI.
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = CommitterCliArgs::parse();
 
     match args.command {
@@ -85,6 +86,7 @@ fn main() {
             // Run relevant test.
             let output = test
                 .run(inputs.as_deref())
+                .await
                 .unwrap_or_else(|error| panic!("Failed to run test: {}", error));
 
             // Print test's output.

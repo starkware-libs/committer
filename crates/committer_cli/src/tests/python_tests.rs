@@ -14,6 +14,8 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
 use committer::patricia_merkle_tree::node_data::leaf::{ContractState, LeafDataImpl};
+
+use committer::patricia_merkle_tree::test_utils::rust_single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use committer::storage::db_object::DBObject;
 use committer::storage::errors::{DeserializationError, SerializationError};
@@ -37,6 +39,7 @@ pub(crate) enum PythonTest {
     ComparePythonHashConstants,
     StorageNode,
     FilledForestOutput,
+    ComputeHashSingleTree,
 }
 
 /// Error type for PythonTest enum.
@@ -80,6 +83,7 @@ impl TryFrom<String> for PythonTest {
             "compare_python_hash_constants" => Ok(Self::ComparePythonHashConstants),
             "storage_node_test" => Ok(Self::StorageNode),
             "filled_forest_output" => Ok(Self::FilledForestOutput),
+            "tree_test" => Ok(Self::ComputeHashSingleTree),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -92,7 +96,7 @@ impl PythonTest {
     }
 
     /// Runs the test with the given arguments.
-    pub(crate) fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
+    pub(crate) async fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
         match self {
             Self::ExampleTest => {
                 let example_input: HashMap<String, String> =
@@ -123,6 +127,22 @@ impl PythonTest {
                 test_storage_node(storage_node_input)
             }
             Self::FilledForestOutput => filled_forest_output_test(),
+            Self::ComputeHashSingleTree => {
+                //1. Get and deserialize input
+                let input: HashMap<String, String> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                let (tree_height, leaf_modifications, storage, root_hash) =
+                    parse_input_single_tree_flow_test(input);
+                //2. Compute hash
+                // let now = std::time::Instant::now();
+                let output =
+                    rust_single_tree_flow_test(tree_height, leaf_modifications, storage, root_hash)
+                        .await;
+                // output += &format!("Benchmark Time: {:?}", now.elapsed());
+                //3. Serialize and return output
+
+                Ok(output)
+            }
         }
     }
 }

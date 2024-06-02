@@ -159,6 +159,17 @@ impl NodeIndex {
     fn from_felt_value(felt: &Felt) -> Self {
         Self(U256::from(felt))
     }
+
+    #[cfg(test)]
+    #[allow(dead_code)]
+    /// Assumes self represnts an index in a smaller tree height. Returns a node index represents the
+    /// same index in tree of height 251 as if the smaller tree was 'planted' at the lowest leftmost
+    /// node from the root.
+    pub(crate) fn to_actual_tree_index(self, smaller_tree_height: TreeHeight) -> Self {
+        let height_diff = TreeHeight::MAX.0 - smaller_tree_height.0;
+        let offset = (NodeIndex::ROOT << height_diff) - 1.into();
+        self + (offset << (self.bit_length() - 1))
+    }
 }
 
 impl std::ops::Add for NodeIndex {

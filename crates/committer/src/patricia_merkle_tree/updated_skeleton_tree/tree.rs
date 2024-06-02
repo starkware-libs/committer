@@ -83,7 +83,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     }
 
     fn is_empty(&self) -> bool {
-        todo!()
+        self.skeleton_tree.is_empty()
     }
 
     fn get_node(&self, index: NodeIndex) -> UpdatedSkeletonTreeResult<&UpdatedSkeletonNode> {

@@ -18,6 +18,7 @@ use committer::patricia_merkle_tree::node_data::leaf::{ContractState, LeafDataIm
 use committer::patricia_merkle_tree::types::NodeIndex;
 
 use crate::tests::utils::parse_from_python::parse_input_single_tree_flow_test;
+use committer::patricia_merkle_tree::test_utils::rust_single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use committer::storage::db_object::DBObject;
 use committer::storage::errors::{DeserializationError, SerializationError};
@@ -44,6 +45,7 @@ pub(crate) enum PythonTest {
     FilledForestOutput,
     ParseBlockInfo,
     SerializeForRustCommitterFlowTest,
+    ComputeHashSingleTree,
 }
 
 /// Error type for PythonTest enum.
@@ -89,6 +91,7 @@ impl TryFrom<String> for PythonTest {
             "filled_forest_output" => Ok(Self::FilledForestOutput),
             "parse_block_info" => Ok(Self::ParseBlockInfo),
             "serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
+            "tree_test" => Ok(Self::ComputeHashSingleTree),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -101,7 +104,7 @@ impl PythonTest {
     }
 
     /// Runs the test with the given arguments.
-    pub(crate) fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
+    pub(crate) async fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
         match self {
             Self::ExampleTest => {
                 let example_input: HashMap<String, String> =
@@ -140,6 +143,76 @@ impl PythonTest {
                 let input: HashMap<String, String> =
                     serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(serialize_for_rust_committer_flow_test(input))
+            }
+            Self::ComputeHashSingleTree => {
+                //1. Get and deserialize input
+                let input: HashMap<String, String> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                let (_, leaf_modifications, storage, root_hash) =
+                    parse_input_single_tree_flow_test(input);
+                // let file_name = "./tmp/log_of_committer.txt";
+                let leaf_modifications_to_print: HashMap<NodeIndex, String> = leaf_modifications
+                    .clone()
+                    .into_iter()
+                    .map(|(k, v)| (k, encode(v.serialize().0)))
+                    .collect();
+                print!("leaf_modifications: {:?}", leaf_modifications_to_print);
+                // print!("storage: {:?}", storage);
+                // print!(
+                //     "{:?}, {:?}",
+                //     StorageKey(vec![
+                //         112, 97, 116, 114, 105, 99, 105, 97, 95, 110, 111, 100, 101, 58, 7, 205,
+                //         22, 8, 35, 165, 18, 81, 138, 94, 96, 145, 181, 250, 255, 113, 6, 88, 16,
+                //         36, 249, 101, 108, 72, 52, 232, 66, 155, 183, 132, 91, 202
+                //     ]),
+                //     StorageValue(vec![
+                //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                //         0, 0, 0, 0, 0, 0, 152, 5, 39, 148, 236, 1, 235, 104, 192, 243, 51, 79, 46,
+                //         158, 106, 63, 238, 72, 2, 73, 22, 47, 187, 91, 28, 196, 145, 193, 115, 131,
+                //         104, 222, 137, 251
+                //     ])
+                // );
+                // let storage: MapStorage = MapStorage::from(HashMap::from([(
+                //     StorageKey(vec![
+                //         112, 97, 116, 114, 105, 99, 105, 97, 95, 110, 111, 100, 101, 58, 7, 205,
+                //         22, 8, 35, 165, 18, 81, 138, 94, 96, 145, 181, 250, 255, 113, 6, 88, 16,
+                //         36, 249, 101, 108, 72, 52, 232, 66, 155, 183, 132, 91, 202,
+                //     ]),
+                //     StorageValue(vec![
+                //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                //         0, 0, 0, 0, 0, 0, 152, 5, 39, 148, 236, 1, 235, 104, 192, 243, 51, 79, 46,
+                //         158, 106, 63, 238, 72, 2, 73, 22, 47, 187, 91, 28, 196, 145, 193, 115, 131,
+                //         104, 222, 137, 251,
+                //     ]),
+                // )]));
+                print!("storage: {:?}", storage.storage);
+                print!("root_hash: {:?}", root_hash.0.to_hex());
+                //2. Compute hash
+                // let now = std::time::Instant::now();
+                let output =
+                    rust_single_tree_flow_test(leaf_modifications, storage, root_hash).await;
+                // output += &format!("Benchmark Time: {:?}", now.elapsed());
+                //3. Serialize and return output
+                // let leaf_modifications_formated: HashMap<NodeIndex, String> = leaf_modifications
+                //     .into_iter()
+                //     .map(|(k, v)| {
+                //         (
+                //             k,
+                //             match v {
+                //                 LeafDataImpl::StorageValue(value) => value.0.to_hex_string(),
+                //                 LeafDataImpl::CompiledClassHash(_) => todo!(),
+                //                 LeafDataImpl::ContractState(_) => todo!(),
+                //             },
+                //         )
+                //     })
+                //     .collect();
+                // let output =
+                //     format!(
+                //     "tree_height: {:?}, leaf_modification: {:?}, storage: {:?}, root_hash: {:?}",
+                //     tree_height, leaf_modifications_formated, storage, root_hash.0.to_hex()
+                // );
+
+                Ok(output)
             }
         }
     }

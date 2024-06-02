@@ -53,7 +53,7 @@ impl<'a> SubTree<'a> {
     ) -> Self {
         let bottom_index = path_to_bottom.bottom_index(self.root_index);
         let bottom_height =
-            self.get_height(total_tree_height) - TreeHeight::new(path_to_bottom.length.0);
+            self.get_height(total_tree_height) - TreeHeight::new(path_to_bottom.length.into());
         let leftmost_in_subtree = bottom_index << bottom_height.into();
         let rightmost_in_subtree =
             leftmost_in_subtree + (NodeIndex::ROOT << bottom_height.into()) - NodeIndex::ROOT;

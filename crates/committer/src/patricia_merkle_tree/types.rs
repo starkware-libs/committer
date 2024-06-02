@@ -11,7 +11,7 @@ use ethnum::U256;
 pub mod types_test;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, derive_more::Sub)]
-pub struct TreeHeight(pub(crate) u8);
+pub struct TreeHeight(pub u8);
 
 impl TreeHeight {
     // TODO(Tzahi, 15/6/2024): Make height configurable for easy testing.

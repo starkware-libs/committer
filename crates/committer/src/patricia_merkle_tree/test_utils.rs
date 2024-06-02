@@ -1,15 +1,12 @@
-use std::collections::HashMap;
-
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
+use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
+use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 use crate::storage::map_storage::MapStorage;
 use ethnum::U256;
 use rand::rngs::ThreadRng;
 use rand::Rng;
 use rstest::{fixture, rstest};
-
-use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
-use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 
 use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::{
@@ -22,8 +19,7 @@ use crate::patricia_merkle_tree::updated_skeleton_tree::tree::{
 
 use crate::patricia_merkle_tree::node_data::leaf::{LeafDataImpl, LeafModifications};
 
-use super::filled_tree::node::CompiledClassHash;
-use super::node_data::leaf::{ContractState, LeafData};
+use super::node_data::leaf::LeafData;
 use super::types::TreeHeight;
 use super::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 
@@ -103,29 +99,6 @@ fn test_get_random_u256(mut random: ThreadRng, #[case] low: U256, #[case] high: 
     assert!(low <= r && r < high);
 }
 
-pub fn parse_input_single_tree_flow_test(
-    input: HashMap<String, String>,
-) -> (
-    TreeHeight,
-    LeafModifications<LeafDataImpl>,
-    MapStorage,
-    HashOutput, //root_hash
-) {
-    let tree_height = input.get("tree_height").unwrap();
-    let n_leaf_modifications = input.get("n_leaf_modifications").unwrap();
-
-    // let leaf_modifications = input.get("leaf_modifications").unwrap();
-    let leaf_modifications: LeafModifications<LeafDataImpl> = LeafModifications::new();
-    let storage: MapStorage;
-    let root_hash = input.get("root_hash").expect("test");
-    (
-        TreeHeight(tree_height.parse::<u8>().expect("test")),
-        leaf_modifications,
-        storage,
-        HashOutput(Felt::from_hex(root_hash).expect("test")),
-    )
-}
-
 fn get_binary_modifications(
     leaf_modifications: &LeafModifications<LeafDataImpl>,
 ) -> LeafModifications<SkeletonLeaf> {
@@ -142,6 +115,7 @@ fn get_binary_modifications(
     binary_modifications
 }
 
+#[allow(clippy::unwrap_used)]
 pub async fn rust_single_tree_flow_test(
     tree_height: TreeHeight,
     leaf_modifications: LeafModifications<LeafDataImpl>,

@@ -15,6 +15,7 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
 };
 use committer::patricia_merkle_tree::node_data::leaf::{ContractState, LeafDataImpl};
 
+use crate::tests::utils::parse_from_python::parse_input_single_tree_flow_test;
 use committer::patricia_merkle_tree::test_utils::rust_single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use committer::storage::db_object::DBObject;
@@ -26,7 +27,6 @@ use starknet_types_core::hash::{Pedersen, StarkHash};
 use std::fmt::Debug;
 use std::{collections::HashMap, io};
 use thiserror;
-
 // Enum representing different Python tests.
 pub(crate) enum PythonTest {
     ExampleTest,
@@ -40,6 +40,7 @@ pub(crate) enum PythonTest {
     StorageNode,
     FilledForestOutput,
     ComputeHashSingleTree,
+    SerializeForRustCommitterFlowTest,
 }
 
 /// Error type for PythonTest enum.
@@ -84,12 +85,14 @@ impl TryFrom<String> for PythonTest {
             "storage_node_test" => Ok(Self::StorageNode),
             "filled_forest_output" => Ok(Self::FilledForestOutput),
             "tree_test" => Ok(Self::ComputeHashSingleTree),
+            "Serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
 }
 
 impl PythonTest {
+    #[allow(clippy::unwrap_used)]
     /// Returns the input string if it's `Some`, or an error if it's `None`.
     fn non_optional_input(input: Option<&str>) -> Result<&str, PythonTestError> {
         input.ok_or_else(|| PythonTestError::NoneInputError)
@@ -143,8 +146,19 @@ impl PythonTest {
 
                 Ok(output)
             }
+            Self::SerializeForRustCommitterFlowTest => {
+                let input: HashMap<String, String> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                Ok(serialize_for_rust_committer_flow_test(input))
+            }
         }
     }
+}
+
+// Test that the fetching of the input to flow test is working.
+fn serialize_for_rust_committer_flow_test(input: HashMap<String, String>) -> String {
+    parse_input_single_tree_flow_test(input);
+    "Success".to_string()
 }
 
 fn get_or_key_not_found<'a, T: Debug>(

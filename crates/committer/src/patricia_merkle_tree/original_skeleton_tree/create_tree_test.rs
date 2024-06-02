@@ -197,8 +197,28 @@ fn test_fetch_nodes(
         TreeHeight::MAX,
     )
     .unwrap();
+    let skeleton_tree = OriginalSkeletonTreeImpl::create(
+        &storage,
+        &sorted_leaf_indices,
+        root_hash,
+        TreeHeight::MAX,
+    )
+    .unwrap();
 
-    assert_eq!(&skeleton_tree.nodes, &expected_skeleton.nodes);
+    let mut expected_nodes: HashMap<NodeIndex, OriginalSkeletonNode> = expected_nodes
+        .into_iter()
+        .map(|(node_idx, node)| (node_idx.to_actual_tree_index(tree_height), node))
+        .collect();
+
+    expected_nodes.insert(
+        NodeIndex::ROOT,
+        OriginalSkeletonNode::Edge(PathToBottom {
+            path: 0.into(),
+            length: EdgePathLength(TreeHeight::MAX.0 - tree_height.0),
+        }),
+    );
+
+    assert_eq!(&skeleton_tree.nodes, &expected_nodes);
 }
 
 pub(crate) fn create_32_bytes_entry(simple_val: u8) -> Vec<u8> {
@@ -264,6 +284,25 @@ pub(crate) fn create_expected_skeleton(
 ) -> OriginalSkeletonTreeImpl {
     let tree_height = TreeHeight::new(height);
     OriginalSkeletonTreeImpl {
+        nodes: nodes
+            .into_iter()
+            .map(|(node_index, node)| (node_index.to_actual_tree_index(tree_height), node))
+            .chain([(
+                NodeIndex::ROOT,
+                OriginalSkeletonNode::Edge(PathToBottom {
+                    path: 0.into(),
+                    length: EdgePathLength(251 - height),
+                }),
+            )])
+            .collect(),
+        tree_height: TreeHeight::MAX,
+    }
+}
+
+fn create_expected_nodes(
+    nodes: Vec<(NodeIndex, OriginalSkeletonNode)>,
+) -> HashMap<NodeIndex, OriginalSkeletonNode> {
+    nodes.into_iter().collect()
         nodes: nodes
             .into_iter()
             .map(|(node_index, node)| {

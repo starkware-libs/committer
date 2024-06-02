@@ -212,4 +212,40 @@ impl OriginalSkeletonTreeImpl {
         skeleton_tree.fetch_nodes(vec![main_subtree], storage)?;
         Ok(skeleton_tree)
     }
+    // May be usefull at the future.
+    #[allow(dead_code)]
+    #[cfg(test)]
+    /// 'Plants' the given smaller tree at the lowest leftmost node in order to create a tree of
+    /// height TREE_HEIGHT::MAX.
+    pub(crate) fn create_actual_sized_tree_from_smaller_tree(smaller_tree: Self) -> Self {
+        use crate::patricia_merkle_tree::node_data::inner_node::EdgePathLength;
+
+        assert!(smaller_tree.tree_height.0 < TreeHeight::MAX.0);
+        if matches!(
+            smaller_tree.nodes.get(&NodeIndex::ROOT).unwrap(),
+            OriginalSkeletonNode::Edge(_)
+        ) {
+            todo!("Implement the case when the root is an edge node.")
+        }
+        let height_diff = TreeHeight::MAX.0 - smaller_tree.tree_height.0;
+        let offset = (NodeIndex::ROOT << height_diff) - 1.into();
+        let mut new_nodes = HashMap::new();
+        // Calculating the new indices.
+        for (node_index, node) in smaller_tree.nodes.into_iter() {
+            let new_index = node_index + (offset << (node_index.bit_length() - 1));
+            new_nodes.insert(new_index, node);
+        }
+        // Adding the root.
+        new_nodes.insert(
+            NodeIndex::ROOT,
+            OriginalSkeletonNode::Edge(PathToBottom {
+                path: 0.into(),
+                length: EdgePathLength(height_diff),
+            }),
+        );
+        Self {
+            nodes: new_nodes,
+            tree_height: TreeHeight::MAX,
+        }
+    }
 }

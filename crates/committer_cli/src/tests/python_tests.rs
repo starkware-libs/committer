@@ -15,13 +15,17 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
 use committer::patricia_merkle_tree::node_data::leaf::{ContractState, LeafDataImpl};
+use committer::patricia_merkle_tree::types::NodeIndex;
 use committer::patricia_merkle_tree::types::SubTreeHeight;
+
+use crate::tests::utils::parse_from_python::parse_input_single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use committer::storage::db_object::DBObject;
 use committer::storage::errors::{DeserializationError, SerializationError};
 use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
 use ethnum::U256;
+use hex::encode;
 use starknet_types_core::hash::{Pedersen, StarkHash};
 use std::fmt::Debug;
 use std::{collections::HashMap, io};
@@ -41,6 +45,7 @@ pub(crate) enum PythonTest {
     FilledForestOutput,
     ParseBlockInfo,
     TreeHeightComparison,
+    SerializeForRustCommitterFlowTest,
 }
 
 /// Error type for PythonTest enum.
@@ -86,6 +91,7 @@ impl TryFrom<String> for PythonTest {
             "filled_forest_output" => Ok(Self::FilledForestOutput),
             "parse_block_info" => Ok(Self::ParseBlockInfo),
             "compare_tree_height" => Ok(Self::TreeHeightComparison),
+            "serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -134,8 +140,31 @@ impl PythonTest {
                 Ok(parse_block_info_test(block_info))
             }
             Self::TreeHeightComparison => Ok(get_actual_tree_height()),
+            Self::SerializeForRustCommitterFlowTest => {
+                let input: HashMap<String, String> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                Ok(serialize_for_rust_committer_flow_test(input))
+            }
         }
     }
+}
+
+// Test that the fetching of the input to flow test is working.
+fn serialize_for_rust_committer_flow_test(input: HashMap<String, String>) -> String {
+    let (tree_height, leaf_modifications, storage, root_hash) =
+        parse_input_single_tree_flow_test(input);
+    let leaf_modifications_to_print: HashMap<NodeIndex, String> = leaf_modifications
+        .into_iter()
+        .map(|(k, v)| (k, encode(v.serialize().0)))
+        .collect();
+
+    format!(
+        "tree_height: {:?}, leaf_modification: {:?}, storage: {:?}, root_hash: {:?}",
+        tree_height.0,
+        leaf_modifications_to_print,
+        storage.storage,
+        root_hash.0.to_hex()
+    )
 }
 
 fn get_or_key_not_found<'a, T: Debug>(

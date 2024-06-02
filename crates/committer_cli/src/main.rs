@@ -17,6 +17,7 @@ pub struct CommitterCliArgs {
     command: Command,
 }
 
+
 #[derive(Debug, Subcommand)]
 enum Command {
     /// Given previous state tree skeleton and a state diff, computes the new commitment.

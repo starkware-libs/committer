@@ -49,7 +49,6 @@ fn get_path_to_lca(root_index: &NodeIndex, subtree_indices: &[NodeIndex]) -> Pat
 /// Returns whether a root of a subtree has leaves on both sides. Assumes:
 /// * The leaf indices array is sorted.
 /// * All leaves are descendants of the root.
-#[allow(dead_code)]
 fn has_leaves_on_both_sides(
     tree_height: &TreeHeight,
     root_index: &NodeIndex,
@@ -64,7 +63,6 @@ fn has_leaves_on_both_sides(
 }
 
 impl UpdatedSkeletonTreeImpl {
-    #[allow(dead_code)]
     /// Updates the originally empty Patricia-Merkle tree rooted at the given index, with leaf
     /// modifications (already updated in the skeleton mapping) in the given leaf_indices.
     /// Returns the root temporary skeleton node as inferred from the subtree.
@@ -129,7 +127,7 @@ impl UpdatedSkeletonTreeImpl {
         if leaf_indices.is_empty() {
             match original_node {
                 OriginalSkeletonNode::Binary => unreachable!(
-                    "Index {root_index:?} is an original Binary node without leaf modifications - 
+                    "Index {root_index:?} is an original Binary node without leaf modifications -
                     it should be a Sibling instead."
                 ),
                 OriginalSkeletonNode::Edge(_)

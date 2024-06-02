@@ -19,27 +19,22 @@ pub(crate) type UpdatedSkeletonTreeResult<T> = Result<T, UpdatedSkeletonTreeErro
 /// to the root.
 pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
     /// Creates an updated tree from an original tree and modifications.
-    #[allow(dead_code)]
     fn create(
         original_skeleton: &impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> UpdatedSkeletonTreeResult<Self>;
 
     /// Does the skeleton represents an empty-tree (i.e. all leaves are empty).
-    #[allow(dead_code)]
     fn is_empty(&self) -> bool;
 
     /// Returns an iterator over all (node index, node) pairs in the tree.
-    #[allow(dead_code)]
     fn get_nodes(&self) -> impl Iterator<Item = (NodeIndex, UpdatedSkeletonNode)>;
 
     /// Returns the node with the given index.
-    #[allow(dead_code)]
     fn get_node(&self, index: NodeIndex) -> UpdatedSkeletonTreeResult<&UpdatedSkeletonNode>;
 }
 
 pub(crate) struct UpdatedSkeletonTreeImpl {
-    #[allow(dead_code)]
     pub(crate) tree_height: TreeHeight,
     pub(crate) skeleton_tree: HashMap<NodeIndex, UpdatedSkeletonNode>,
 }

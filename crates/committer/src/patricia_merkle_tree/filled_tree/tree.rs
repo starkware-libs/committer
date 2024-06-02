@@ -27,7 +27,6 @@ pub(crate) type FilledTreeResult<T, L> = Result<T, FilledTreeError<L>>;
 /// data and hashes.
 pub(crate) trait FilledTree<L: LeafData>: Sized {
     /// Computes and returns the filled tree.
-    #[allow(dead_code)]
     async fn create<TH: TreeHashFunction<LeafDataImpl> + 'static>(
         updated_skeleton: impl UpdatedSkeletonTree + 'static,
         leaf_modifications: LeafModifications<LeafDataImpl>,
@@ -36,10 +35,8 @@ pub(crate) trait FilledTree<L: LeafData>: Sized {
     /// Serializes the current state of the tree into a hashmap,
     /// where each key-value pair corresponds
     /// to a storage key and its serialized storage value.
-    #[allow(dead_code)]
     fn serialize(&self) -> HashMap<StorageKey, StorageValue>;
 
-    #[allow(dead_code)]
     fn get_root_hash(&self) -> FilledTreeResult<HashOutput, L>;
 }
 
@@ -60,7 +57,6 @@ impl FilledTreeImpl {
         filled_tree_map
     }
 
-    #[allow(dead_code)]
     pub(crate) fn get_all_nodes(&self) -> &HashMap<NodeIndex, FilledNode<LeafDataImpl>> {
         &self.tree_map
     }

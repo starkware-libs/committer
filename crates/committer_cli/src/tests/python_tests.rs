@@ -20,6 +20,8 @@ use committer::storage::errors::{DeserializationError, SerializationError};
 use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
 use ethnum::U256;
+use serde_json::Value;
+use starknet_api::block::GasPricePerToken;
 use starknet_types_core::hash::{Pedersen, StarkHash};
 use std::fmt::Debug;
 use std::{collections::HashMap, io};
@@ -37,6 +39,7 @@ pub(crate) enum PythonTest {
     ComparePythonHashConstants,
     StorageNode,
     FilledForestOutput,
+    ParseBlockInfo,
 }
 
 /// Error type for PythonTest enum.
@@ -80,6 +83,7 @@ impl TryFrom<String> for PythonTest {
             "compare_python_hash_constants" => Ok(Self::ComparePythonHashConstants),
             "storage_node_test" => Ok(Self::StorageNode),
             "filled_forest_output" => Ok(Self::FilledForestOutput),
+            "parse_block_info" => Ok(Self::ParseBlockInfo),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -123,6 +127,11 @@ impl PythonTest {
                 test_storage_node(storage_node_input)
             }
             Self::FilledForestOutput => filled_forest_output_test(),
+            Self::ParseBlockInfo => {
+                let input: HashMap<String, Value> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                Ok(parse_block_info_test(input))
+            }
         }
     }
 }
@@ -143,6 +152,29 @@ pub(crate) fn example_test(test_args: HashMap<String, String>) -> String {
     let x = test_args.get("x").expect("Failed to get value for key 'x'");
     let y = test_args.get("y").expect("Failed to get value for key 'y'");
     format!("Calling example test with args: x: {}, y: {}", x, y)
+}
+
+pub(crate) fn parse_block_info_test(test_args: HashMap<String, Value>) -> String {
+    let da_mode_value = get_param_from_args(&test_args, "l1_da_mode");
+    let da_mode: bool = da_mode_value.as_bool().expect("serialize da mode");
+
+    let data_gas_value = get_param_from_args(&test_args, "l1_data_gas_price_per_token");
+    let data_gas: GasPricePerToken =
+        serde_json::from_value(data_gas_value.to_owned()).expect("serialize data gas");
+
+    let gas_value = get_param_from_args(&test_args, "l1_gas_price_per_token");
+    let gas: GasPricePerToken =
+        serde_json::from_value(gas_value.to_owned()).expect("serialize gas");
+
+    format!(
+        "da mode: {}, data gas: {:?}, gas: {:?}",
+        da_mode, data_gas, gas
+    )
+}
+
+fn get_param_from_args<'a>(test_args: &'a HashMap<String, Value>, param_name: &str) -> &'a Value {
+    let error_message = format!("{} not found", param_name);
+    test_args.get(param_name).expect(&error_message)
 }
 
 /// Serializes a Felt into a string.

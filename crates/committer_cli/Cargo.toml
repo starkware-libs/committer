@@ -24,4 +24,5 @@ serde_json.workspace = true
 starknet-types-core.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
+starknet_api.workspace = true
 thiserror.workspace = true

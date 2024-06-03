@@ -1,4 +1,4 @@
-use crate::block_hash::BlockInfo;
+use crate::block_hash::{BlockInfo, ThinTransactionExecutionInfo};
 use crate::filled_tree_output::errors::FilledForestError;
 use crate::filled_tree_output::filled_forest::SerializedForest;
 use crate::parse_input::read::parse_input;
@@ -39,8 +39,9 @@ pub(crate) enum PythonTest {
     ComparePythonHashConstants,
     StorageNode,
     FilledForestOutput,
-    ParseBlockInfo,
     TreeHeightComparison,
+    ParseBlockInfo,
+    ParseTxExecutionInfo,
 }
 
 /// Error type for PythonTest enum.
@@ -86,6 +87,7 @@ impl TryFrom<String> for PythonTest {
             "filled_forest_output" => Ok(Self::FilledForestOutput),
             "parse_block_info" => Ok(Self::ParseBlockInfo),
             "compare_tree_height" => Ok(Self::TreeHeightComparison),
+            "parse_tx_execution_info" => Ok(Self::ParseTxExecutionInfo),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -129,11 +131,16 @@ impl PythonTest {
                 test_storage_node(storage_node_input)
             }
             Self::FilledForestOutput => filled_forest_output_test(),
+            Self::TreeHeightComparison => Ok(get_actual_tree_height()),
             Self::ParseBlockInfo => {
                 let block_info: BlockInfo = serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(parse_block_info_test(block_info))
             }
-            Self::TreeHeightComparison => Ok(get_actual_tree_height()),
+            Self::ParseTxExecutionInfo => {
+                let tx_execution_info: ThinTransactionExecutionInfo =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                Ok(parse_tx_execution_info_test(tx_execution_info))
+            }
         }
     }
 }
@@ -166,6 +173,21 @@ pub(crate) fn parse_block_info_test(block_info: BlockInfo) -> String {
         block_info.da_mode,
         block_info.l1_gas_price_per_token,
         block_info.l1_data_gas_price_per_token
+    )
+}
+
+pub(crate) fn parse_tx_execution_info_test(
+    tx_execution_info: ThinTransactionExecutionInfo,
+) -> String {
+    format!(
+        "events: {:?}, l2_to_l1_messages: {:?}, actual_fee: {:?},
+        actual_resources: {:?}, execution_status: {:?}, da_gas: {:?}",
+        tx_execution_info.events,
+        tx_execution_info.l2_to_l1_messages,
+        tx_execution_info.actual_fee,
+        tx_execution_info.actual_resources,
+        tx_execution_info.execution_status,
+        tx_execution_info.da_gas,
     )
 }
 

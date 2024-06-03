@@ -1,4 +1,4 @@
-use crate::patricia_merkle_tree::node_data::errors::EdgePathError;
+use crate::patricia_merkle_tree::node_data::errors::{EdgePathError, PathToBottomError};
 use crate::storage::storage_trait::StorageKey;
 
 use serde_json;
@@ -24,4 +24,6 @@ pub enum DeserializationError {
     ParsingError(#[from] serde_json::Error),
     #[error("Illegal EdgePath: {0}")]
     EdgePathError(#[from] EdgePathError),
+    #[error("Illegal PathToBottom: {0}")]
+    PathToBottomError(#[from] PathToBottomError),
 }

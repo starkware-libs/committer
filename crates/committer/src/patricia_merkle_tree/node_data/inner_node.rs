@@ -92,10 +92,29 @@ impl From<EdgePathLength> for Felt {
     }
 }
 
+#[allow(clippy::manual_non_exhaustive)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,
+    // Used to prevent direct instantiation, while allowing destructure of other fields.
+    _fake_field: (),
+}
+
+impl PathToBottom {
+    /// Creates a new [PathToBottom] instance.
+    // Asserts the path is not longer than the length.
+    pub fn new(path: EdgePath, length: EdgePathLength) -> Result<Self, PathToBottomError> {
+        let bit_length = U256::BITS - path.0.leading_zeros();
+        if bit_length > u8::from(length).into() {
+            return Err(PathToBottomError::MismatchedLengthError { path, length });
+        }
+        Ok(Self {
+            path,
+            length,
+            _fake_field: (),
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
@@ -108,11 +127,13 @@ impl PathToBottom {
     pub(crate) const LEFT_CHILD: Self = Self {
         path: EdgePath(U256::ZERO),
         length: EdgePathLength(1),
+        _fake_field: (),
     };
 
     pub(crate) const RIGHT_CHILD: Self = Self {
         path: EdgePath(U256::ONE),
         length: EdgePathLength(1),
+        _fake_field: (),
     };
 
     pub(crate) fn bottom_index(&self, root_index: NodeIndex) -> NodeIndex {
@@ -128,6 +149,7 @@ impl PathToBottom {
         Self {
             path: EdgePath::from((self.path.0 << other.length.0) + other.path.0),
             length: self.length + other.length,
+            _fake_field: (),
         }
     }
 
@@ -145,6 +167,7 @@ impl PathToBottom {
         Ok(Self {
             path: EdgePath(self.path.0 >> n_edges.0),
             length: self.length - n_edges,
+            _fake_field: (),
         })
     }
 }

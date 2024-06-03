@@ -92,10 +92,23 @@ impl From<EdgePathLength> for Felt {
     }
 }
 
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PathToBottom {
     pub path: EdgePath,
     pub length: EdgePathLength,
+}
+
+impl PathToBottom {
+    /// Creates a new [PathToBottom] instance.
+    // Asserts the path is not longer than the length.
+    pub fn new(path: EdgePath, length: EdgePathLength) -> Result<Self, PathToBottomError> {
+        let bit_length = U256::BITS - path.0.leading_zeros();
+        if bit_length > u8::from(length).into() {
+            return Err(PathToBottomError::MismatchedLengthError { path, length });
+        }
+        Ok(Self { path, length })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]

@@ -7,6 +7,7 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
+use crate::patricia_merkle_tree::test_utils::small_tree_index_to_full;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::{
     get_path_to_lca, has_leaves_on_both_sides, TempSkeletonNode,
@@ -50,7 +51,7 @@ fn updated_skeleton(
 #[case::large_tree_farthest_leaves(
     251,
     1,
-    vec![NodeIndex::ROOT << 251, NodeIndex::MAX],
+    vec![NodeIndex::FIRST_LEAF, NodeIndex::MAX],
     true)]
 #[case::large_tree_positive_consecutive_indices_of_different_sides(
     251,
@@ -67,15 +68,19 @@ fn updated_skeleton(
     ],
     false)]
 fn test_has_leaves_on_both_sides(
-    #[case] _tree_height: u8,
-    #[with(TreeHeight::new(_tree_height), &[])] updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[case] tree_height: u8,
     #[case] root_index: u8,
     #[case] leaf_indices: Vec<NodeIndex>,
     #[case] expected: bool,
 ) {
-    let root_index = NodeIndex::new(root_index.into());
+    let height = TreeHeight(tree_height);
+    let root_index = small_tree_index_to_full(root_index.into(), height);
+    let full_tree_leaf_indices: Vec<NodeIndex> = leaf_indices
+        .iter()
+        .map(|idx| NodeIndex::from_subtree_index(*idx, height))
+        .collect();
     assert_eq!(
-        has_leaves_on_both_sides(&updated_skeleton.tree_height, &root_index, &leaf_indices),
+        has_leaves_on_both_sides(&root_index, &full_tree_leaf_indices),
         expected
     );
 }
@@ -85,13 +90,17 @@ fn test_has_leaves_on_both_sides(
 #[case::last_leaf_not_descendant(3, 2, vec![NodeIndex::from(8), NodeIndex::from(12)])]
 #[should_panic(expected = "is not a descendant of the root")]
 fn test_has_leaves_on_both_sides_assertions(
-    #[case] _tree_height: u8,
-    #[with(TreeHeight::new(_tree_height), &[])] updated_skeleton: UpdatedSkeletonTreeImpl,
+    #[case] tree_height: u8,
     #[case] root_index: u8,
     #[case] leaf_indices: Vec<NodeIndex>,
 ) {
-    let root_index = NodeIndex::new(root_index.into());
-    has_leaves_on_both_sides(&updated_skeleton.tree_height, &root_index, &leaf_indices);
+    let height = TreeHeight(tree_height);
+    let root_index = small_tree_index_to_full(root_index.into(), height);
+    let full_tree_leaf_indices: Vec<NodeIndex> = leaf_indices
+        .iter()
+        .map(|idx| NodeIndex::from_subtree_index(*idx, TreeHeight(tree_height)))
+        .collect();
+    has_leaves_on_both_sides(&root_index, &full_tree_leaf_indices);
 }
 
 #[rstest]

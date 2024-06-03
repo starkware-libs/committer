@@ -1,6 +1,7 @@
 use super::split_leaves;
 use crate::patricia_merkle_tree::test_utils::get_random_u256;
 use crate::patricia_merkle_tree::test_utils::random;
+use crate::patricia_merkle_tree::test_utils::small_tree_index_to_full;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
 use ethnum::{uint, U256};
 use rand::rngs::ThreadRng;
@@ -44,21 +45,25 @@ fn create_increasing_random_array<R: Rng>(
     3_u8, uint!("2"), &[uint!("8"), uint!("10"), uint!("14")], &[], &[]
 )]
 fn test_split_leaves(
-    #[case] tree_height: u8,
+    #[case] subtree_height: u8,
     #[case] root_index: U256,
     #[case] leaf_indices: &[U256],
     #[case] expected_left: &[U256],
     #[case] expected_right: &[U256],
 ) {
-    let tree_height = TreeHeight::new(tree_height);
-    let root_index = NodeIndex::new(root_index);
-    let to_node_index = |arr: &[U256]| arr.iter().map(|i| NodeIndex::new(*i)).collect::<Vec<_>>();
-    let leaf_indices = to_node_index(leaf_indices);
+    let height = TreeHeight(subtree_height);
+    let root_index = small_tree_index_to_full(root_index, height);
+    let full_tree_leaf_indices: Vec<NodeIndex> = leaf_indices
+        .iter()
+        .map(|idx| small_tree_index_to_full(*idx, height))
+        .collect();
+    let to_node_index = |arr: &[U256]| {
+        arr.iter()
+            .map(|i| small_tree_index_to_full(*i, height))
+            .collect::<Vec<_>>()
+    };
     let expected = [to_node_index(expected_left), to_node_index(expected_right)];
-    assert_eq!(
-        split_leaves(&tree_height, &root_index, &leaf_indices),
-        expected
-    );
+    assert_eq!(split_leaves(&root_index, &full_tree_leaf_indices), expected);
 }
 
 #[rstest]

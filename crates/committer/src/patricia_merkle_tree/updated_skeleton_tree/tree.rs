@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
-use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
+use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::TempSkeletonNode;
 use crate::patricia_merkle_tree::updated_skeleton_tree::errors::UpdatedSkeletonTreeError;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
@@ -37,8 +37,6 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
 }
 
 pub(crate) struct UpdatedSkeletonTreeImpl {
-    #[allow(dead_code)]
-    pub(crate) tree_height: TreeHeight,
     pub(crate) skeleton_tree: UpdatedSkeletonNodeMap,
 }
 
@@ -49,10 +47,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     ) -> UpdatedSkeletonTreeResult<Self> {
         let skeleton_tree = Self::finalize_bottom_layer(original_skeleton, leaf_modifications);
 
-        let mut updated_skeleton_tree = UpdatedSkeletonTreeImpl {
-            tree_height: *original_skeleton.get_tree_height(),
-            skeleton_tree,
-        };
+        let mut updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
 
         let temp_root_node =
             updated_skeleton_tree.finalize_middle_layers(original_skeleton, leaf_modifications);

@@ -46,16 +46,23 @@ fn test_cast_to_node_index(
 }
 
 #[rstest]
-#[case(1, 1, 1)]
-#[case(2, 5, 2)]
-#[case(5, 2, 2)]
-#[case(8, 10, 2)]
-#[case(9, 12, 1)]
-fn test_get_lca(#[case] node_index: u8, #[case] other: u8, #[case] expected: u8) {
-    let root_index = NodeIndex::new(node_index.into());
-    let other_index = NodeIndex::new(other.into());
+#[case(U256([1,0]), U256([1,0]), U256([1,0]))]
+#[case(U256([2,0]), U256([5,0]), U256([2,0]))]
+#[case(U256([5,0]), U256([2,0]), U256([2,0]))]
+#[case(U256([8,0]), U256([10,0]), U256([2,0]))]
+#[case(U256([9,0]), U256([12,0]), U256([1,0]))]
+#[case(U256([1,0]), U256([2,0]), U256([1,0]))]
+#[case(U256([2,0]), U256([1,0]), U256([1,0]))]
+#[case(
+    U256::from_str_hex("0x200000000000000000000000000000000000000000000000000000000000000").unwrap(),
+    U256::from_str_hex("0x800000000000000000000000000000000000000000000000000000000000000").unwrap(),
+    U256::from_str_hex("0x200000000000000000000000000000000000000000000000000000000000000").unwrap()
+)]
+fn test_get_lca(#[case] node_index: U256, #[case] other: U256, #[case] expected: U256) {
+    let root_index = NodeIndex::new(node_index);
+    let other_index = NodeIndex::new(other);
     let lca = root_index.get_lca(&other_index);
-    let expected = NodeIndex::new(expected.into());
+    let expected = NodeIndex::new(expected);
     assert_eq!(lca, expected);
 }
 

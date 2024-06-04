@@ -89,9 +89,18 @@ impl NodeIndex {
         Self::BITS - self.leading_zeros()
     }
 
+    pub(crate) fn is_ancestor_of(&self, descendant: &NodeIndex) -> bool {
+        self.bit_length() < descendant.bit_length()
+            && *self == *descendant >> (descendant.bit_length() - self.bit_length())
+    }
+
     /// Get the LCA (Lowest Common Ancestor) of the two nodes.
     pub(crate) fn get_lca(&self, other: &NodeIndex) -> NodeIndex {
         if self == other {
+            return *self;
+        }
+        // If self is an ancestor of other, return self.
+        if self.is_ancestor_of(other) {
             return *self;
         }
 
@@ -107,6 +116,7 @@ impl NodeIndex {
         let xor = adapted_self.0 ^ other.0;
         // The length of the remainder after removing the common prefix of the two nodes.
         let post_common_prefix_len = NodeIndex::new(xor).bit_length();
+
         let lca = adapted_self.0 >> post_common_prefix_len;
         NodeIndex::new(lca)
     }

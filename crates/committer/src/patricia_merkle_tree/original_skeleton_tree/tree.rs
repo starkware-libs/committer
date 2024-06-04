@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::original_skeleton_tree::errors::OriginalSkeletonTreeError;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
-use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
+use crate::patricia_merkle_tree::types::NodeIndex;
 
 use crate::storage::storage_trait::Storage;
 
@@ -26,8 +26,6 @@ pub(crate) trait OriginalSkeletonTree {
     fn get_nodes(&self) -> &OriginalSkeletonNodeMap;
 
     fn get_nodes_mut(&mut self) -> &mut OriginalSkeletonNodeMap;
-
-    fn get_tree_height(&self) -> &TreeHeight;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -50,9 +48,5 @@ impl OriginalSkeletonTree for OriginalSkeletonTreeImpl {
 
     fn get_nodes_mut(&mut self) -> &mut OriginalSkeletonNodeMap {
         &mut self.nodes
-    }
-
-    fn get_tree_height(&self) -> &TreeHeight {
-        &TreeHeight::MAX
     }
 }

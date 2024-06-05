@@ -7,6 +7,22 @@ use rstest::{fixture, rstest};
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 
+#[cfg(feature = "testing")]
+use crate::patricia_merkle_tree::errors::TypesError;
+impl TryFrom<&U256> for Felt {
+    type Error = TypesError<U256>;
+    fn try_from(value: &U256) -> Result<Self, Self::Error> {
+        if *value > U256::from(&Felt::MAX) {
+            return Err(TypesError::ConversionError {
+                from: *value,
+                to: "Felt",
+                reason: "value is bigger than felt::max",
+            });
+        }
+        Ok(Self::from_bytes_be(&value.to_be_bytes()))
+    }
+}
+
 impl From<u8> for SkeletonLeaf {
     fn from(value: u8) -> Self {
         Self::from(Felt::from(value))

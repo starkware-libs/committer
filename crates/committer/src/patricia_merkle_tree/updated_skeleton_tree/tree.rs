@@ -45,6 +45,9 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         original_skeleton: &mut impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> UpdatedSkeletonTreeResult<Self> {
+        if leaf_modifications.is_empty() {
+            return Self::create_unmodified(original_skeleton);
+        }
         let skeleton_tree = Self::finalize_bottom_layer(original_skeleton, leaf_modifications);
 
         let mut updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };

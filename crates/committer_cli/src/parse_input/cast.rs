@@ -72,7 +72,7 @@ impl TryFrom<RawInput> for Input {
 
         let mut storage_updates = HashMap::new();
         for outer_entry in raw_input.state_diff.storage_updates {
-            let inner_map = outer_entry
+            let inner_map: HashMap<StarknetStorageKey, StarknetStorageValue> = outer_entry
                 .storage_updates
                 .iter()
                 .map(|inner_entry| {
@@ -82,12 +82,14 @@ impl TryFrom<RawInput> for Input {
                     )
                 })
                 .collect();
-            add_unique(
-                &mut storage_updates,
-                "starknet storage updates",
-                ContractAddress(Felt::from_bytes_be_slice(&outer_entry.address)),
-                inner_map,
-            )?;
+            if !inner_map.is_empty() {
+                add_unique(
+                    &mut storage_updates,
+                    "starknet storage updates",
+                    ContractAddress(Felt::from_bytes_be_slice(&outer_entry.address)),
+                    inner_map,
+                )?;
+            }
         }
 
         Ok(Input {

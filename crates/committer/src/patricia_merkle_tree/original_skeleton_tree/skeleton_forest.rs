@@ -32,7 +32,7 @@ pub(crate) trait OriginalSkeletonForest {
 
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct OriginalSkeletonForestImpl<T: OriginalSkeletonTree> {
-    pub(crate) classes_trie: T,
+    pub(crate) classes_trie: Option<T>,
     pub(crate) contracts_trie: T,
     pub(crate) storage_tries: HashMap<ContractAddress, T>,
 }
@@ -49,41 +49,28 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForest for OriginalSkeletonForestI
         Self: std::marker::Sized,
     {
         let accessed_addresses = state_diff.accessed_addresses();
-        let global_state_tree =
+        let contracts_trie =
             Self::create_contracts_trie(&accessed_addresses, contracts_trie_root_hash, &storage)?;
-        let contract_states = Self::create_storage_tries(
-            &accessed_addresses,
+        let storage_tries = Self::create_storage_tries(
             current_contracts_trie_leaves,
             &state_diff.storage_updates,
             &storage,
         )?;
-        let classes_tree = Self::create_classes_trie(
+        let classes_trie = Self::create_classes_trie(
             &state_diff.class_hash_to_compiled_class_hash,
             classes_trie_root_hash,
             &storage,
         )?;
 
-        Ok(OriginalSkeletonForestImpl::new(
-            classes_tree,
-            global_state_tree,
-            contract_states,
-        ))
+        Ok(OriginalSkeletonForestImpl {
+            classes_trie,
+            contracts_trie,
+            storage_tries,
+        })
     }
 }
 
 impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
-    pub(crate) fn new(
-        classes_trie: T,
-        contracts_trie: T,
-        storage_tries: HashMap<ContractAddress, T>,
-    ) -> Self {
-        Self {
-            classes_trie,
-            contracts_trie,
-            storage_tries,
-        }
-    }
-
     fn create_contracts_trie(
         accessed_addresses: &HashSet<&ContractAddress>,
         contracts_trie_root_hash: HashOutput,
@@ -102,7 +89,6 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
     }
 
     fn create_storage_tries(
-        accessed_addresses: &HashSet<&ContractAddress>,
         current_contracts_trie_leaves: &HashMap<ContractAddress, ContractState>,
         storage_updates: &HashMap<
             ContractAddress,
@@ -111,23 +97,24 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
         storage: &impl Storage,
     ) -> ForestResult<HashMap<ContractAddress, T>> {
         let mut storage_tries = HashMap::new();
-        for address in accessed_addresses {
-            let mut sorted_leaf_indices: Vec<NodeIndex> = storage_updates
-                .get(address)
-                .unwrap_or(&HashMap::new())
+        for (address, inner_updates) in storage_updates {
+            if inner_updates.is_empty() {
+                continue;
+            }
+            let mut sorted_leaf_indices: Vec<NodeIndex> = inner_updates
                 .keys()
                 .map(NodeIndex::from_starknet_storage_key)
                 .collect();
             sorted_leaf_indices.sort();
             let contract_state = current_contracts_trie_leaves
                 .get(address)
-                .ok_or(ForestError::MissingContractCurrentState(**address))?;
+                .ok_or(ForestError::MissingContractCurrentState(*address))?;
             let original_skeleton = T::create(
                 storage,
                 &sorted_leaf_indices,
                 contract_state.storage_root_hash,
             )?;
-            storage_tries.insert(**address, original_skeleton);
+            storage_tries.insert(*address, original_skeleton);
         }
         Ok(storage_tries)
     }
@@ -136,16 +123,20 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
         class_hash_to_compiled_class_hash: &HashMap<ClassHash, CompiledClassHash>,
         classes_trie_root_hash: HashOutput,
         storage: &impl Storage,
-    ) -> ForestResult<T> {
+    ) -> ForestResult<Option<T>> {
         let mut sorted_leaf_indices: Vec<NodeIndex> = class_hash_to_compiled_class_hash
             .keys()
             .map(NodeIndex::from_class_hash)
             .collect();
         sorted_leaf_indices.sort();
-        Ok(T::create(
-            storage,
-            &sorted_leaf_indices,
-            classes_trie_root_hash,
-        )?)
+        if sorted_leaf_indices.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(T::create(
+                storage,
+                &sorted_leaf_indices,
+                classes_trie_root_hash,
+            )?))
+        }
     }
 }

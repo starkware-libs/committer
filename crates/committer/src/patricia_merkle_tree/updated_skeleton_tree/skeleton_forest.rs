@@ -13,7 +13,7 @@ use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
 
 pub(crate) struct UpdatedSkeletonForestImpl<T: UpdatedSkeletonTree> {
-    pub(crate) classes_trie: T,
+    pub(crate) classes_trie: Option<T>,
     pub(crate) contracts_trie: T,
     pub(crate) storage_tries: HashMap<ContractAddress, T>,
 }
@@ -46,10 +46,12 @@ impl<T: OriginalSkeletonTree, U: UpdatedSkeletonTree> UpdatedSkeletonForest<T>
         Self: std::marker::Sized,
     {
         // Classes trie.
-        let classes_trie = U::create(
-            &mut original_skeleton_forest.classes_trie,
-            class_hash_leaf_modifications,
-        )?;
+        let classes_trie =
+            if let Some(classes_trie) = original_skeleton_forest.classes_trie.as_mut() {
+                Some(U::create(classes_trie, class_hash_leaf_modifications)?)
+            } else {
+                None
+            };
 
         // Storage tries.
         let mut contracts_trie_leaves = HashMap::new();

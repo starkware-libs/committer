@@ -120,7 +120,7 @@ use crate::storage::map_storage::MapStorage;
         contracts_trie_root_hash: HashOutput(Felt::from(254_u128 + 248_u128)),
         classes_trie_root_hash: HashOutput(Felt::from(157_u128 + 248_u128)),
     }, OriginalSkeletonForestImpl{
-        classes_trie: create_expected_skeleton(
+        classes_trie: Some(create_expected_skeleton(
             vec![
                 create_edge_skeleton_node(1, 0, 1),
                 create_binary_skeleton_node(2),
@@ -130,7 +130,7 @@ use crate::storage::map_storage::MapStorage;
                 create_leaf_or_binary_sibling_skeleton_node(9, 47)
             ],
             3
-        ),
+        )),
         contracts_trie: create_expected_skeleton(
             vec![
                 create_binary_skeleton_node(1),

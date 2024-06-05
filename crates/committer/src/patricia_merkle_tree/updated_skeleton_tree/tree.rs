@@ -45,6 +45,22 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         original_skeleton: &mut impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> UpdatedSkeletonTreeResult<Self> {
+        if leaf_modifications.is_empty() {
+            let original_root_node = original_skeleton
+                .get_nodes()
+                .get(&NodeIndex::ROOT)
+                .ok_or(UpdatedSkeletonTreeError::MissingNode(NodeIndex::ROOT))?;
+            let root_hash = match original_root_node {
+                OriginalSkeletonNode::LeafOrBinarySibling(hash) => hash,
+                _ => panic!("A root of tree without modifications is expected to be a sibling."),
+            };
+            return Ok(Self {
+                skeleton_tree: HashMap::from([(
+                    NodeIndex::ROOT,
+                    UpdatedSkeletonNode::Sibling(*root_hash),
+                )]),
+            });
+        }
         let skeleton_tree = Self::finalize_bottom_layer(original_skeleton, leaf_modifications);
 
         let mut updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };

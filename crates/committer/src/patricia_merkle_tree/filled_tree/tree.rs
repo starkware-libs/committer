@@ -196,6 +196,7 @@ impl FilledTree<LeafDataImpl> for FilledTreeImpl {
         //   1. Create a map containing the tree structure without hash values.
         //   2. Fill in the hash values.
         let filled_tree_map = Arc::new(Self::initialize_with_placeholders(&updated_skeleton));
+        println!("filled_tree_map: {:?}", filled_tree_map);
         Self::compute_filled_tree_rec::<TH>(
             Arc::new(updated_skeleton),
             NodeIndex::ROOT,

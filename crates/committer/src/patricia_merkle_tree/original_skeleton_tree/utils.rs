@@ -11,6 +11,12 @@ pub(crate) fn get_node_height(tree_height: &TreeHeight, index: &NodeIndex) -> Tr
     TreeHeight::new(u8::from(*tree_height) + 1 - index.bit_length())
 }
 
+fn is_sorted<T>(data: &[T]) -> bool
+where
+    T: Ord,
+{
+    data.windows(2).all(|w| w[0] <= w[1])
+}
 /// Splits leaf_indices into two arrays according to the given root: the left child leaves and
 /// the right child leaves. Assumes:
 /// * The leaf indices array is sorted.
@@ -23,7 +29,7 @@ pub(crate) fn split_leaves<'a>(
     if leaf_indices.is_empty() {
         return [&[]; 2];
     }
-
+    assert!(is_sorted(leaf_indices));
     let root_height = get_node_height(tree_height, root_index);
     let assert_descendant = |leaf_index: &NodeIndex| {
         if (*leaf_index >> u8::from(root_height)) != *root_index {

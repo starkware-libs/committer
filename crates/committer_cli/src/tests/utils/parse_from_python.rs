@@ -34,8 +34,8 @@ pub fn parse_input_single_tree_flow_test(
         .iter()
         .map(|(k, v)| {
             (
-                NodeIndex::new(U256::from_str_hex(k).unwrap()),
-                LeafDataImpl::StorageValue(Felt::from_hex(v).unwrap()),
+                NodeIndex::new(U256::from_str_hex(k).expect("Failed to parse U256")),
+                LeafDataImpl::StorageValue(Felt::from_hex(v).expect("Failed to parse Felt")),
             )
         })
         .collect();

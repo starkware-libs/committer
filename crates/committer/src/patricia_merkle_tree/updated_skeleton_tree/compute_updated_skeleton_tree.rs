@@ -188,6 +188,11 @@ impl UpdatedSkeletonTreeImpl {
             }
         };
 
+        println!(
+            "root_index: {:?}, original_node: {:?}, leaf_indices: {:?}",
+            root_index, original_node, leaf_indices
+        );
+
         match original_node {
             OriginalSkeletonNode::LeafOrBinarySibling(_)
             | OriginalSkeletonNode::UnmodifiedBottom(_) => {
@@ -196,6 +201,7 @@ impl UpdatedSkeletonTreeImpl {
                 )
             }
             OriginalSkeletonNode::Binary => {
+                println!("root index {:?} is Binary node", root_index);
                 let [left_indices, right_indices] =
                     split_leaves(&self.tree_height, root_index, leaf_indices);
                 let [left_child_index, right_child_index] = root_index.get_children_indices();
@@ -212,6 +218,7 @@ impl UpdatedSkeletonTreeImpl {
                 self.node_from_binary_data(root_index, &left, &right)
             }
             OriginalSkeletonNode::Edge(path_to_bottom) => {
+                println!("root index {:?} is Edge node", root_index);
                 self.update_edge_node(root_index, &path_to_bottom, original_skeleton, leaf_indices)
             }
         }
@@ -326,10 +333,15 @@ impl UpdatedSkeletonTreeImpl {
         let [left_child_index, right_child_index] = root_index.get_children_indices();
         let [left_indices, right_indices] =
             split_leaves(&self.tree_height, root_index, leaf_indices);
+        println!(
+            "root index {:?} has left indices: {:?}, right indices: {:?}",
+            root_index, left_indices, right_indices
+        );
         let was_left_nonempty = path_to_bottom.is_left_descendant();
         if (!right_indices.is_empty() && was_left_nonempty)
             || (!left_indices.is_empty() && !was_left_nonempty)
         {
+            println!("Not the CASE?!");
             // The root has a new leaf on its originally empty subtree.
             let (
                 nonempty_subtree_child_index,
@@ -388,17 +400,33 @@ impl UpdatedSkeletonTreeImpl {
         // Create a new edge to the LCA of the leaves and the bottom.
         let path_to_leaves_lca = get_path_to_lca(root_index, leaf_indices);
         let leaves_lca_index = path_to_leaves_lca.bottom_index(*root_index);
+        println!(
+            "root index {:?} has leaves lca index: {:?}",
+            root_index, leaves_lca_index
+        );
 
         let bottom_index = path_to_bottom.bottom_index(*root_index);
+        println!(
+            "root index {:?} has bottom index: {:?}",
+            root_index, bottom_index
+        );
         let path_to_new_bottom = get_path_to_lca(root_index, &[leaves_lca_index, bottom_index]);
+        println!(
+            "root index {:?} has path to new bottom: {:?} and path to bottom index: {:?}",
+            root_index,
+            path_to_new_bottom,
+            path_to_new_bottom.bottom_index(*root_index)
+        );
 
         let new_bottom_index = path_to_new_bottom.bottom_index(*root_index);
         if new_bottom_index == bottom_index {
             //  All leaf_indices are in the bottom_node subtree.
             assert_eq!(&path_to_new_bottom, path_to_bottom);
         } else {
+            println!("Not all leaf_indices are in the bottom_node subtree");
             // Inject the new node to the original skeleton as if it was in it
             // originally (fake original).
+            // HERE: why is it always Edge node?
             let fake_original_new_bottom_node = OriginalSkeletonNode::Edge(
                 path_to_bottom
                     .remove_first_edges(path_to_new_bottom.length)

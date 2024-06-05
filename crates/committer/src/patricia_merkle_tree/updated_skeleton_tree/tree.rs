@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
+use crate::patricia_merkle_tree::node_data::leaf::{
+    LeafData, LeafDataImpl, LeafModifications, SkeletonLeaf,
+};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
 use crate::patricia_merkle_tree::types::{NodeIndex, TreeHeight};
@@ -28,6 +30,26 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
 
     /// Does the skeleton represents an empty-tree (i.e. all leaves are empty).
     fn is_empty(&self) -> bool;
+
+    /// Returns the modified skeleton leaves.
+    /// The leaf data is binary: `Zero` if the leaf is empty, `NonZero` otherwise.
+
+    #[allow(dead_code)]
+    fn get_binary_modifications(
+        leaf_modifications: &LeafModifications<LeafDataImpl>,
+    ) -> LeafModifications<SkeletonLeaf> {
+        let mut binary_modifications = LeafModifications::new();
+        for (index, data) in leaf_modifications.iter() {
+            binary_modifications.insert(
+                *index,
+                match data.is_empty() {
+                    true => SkeletonLeaf::Zero,
+                    false => SkeletonLeaf::NonZero,
+                },
+            );
+        }
+        binary_modifications
+    }
 
     /// Returns an iterator over all (node index, node) pairs in the tree.
     fn get_nodes(&self) -> impl Iterator<Item = (NodeIndex, UpdatedSkeletonNode)>;

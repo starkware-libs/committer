@@ -165,6 +165,9 @@ impl PathToBottom {
                 n_edges,
             });
         }
-        Self::new(EdgePath(self.path.0 >> n_edges.0), self.length - n_edges)
+        Self::new(
+            EdgePath(self.path.0 & ((U256::new(1) << (self.length.0 - n_edges.0)) - 1)),
+            self.length - n_edges,
+        )
     }
 }

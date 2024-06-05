@@ -215,7 +215,7 @@ impl DummyRandomValue for FilledForestImpl {
             .collect::<HashMap<_, _>>();
 
         let contracts_trie = FilledTreeImpl::dummy_random(rng, max_size);
-        let classes_trie = FilledTreeImpl::dummy_random(rng, max_size);
+        let classes_trie = Some(FilledTreeImpl::dummy_random(rng, max_size));
 
         Self {
             storage_tries,

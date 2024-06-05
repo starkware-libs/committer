@@ -20,7 +20,7 @@ pub trait FilledForest<L: LeafData> {
     /// Serialize each tree and store it.
     fn write_to_storage(&self, storage: &mut impl Storage);
 
-    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, L>;
+    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<Option<HashOutput>, L>;
 
     fn get_contract_root_hash(&self) -> FilledTreeResult<HashOutput, L>;
 }
@@ -28,7 +28,7 @@ pub trait FilledForest<L: LeafData> {
 pub struct FilledForestImpl {
     pub storage_tries: HashMap<ContractAddress, FilledTreeImpl>,
     pub contracts_trie: FilledTreeImpl,
-    pub classes_trie: FilledTreeImpl,
+    pub classes_trie: Option<FilledTreeImpl>,
 }
 
 impl FilledForest<LeafDataImpl> for FilledForestImpl {
@@ -39,7 +39,7 @@ impl FilledForest<LeafDataImpl> for FilledForestImpl {
             .values()
             .flat_map(|tree| tree.serialize().into_iter())
             .chain(self.contracts_trie.serialize())
-            .chain(self.classes_trie.serialize())
+            .chain(self.classes_trie.iter().flat_map(|tree| tree.serialize()))
             .collect();
 
         // Store the new hash map
@@ -50,8 +50,12 @@ impl FilledForest<LeafDataImpl> for FilledForestImpl {
         self.contracts_trie.get_root_hash()
     }
 
-    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<HashOutput, LeafDataImpl> {
-        self.classes_trie.get_root_hash()
+    fn get_compiled_class_root_hash(&self) -> FilledTreeResult<Option<HashOutput>, LeafDataImpl> {
+        if let Some(classes_trie) = &self.classes_trie {
+            Ok(Some(classes_trie.get_root_hash()?))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -67,8 +71,11 @@ impl FilledForestImpl {
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
     ) -> ForestResult<Self> {
-        let classes_trie =
-            FilledTreeImpl::create::<TH>(updated_forest.classes_trie, classes_updates).await?;
+        let classes_trie = if let Some(classes_trie) = updated_forest.classes_trie {
+            Some(FilledTreeImpl::create::<TH>(classes_trie, classes_updates).await?)
+        } else {
+            None
+        };
 
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();

@@ -20,8 +20,12 @@ impl SerializedForest {
         println!("{}", contract_storage_root_hash.to_hex());
 
         // Output the new compiled class root.
-        let compiled_class_root_hash = self.0.get_compiled_class_root_hash()?.0;
-        println!("{}", compiled_class_root_hash.to_hex());
+        if let Some(compiled_class_root_hash) = self.0.get_compiled_class_root_hash()? {
+            println!("{}", compiled_class_root_hash.0.to_hex());
+        } else {
+            // An empty line.
+            println!();
+        }
 
         Ok(())
     }

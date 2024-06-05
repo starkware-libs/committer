@@ -50,13 +50,17 @@ impl StateDiff {
 
     /// For each modified contract calculates it's actual storage updates.
     pub(crate) fn skeleton_storage_updates(
-        &self,
+        storage_updates: &HashMap<
+            ContractAddress,
+            HashMap<StarknetStorageKey, StarknetStorageValue>,
+        >,
     ) -> HashMap<ContractAddress, LeafModifications<SkeletonLeaf>> {
-        self.accessed_addresses()
+        storage_updates
             .iter()
-            .map(|address| {
-                let updates = match self.storage_updates.get(address) {
-                    Some(inner_updates) => inner_updates
+            .map(|(address, inner_updates)| {
+                (
+                    *address,
+                    inner_updates
                         .iter()
                         .map(|(key, value)| {
                             (
@@ -65,9 +69,7 @@ impl StateDiff {
                             )
                         })
                         .collect(),
-                    None => HashMap::new(),
-                };
-                (**address, updates)
+                )
             })
             .collect()
     }
@@ -87,13 +89,17 @@ impl StateDiff {
     }
 
     pub(crate) fn actual_storage_updates(
-        &self,
+        storage_updates: &HashMap<
+            ContractAddress,
+            HashMap<StarknetStorageKey, StarknetStorageValue>,
+        >,
     ) -> HashMap<ContractAddress, LeafModifications<LeafDataImpl>> {
-        self.accessed_addresses()
+        storage_updates
             .iter()
-            .map(|address| {
-                let updates = match self.storage_updates.get(address) {
-                    Some(inner_updates) => inner_updates
+            .map(|(address, inner_updates)| {
+                (
+                    *address,
+                    inner_updates
                         .iter()
                         .map(|(key, value)| {
                             (
@@ -102,9 +108,7 @@ impl StateDiff {
                             )
                         })
                         .collect(),
-                    None => HashMap::new(),
-                };
-                (**address, updates)
+                )
             })
             .collect()
     }

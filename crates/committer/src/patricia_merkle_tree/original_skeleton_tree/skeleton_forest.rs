@@ -98,9 +98,6 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
     ) -> ForestResult<HashMap<ContractAddress, T>> {
         let mut storage_tries = HashMap::new();
         for (address, inner_updates) in storage_updates {
-            if inner_updates.is_empty() {
-                continue;
-            }
             let mut sorted_leaf_indices: Vec<NodeIndex> = inner_updates
                 .keys()
                 .map(NodeIndex::from_starknet_storage_key)

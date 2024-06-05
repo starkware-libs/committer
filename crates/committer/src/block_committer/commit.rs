@@ -29,7 +29,7 @@ pub async fn commit_block(input: Input) -> BlockCommitmentResult<FilledForestImp
     let updated_forest = UpdatedSkeletonForestImpl::<UpdatedSkeletonTreeImpl>::create(
         &mut original_forest,
         &StateDiff::skeleton_classes_updates(&input.state_diff.class_hash_to_compiled_class_hash),
-        &input.state_diff.skeleton_storage_updates(),
+        &StateDiff::skeleton_storage_updates(&input.state_diff.storage_updates),
         &input.current_contracts_trie_leaves,
         &input.state_diff.address_to_class_hash,
         &input.state_diff.address_to_nonce,
@@ -38,7 +38,7 @@ pub async fn commit_block(input: Input) -> BlockCommitmentResult<FilledForestImp
     Ok(
         FilledForestImpl::create::<UpdatedSkeletonTreeImpl, TreeHashFunctionImpl>(
             updated_forest,
-            input.state_diff.actual_storage_updates(),
+            StateDiff::actual_storage_updates(&input.state_diff.storage_updates),
             StateDiff::actual_classes_updates(&input.state_diff.class_hash_to_compiled_class_hash),
             &input.current_contracts_trie_leaves,
             &input.state_diff.address_to_class_hash,

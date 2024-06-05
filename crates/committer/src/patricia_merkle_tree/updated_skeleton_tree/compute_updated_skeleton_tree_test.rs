@@ -1,19 +1,28 @@
+use std::collections::HashMap;
+
 use ethnum::U256;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
+use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
+use crate::patricia_merkle_tree::original_skeleton_tree::tree::{
+    OriginalSkeletonNodeMap, OriginalSkeletonTreeImpl,
+};
 use crate::patricia_merkle_tree::test_utils::small_tree_index_to_full;
 use crate::patricia_merkle_tree::types::{NodeIndex, SubTreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::{
     get_path_to_lca, has_leaves_on_both_sides, TempSkeletonNode,
 };
+use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
+use crate::patricia_merkle_tree::updated_skeleton_tree::tree::{
+    UpdatedSkeletonTree, UpdatedSkeletonTreeImpl,
+};
+use crate::storage::map_storage::MapStorage;
 
 #[fixture]
 fn updated_skeleton(
@@ -483,6 +492,20 @@ fn test_update_node_in_nonempty_tree(
     );
     assert_eq!(temp_node, expected_node);
     assert_eq!(updated_skeleton.skeleton_tree, expected_skeleton_tree);
+}
+
+#[tokio::test]
+async fn test_update_non_modified_tree() {
+    let some_non_empty_root = HashOutput(Felt::from(56_u128));
+    let mut original_skeleton_tree =
+        OriginalSkeletonTreeImpl::create_impl(&MapStorage::default(), &[], some_non_empty_root)
+            .unwrap();
+    let updated =
+        UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new()).unwrap();
+    let filled = FilledTreeImpl::create::<TreeHashFunctionImpl>(updated, HashMap::new())
+        .await
+        .unwrap();
+    assert_eq!(some_non_empty_root, filled.get_root_hash());
 }
 
 pub(crate) fn as_fully_indexed(

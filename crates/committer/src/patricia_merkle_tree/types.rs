@@ -88,9 +88,17 @@ impl NodeIndex {
         Self::BITS - self.leading_zeros()
     }
 
+    pub(crate) fn is_ancestor_of(&self, descendant: &NodeIndex) -> bool {
+        self.bit_length() < descendant.bit_length()
+            && *self == *descendant >> (descendant.bit_length() - self.bit_length())
+    }
     /// Get the LCA (Lowest Common Ancestor) of the two nodes.
     pub(crate) fn get_lca(&self, other: &NodeIndex) -> NodeIndex {
         if self == other {
+            return *self;
+        }
+        // If self is an ancestor of other, return self.
+        if self.is_ancestor_of(other) {
             return *self;
         }
 

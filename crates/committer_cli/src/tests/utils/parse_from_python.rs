@@ -5,7 +5,6 @@ use committer::hash::hash_trait::HashOutput;
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use committer::patricia_merkle_tree::node_data::leaf::LeafModifications;
 use committer::patricia_merkle_tree::types::NodeIndex;
-use committer::patricia_merkle_tree::types::TreeHeight;
 use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::StorageKey;
 use committer::storage::storage_trait::StorageValue;
@@ -17,15 +16,10 @@ use std::collections::HashMap;
 pub fn parse_input_single_tree_flow_test(
     input: HashMap<String, String>,
 ) -> (
-    TreeHeight,
     LeafModifications<LeafDataImpl>,
     MapStorage,
     HashOutput, //root_hash
 ) {
-    // Fetch tree height.
-    let tree_height_str = input.get("tree_height").unwrap();
-    let tree_height = TreeHeight(tree_height_str.parse::<u8>().unwrap());
-
     // Fetch leaf_modifications.
     let leaf_modifications_json = input.get("leaf_modifications").unwrap();
     let leaf_modifications_map =
@@ -34,8 +28,8 @@ pub fn parse_input_single_tree_flow_test(
         .iter()
         .map(|(k, v)| {
             (
-                NodeIndex::new(U256::from_str_hex(k).unwrap()),
-                LeafDataImpl::StorageValue(Felt::from_hex(v).unwrap()),
+                NodeIndex::new(U256::from_str_hex(k).expect("Failed to parse U256")),
+                LeafDataImpl::StorageValue(Felt::from_hex(v).expect("Failed to parse Felt")),
             )
         })
         .collect();
@@ -60,5 +54,5 @@ pub fn parse_input_single_tree_flow_test(
     // Fetch root_hash.
     let root_hash = HashOutput(Felt::from_hex(input.get("root_hash").unwrap()).unwrap());
 
-    (tree_height, leaf_modifications, map_storage, root_hash)
+    (leaf_modifications, map_storage, root_hash)
 }

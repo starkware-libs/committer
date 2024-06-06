@@ -19,6 +19,7 @@ use committer::patricia_merkle_tree::types::NodeIndex;
 use committer::patricia_merkle_tree::types::SubTreeHeight;
 
 use crate::tests::utils::parse_from_python::parse_input_single_tree_flow_test;
+use committer::patricia_merkle_tree::test_utils::rust_single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
 use committer::storage::db_object::DBObject;
 use committer::storage::errors::{DeserializationError, SerializationError};
@@ -46,6 +47,7 @@ pub(crate) enum PythonTest {
     ParseBlockInfo,
     TreeHeightComparison,
     SerializeForRustCommitterFlowTest,
+    ComputeHashSingleTree,
 }
 
 /// Error type for PythonTest enum.
@@ -92,6 +94,7 @@ impl TryFrom<String> for PythonTest {
             "parse_block_info" => Ok(Self::ParseBlockInfo),
             "compare_tree_height" => Ok(Self::TreeHeightComparison),
             "serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
+            "tree_test" => Ok(Self::ComputeHashSingleTree),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
     }
@@ -104,7 +107,7 @@ impl PythonTest {
     }
 
     /// Runs the test with the given arguments.
-    pub(crate) fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
+    pub(crate) async fn run(&self, input: Option<&str>) -> Result<String, PythonTestError> {
         match self {
             Self::ExampleTest => {
                 let example_input: HashMap<String, String> =
@@ -145,22 +148,33 @@ impl PythonTest {
                     serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(serialize_for_rust_committer_flow_test(input))
             }
+            Self::ComputeHashSingleTree => {
+                //1. Get and deserialize input
+                let input: HashMap<String, String> =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                let (leaf_modifications, storage, root_hash) =
+                    parse_input_single_tree_flow_test(input);
+                //2. Run the test
+                let output =
+                    rust_single_tree_flow_test(leaf_modifications, storage, root_hash).await;
+                // output += &format!("Benchmark Time: {:?}", now.elapsed());
+                //3. Serialize and return output
+                Ok(output)
+            }
         }
     }
 }
 
 // Test that the fetching of the input to flow test is working.
 fn serialize_for_rust_committer_flow_test(input: HashMap<String, String>) -> String {
-    let (tree_height, leaf_modifications, storage, root_hash) =
-        parse_input_single_tree_flow_test(input);
+    let (leaf_modifications, storage, root_hash) = parse_input_single_tree_flow_test(input);
     let leaf_modifications_to_print: HashMap<NodeIndex, String> = leaf_modifications
         .into_iter()
         .map(|(k, v)| (k, encode(v.serialize().0)))
         .collect();
 
     format!(
-        "tree_height: {:?}, leaf_modification: {:?}, storage: {:?}, root_hash: {:?}",
-        tree_height.0,
+        "leaf_modification: {:?}, storage: {:?}, root_hash: {:?}",
         leaf_modifications_to_print,
         storage.storage,
         root_hash.0.to_hex()

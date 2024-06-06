@@ -54,7 +54,10 @@ impl FilledTreeImpl {
     ) -> HashMap<NodeIndex, Mutex<Option<FilledNode<LeafDataImpl>>>> {
         let mut filled_tree_map = HashMap::new();
         for (index, node) in updated_skeleton.get_nodes() {
-            if !matches!(node, UpdatedSkeletonNode::Sibling(_)) {
+            if !matches!(
+                node,
+                UpdatedSkeletonNode::Sibling(_) | UpdatedSkeletonNode::UnmodifiedBottom(_)
+            ) {
                 filled_tree_map.insert(index, Mutex::new(None));
             }
         }
@@ -121,10 +124,16 @@ impl FilledTreeImpl {
     where
         TH: TreeHashFunction<LeafDataImpl> + 'static,
     {
+        // println!(
+        //     "Print before: index: {:?} leaf_modifications: {:?}",
+        //     index, leaf_modifications
+        // );
         let binding = Arc::clone(&updated_skeleton);
         let node = binding.get_node(index)?;
+        // println!("index: {:?} node: {:?}", index, node);
         match node {
             UpdatedSkeletonNode::Binary => {
+                // println!("index: {:?} is binary", index);
                 let left_index = index * 2.into();
                 let right_index = left_index + NodeIndex::ROOT;
 
@@ -153,6 +162,7 @@ impl FilledTreeImpl {
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Edge(path_to_bottom) => {
+                // println!("index: {:?} is edge", index);
                 let bottom_node_index = NodeIndex::compute_bottom_index(index, path_to_bottom);
                 let bottom_hash = Self::compute_filled_tree_rec::<TH>(
                     updated_skeleton,
@@ -170,8 +180,13 @@ impl FilledTreeImpl {
                 Ok(hash_value)
             }
             UpdatedSkeletonNode::Sibling(hash_result)
-            | UpdatedSkeletonNode::UnmodifiedBottom(hash_result) => Ok(*hash_result),
+            | UpdatedSkeletonNode::UnmodifiedBottom(hash_result) => {
+                // println!("index: {:?} is sibling or unmodified bottom", index);
+                // Self::write_to_output_map(output_map, index, *hash_result)?;
+                Ok(*hash_result)
+            }
             UpdatedSkeletonNode::Leaf => {
+                // println!("index: {:?} is leaf", index);
                 let leaf_data = LeafDataImpl::create(&index, leaf_modifications).await?;
                 if leaf_data.is_empty() {
                     return Err(FilledTreeError::<LeafDataImpl>::DeletedLeafInSkeleton(
@@ -196,6 +211,7 @@ impl FilledTree<LeafDataImpl> for FilledTreeImpl {
         //   1. Create a map containing the tree structure without hash values.
         //   2. Fill in the hash values.
         let filled_tree_map = Arc::new(Self::initialize_with_placeholders(&updated_skeleton));
+        // println!("filled_tree_map: {:?}", filled_tree_map);
         Self::compute_filled_tree_rec::<TH>(
             Arc::new(updated_skeleton),
             NodeIndex::ROOT,

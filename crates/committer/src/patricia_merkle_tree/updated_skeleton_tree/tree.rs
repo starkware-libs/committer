@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
+use crate::patricia_merkle_tree::node_data::leaf::{
+    LeafData, LeafDataImpl, LeafModifications, SkeletonLeaf,
+};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
 use crate::patricia_merkle_tree::types::NodeIndex;
@@ -26,9 +28,25 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
     ) -> UpdatedSkeletonTreeResult<Self>;
 
+    #[allow(dead_code)]
+    fn create_from_modifications_data(
+        original_skeleton: &mut impl OriginalSkeletonTree,
+        leaf_modifications: &LeafModifications<LeafDataImpl>,
+    ) -> UpdatedSkeletonTreeResult<Self> {
+        Self::create(
+            original_skeleton,
+            &Self::get_binary_modifications(leaf_modifications),
+        )
+    }
+
     /// Does the skeleton represents an empty-tree (i.e. all leaves are empty).
     fn is_empty(&self) -> bool;
 
+    /// Returns the modified skeleton leaves.
+    /// The leaf data is binary: `Zero` if the leaf is empty, `NonZero` otherwise.
+    fn get_binary_modifications(
+        leaf_modifications: &LeafModifications<LeafDataImpl>,
+    ) -> LeafModifications<SkeletonLeaf>;
     /// Returns an iterator over all (node index, node) pairs in the tree.
     fn get_nodes(&self) -> impl Iterator<Item = (NodeIndex, UpdatedSkeletonNode)>;
 
@@ -102,5 +120,22 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         self.skeleton_tree
             .iter()
             .map(|(index, node)| (*index, node.clone()))
+    }
+
+    fn get_binary_modifications(
+        leaf_modifications: &LeafModifications<LeafDataImpl>,
+    ) -> LeafModifications<SkeletonLeaf> {
+        leaf_modifications
+            .iter()
+            .map(|(index, data)| {
+                (
+                    *index,
+                    match data.is_empty() {
+                        true => SkeletonLeaf::Zero,
+                        false => SkeletonLeaf::NonZero,
+                    },
+                )
+            })
+            .collect()
     }
 }

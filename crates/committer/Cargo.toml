@@ -31,3 +31,6 @@ strum.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+
+[target.'cfg(test)'.features]
+default = ["testing"]

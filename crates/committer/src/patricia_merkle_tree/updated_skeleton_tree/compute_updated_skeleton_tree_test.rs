@@ -10,7 +10,7 @@ use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToB
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
-use crate::patricia_merkle_tree::test_utils::small_tree_index_to_full;
+use crate::patricia_merkle_tree::internal_test_utils::small_tree_index_to_full;
 use crate::patricia_merkle_tree::types::{NodeIndex, SubTreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::compute_updated_skeleton_tree::{
     get_path_to_lca, has_leaves_on_both_sides, TempSkeletonNode,
@@ -310,7 +310,7 @@ fn test_node_from_edge_data(
     TempSkeletonNode::Original(OriginalSkeletonNode::Binary),
     &[
         (NodeIndex::from(2),
-        UpdatedSkeletonNode::Edge(PathToBottom::from("0".repeat(250).as_str()))), 
+        UpdatedSkeletonNode::Edge(PathToBottom::from("0".repeat(250).as_str()))),
         (NodeIndex::from(3),
         UpdatedSkeletonNode::Edge(PathToBottom::from("1".repeat(250).as_str())))],
 )]

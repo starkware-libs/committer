@@ -16,7 +16,7 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
 use committer::patricia_merkle_tree::node_data::leaf::ContractState;
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use committer::patricia_merkle_tree::node_data::leaf::LeafDataImplDiscriminants as LeafDataVariants;
-use committer::patricia_merkle_tree::test_utils::get_random_u256;
+use committer::patricia_merkle_tree::external_test_utils::get_random_u256;
 use committer::patricia_merkle_tree::types::NodeIndex;
 use ethnum::U256;
 use rand::prelude::IteratorRandom;

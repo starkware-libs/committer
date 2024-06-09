@@ -302,7 +302,7 @@ pub(crate) fn create_leaf_or_binary_sibling_skeleton_node(
 ) -> (NodeIndex, OriginalSkeletonNode) {
     (
         NodeIndex::from(idx),
-        OriginalSkeletonNode::LeafOrBinarySibling(HashOutput(Felt::from(hash_output))),
+        OriginalSkeletonNode::UnmodifiedSubTree(HashOutput(Felt::from(hash_output))),
     )
 }
 
@@ -312,7 +312,7 @@ pub(crate) fn create_unmodified_bottom_skeleton_node(
 ) -> (NodeIndex, OriginalSkeletonNode) {
     (
         NodeIndex::from(idx),
-        OriginalSkeletonNode::UnmodifiedBottom(HashOutput(Felt::from(hash_output))),
+        OriginalSkeletonNode::UnmodifiedSubTree(HashOutput(Felt::from(hash_output))),
     )
 }
 

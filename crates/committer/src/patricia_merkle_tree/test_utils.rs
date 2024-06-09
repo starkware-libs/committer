@@ -2,6 +2,7 @@ use crate::felt::Felt;
 use crate::patricia_merkle_tree::errors::TypesError;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
+
 use ethnum::U256;
 use rand::rngs::ThreadRng;
 use rand::Rng;
@@ -113,6 +114,36 @@ pub fn get_random_u256<R: Rng>(rng: &mut R, low: U256, high: U256) -> U256 {
 fn test_get_random_u256(mut random: ThreadRng, #[case] low: U256, #[case] high: U256) {
     let r = get_random_u256(&mut random, low, high);
     assert!(low <= r && r < high);
+}
+
+#[cfg(test)]
+use {
+    crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode,
+    crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode,
+    crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl,
+};
+#[cfg(test)]
+pub(crate) fn get_initial_updated_skeleton(
+    original_skeleton: &[(NodeIndex, OriginalSkeletonNode)],
+    leaf_modifications: &[(NodeIndex, u8)],
+) -> UpdatedSkeletonTreeImpl {
+    UpdatedSkeletonTreeImpl {
+        skeleton_tree: leaf_modifications
+            .iter()
+            .filter(|(_, leaf_val)| *leaf_val != 0)
+            .map(|(index, _)| (*index, UpdatedSkeletonNode::Leaf))
+            .chain(
+                original_skeleton
+                    .iter()
+                    .filter_map(|(index, node)| match node {
+                        OriginalSkeletonNode::UnmodifiedSubTree(hash) => {
+                            Some((*index, UpdatedSkeletonNode::UnmodifiedSubTree(*hash)))
+                        }
+                        OriginalSkeletonNode::Binary | OriginalSkeletonNode::Edge(_) => None,
+                    }),
+            )
+            .collect(),
+    }
 }
 
 #[cfg(test)]

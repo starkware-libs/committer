@@ -1,4 +1,3 @@
-use crate::block_hash::BlockInfo;
 use crate::filled_tree_output::errors::FilledForestError;
 use crate::filled_tree_output::filled_forest::SerializedForest;
 use crate::parse_input::read::parse_input;
@@ -24,14 +23,17 @@ use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
 use ethnum::U256;
 use serde_json::json;
-use starknet_api::block_hash::block_hash_calculator::TransactionOutputForHash;
+use starknet_api::block_hash::block_hash_calculator::{
+    TransactionHashingData, TransactionOutputForHash,
+};
 use starknet_api::state::ThinStateDiff;
+use starknet_api::transaction::TransactionExecutionStatus;
 use starknet_types_core::hash::{Pedersen, StarkHash};
 use std::fmt::Debug;
 use std::{collections::HashMap, io};
 use thiserror;
 
-use super::utils::objects::{get_thin_state_diff, get_transaction_output_for_hash};
+use super::utils::objects::{get_thin_state_diff, get_transaction_output_for_hash, get_tx_data};
 
 // Enum representing different Python tests.
 pub(crate) enum PythonTest {
@@ -46,9 +48,9 @@ pub(crate) enum PythonTest {
     StorageNode,
     FilledForestOutput,
     TreeHeightComparison,
-    ParseBlockInfo,
     ParseTxOutput,
     ParseStateDiff,
+    ParseTxData,
     SerializeForRustCommitterFlowTest,
 }
 
@@ -93,10 +95,10 @@ impl TryFrom<String> for PythonTest {
             "compare_python_hash_constants" => Ok(Self::ComparePythonHashConstants),
             "storage_node_test" => Ok(Self::StorageNode),
             "filled_forest_output" => Ok(Self::FilledForestOutput),
-            "parse_block_info" => Ok(Self::ParseBlockInfo),
             "compare_tree_height" => Ok(Self::TreeHeightComparison),
             "parse_tx_output_test" => Ok(Self::ParseTxOutput),
             "parse_state_diff_test" => Ok(Self::ParseStateDiff),
+            "parse_tx_data_test" => Ok(Self::ParseTxData),
             "serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
@@ -142,10 +144,6 @@ impl PythonTest {
             }
             Self::FilledForestOutput => filled_forest_output_test(),
             Self::TreeHeightComparison => Ok(get_actual_tree_height()),
-            Self::ParseBlockInfo => {
-                let block_info: BlockInfo = serde_json::from_str(Self::non_optional_input(input)?)?;
-                Ok(parse_block_info_test(block_info))
-            }
             Self::ParseTxOutput => {
                 let tx_output: TransactionOutputForHash =
                     serde_json::from_str(Self::non_optional_input(input)?)?;
@@ -155,6 +153,11 @@ impl PythonTest {
                 let tx_output: ThinStateDiff =
                     serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(parse_state_diff_test(tx_output))
+            }
+            Self::ParseTxData => {
+                let tx_data: TransactionHashingData =
+                    serde_json::from_str(Self::non_optional_input(input)?)?;
+                Ok(parse_tx_data_test(tx_data))
             }
             Self::SerializeForRustCommitterFlowTest => {
                 let input: HashMap<String, String> =
@@ -202,15 +205,6 @@ pub(crate) fn example_test(test_args: HashMap<String, String>) -> String {
     format!("Calling example test with args: x: {}, y: {}", x, y)
 }
 
-pub(crate) fn parse_block_info_test(block_info: BlockInfo) -> String {
-    format!(
-        "da mode: {}, gas: {:?}, data_gas: {:?}",
-        block_info.da_mode,
-        block_info.l1_gas_price_per_token,
-        block_info.l1_data_gas_price_per_token
-    )
-}
-
 pub(crate) fn parse_tx_output_test(tx_execution_info: TransactionOutputForHash) -> String {
     let expected_object = get_transaction_output_for_hash(&tx_execution_info.execution_status);
     is_success_string(expected_object == tx_execution_info)
@@ -219,6 +213,11 @@ pub(crate) fn parse_tx_output_test(tx_execution_info: TransactionOutputForHash) 
 pub(crate) fn parse_state_diff_test(state_diff: ThinStateDiff) -> String {
     let expected_object = get_thin_state_diff();
     is_success_string(expected_object == state_diff)
+}
+
+pub(crate) fn parse_tx_data_test(tx_data: TransactionHashingData) -> String {
+    let expected_object = get_tx_data(&TransactionExecutionStatus::Succeeded);
+    is_success_string(expected_object == tx_data)
 }
 
 fn is_success_string(is_success: bool) -> String {

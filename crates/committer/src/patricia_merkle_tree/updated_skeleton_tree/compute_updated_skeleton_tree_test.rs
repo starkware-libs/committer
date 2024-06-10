@@ -7,7 +7,8 @@ use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::tree::{FilledTree, FilledTreeImpl};
 use crate::patricia_merkle_tree::internal_test_utils::small_tree_index_to_full;
-use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
+use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength, PathToBottom};
+use crate::patricia_merkle_tree::node_data::leaf::SkeletonLeaf;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
@@ -511,4 +512,30 @@ async fn test_update_non_modified_tree(#[case] root_hash: HashOutput) {
         .await
         .unwrap();
     assert_eq!(root_hash, filled.get_root_hash());
+}
+
+#[rstest]
+fn test_tree_becomes_empty() {
+    // The tree had one leaf at the leftmost leaf.
+    let mut original_skeleton = OriginalSkeletonTreeImpl {
+        nodes: HashMap::from([(
+            NodeIndex::ROOT,
+            OriginalSkeletonNode::Edge(
+                PathToBottom::new(EdgePath(0_u8.into()), EdgePathLength::new(251).unwrap())
+                    .unwrap(),
+            ),
+        )]),
+    };
+    // The leftmost leaf and it's sibling become empty.
+    let leaf_modifications = HashMap::from([
+        (
+            NodeIndex::FIRST_LEAF + NodeIndex::from(1),
+            SkeletonLeaf::Zero,
+        ),
+        (NodeIndex::FIRST_LEAF, SkeletonLeaf::Zero),
+    ]);
+    let updated =
+        UpdatedSkeletonTreeImpl::create(&mut original_skeleton, &leaf_modifications).unwrap();
+
+    assert!(updated.is_empty())
 }

@@ -119,14 +119,17 @@ impl UpdatedSkeletonTreeImpl {
         leaf_indices: &[NodeIndex],
     ) -> TempSkeletonNode {
         if root_index.is_leaf() {
-            // Leaf. As this is an empty tree, the leaf must be new.
+            // Leaf.
             assert!(
-                leaf_indices.len() == 1
-                    && leaf_indices[0] == *root_index
-                    && self.skeleton_tree.contains_key(root_index),
+                leaf_indices.len() == 1 && leaf_indices[0] == *root_index,
                 "Unexpected leaf index (root_index={root_index:?}, leaf_indices={leaf_indices:?})."
             );
-            return TempSkeletonNode::Leaf;
+            return if self.skeleton_tree.contains_key(root_index) {
+                // Non-zero leaf.
+                TempSkeletonNode::Leaf
+            } else {
+                TempSkeletonNode::Empty // Zero leaf (empty subtree).
+            };
         }
 
         if has_leaves_on_both_sides(root_index, leaf_indices) {

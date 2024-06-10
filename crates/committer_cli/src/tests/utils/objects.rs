@@ -2,7 +2,6 @@ use indexmap::indexmap;
 use starknet_api::{
     block_hash::block_hash_calculator::{TransactionHashingData, TransactionOutputForHash},
     core::{ClassHash, CompiledClassHash, ContractAddress, EthAddress, Nonce, PatriciaKey},
-    data_availability::L1DataAvailabilityMode,
     state::{StorageKey, ThinStateDiff},
     transaction::{
         Event, EventContent, EventData, EventKey, Fee, GasVector, L2ToL1Payload, MessageToL1,
@@ -11,8 +10,6 @@ use starknet_api::{
     },
 };
 use starknet_types_core::felt::Felt;
-
-use crate::block_hash::BlockCommitmentsInput;
 
 pub(crate) fn get_transaction_output_for_hash(
     execution_status: &TransactionExecutionStatus,
@@ -81,16 +78,5 @@ pub(crate) fn get_tx_data(execution_status: &TransactionExecutionStatus) -> Tran
         ])),
         transaction_output: get_transaction_output_for_hash(execution_status),
         transaction_hash: TransactionHash(Felt::from_bytes_be_slice(&[3_u8])),
-    }
-}
-
-pub(crate) fn get_commitments_input(
-    n_txs: usize,
-    l1_da_mode: L1DataAvailabilityMode,
-) -> BlockCommitmentsInput {
-    BlockCommitmentsInput {
-        transactions_data: vec![get_tx_data(&TransactionExecutionStatus::Succeeded); n_txs],
-        state_diff: get_thin_state_diff(),
-        l1_da_mode,
     }
 }

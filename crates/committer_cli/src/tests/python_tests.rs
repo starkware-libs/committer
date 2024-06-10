@@ -1,4 +1,3 @@
-use crate::block_hash::BlockCommitmentsInput;
 use crate::filled_tree_output::errors::FilledForestError;
 use crate::filled_tree_output::filled_forest::SerializedForest;
 use crate::parse_input::read::parse_input;
@@ -25,7 +24,7 @@ use committer::storage::storage_trait::{Storage, StorageKey, StorageValue};
 use ethnum::U256;
 use serde_json::json;
 use starknet_api::block_hash::block_hash_calculator::{
-    calculate_block_commitments, TransactionHashingData, TransactionOutputForHash,
+    TransactionHashingData, TransactionOutputForHash,
 };
 use starknet_api::state::ThinStateDiff;
 use starknet_api::transaction::TransactionExecutionStatus;
@@ -34,9 +33,7 @@ use std::fmt::Debug;
 use std::{collections::HashMap, io};
 use thiserror;
 
-use super::utils::objects::{
-    get_commitments_input, get_thin_state_diff, get_transaction_output_for_hash, get_tx_data,
-};
+use super::utils::objects::{get_thin_state_diff, get_transaction_output_for_hash, get_tx_data};
 
 // Enum representing different Python tests.
 pub(crate) enum PythonTest {
@@ -54,7 +51,6 @@ pub(crate) enum PythonTest {
     ParseTxOutput,
     ParseStateDiff,
     ParseTxData,
-    BlockCommitments,
     SerializeForRustCommitterFlowTest,
 }
 
@@ -103,7 +99,6 @@ impl TryFrom<String> for PythonTest {
             "parse_tx_output_test" => Ok(Self::ParseTxOutput),
             "parse_state_diff_test" => Ok(Self::ParseStateDiff),
             "parse_tx_data_test" => Ok(Self::ParseTxData),
-            "block_commitments_test" => Ok(Self::BlockCommitments),
             "serialize_to_rust_committer_flow_test" => Ok(Self::SerializeForRustCommitterFlowTest),
             _ => Err(PythonTestError::UnknownTestName(value)),
         }
@@ -164,11 +159,6 @@ impl PythonTest {
                     serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(parse_tx_data_test(tx_data))
             }
-            Self::BlockCommitments => {
-                let commitments_input: BlockCommitmentsInput =
-                    serde_json::from_str(Self::non_optional_input(input)?)?;
-                Ok(commitments_input_test(commitments_input))
-            }
             Self::SerializeForRustCommitterFlowTest => {
                 let input: HashMap<String, String> =
                     serde_json::from_str(Self::non_optional_input(input)?)?;
@@ -228,20 +218,6 @@ pub(crate) fn parse_state_diff_test(state_diff: ThinStateDiff) -> String {
 pub(crate) fn parse_tx_data_test(tx_data: TransactionHashingData) -> String {
     let expected_object = get_tx_data(&TransactionExecutionStatus::Succeeded);
     is_success_string(expected_object == tx_data)
-}
-
-pub(crate) fn commitments_input_test(commitments_input: BlockCommitmentsInput) -> String {
-    let expected_object = get_commitments_input(
-        commitments_input.transactions_data.len(),
-        commitments_input.l1_da_mode,
-    );
-    assert_eq!(expected_object, commitments_input);
-    serde_json::to_string(&calculate_block_commitments(
-        &commitments_input.transactions_data,
-        &commitments_input.state_diff,
-        commitments_input.l1_da_mode,
-    ))
-    .expect("block commitments")
 }
 
 fn is_success_string(is_success: bool) -> String {

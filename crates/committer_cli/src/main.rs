@@ -1,10 +1,12 @@
 use crate::tests::python_tests::PythonTest;
-use block_hash::BlockCommitmentsInput;
+use block_hash::{BlockCommitmentsInput, BlockHashInput};
 use clap::{Args, Parser, Subcommand};
 use committer::block_committer::commit::commit_block;
 use filled_tree_output::filled_forest::SerializedForest;
 use parse_input::read::{load_from_file, parse_input, write_to_file};
-use starknet_api::block_hash::block_hash_calculator::calculate_block_commitments;
+use starknet_api::block_hash::block_hash_calculator::{
+    calculate_block_commitments, calculate_block_hash,
+};
 use std::io;
 
 pub mod block_hash;
@@ -25,6 +27,17 @@ pub struct CommitterCliArgs {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Calculates the block hash.
+    BlockHash {
+        /// File path to input.
+        #[clap(long, short = 'i')]
+        input_path: String,
+
+        /// File path to output.
+        #[clap(long, short = 'o')]
+        output_path: String,
+    },
+    /// Given previous state tree skeleton and a state diff, computes the new commitment.
     /// Calculates commitments needed for the block hash.
     BlockHashCommitments {
         /// File path to input.
@@ -96,6 +109,19 @@ async fn main() {
 
             // Print test's output.
             print!("{}", output);
+        }
+
+        Command::BlockHash {
+            input_path,
+            output_path,
+        } => {
+            let block_hash_input: BlockHashInput = load_from_file(&input_path);
+            let block_hash = serde_json::to_string(&calculate_block_hash(
+                block_hash_input.header,
+                block_hash_input.block_commitments,
+            ))
+            .expect("Failed to serialize block hash");
+            write_to_file(&output_path, &block_hash);
         }
 
         Command::BlockHashCommitments {

@@ -8,6 +8,7 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
 use crate::patricia_merkle_tree::node_data::leaf::ContractState;
+use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::storage::storage_trait::Storage;
@@ -94,7 +95,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             .map(|address| NodeIndex::from_contract_address(address))
             .collect();
         sorted_leaf_indices.sort();
-        Ok(T::create(
+        Ok(T::create::<LeafDataImpl>(
             storage,
             &sorted_leaf_indices,
             contracts_trie_root_hash,
@@ -122,7 +123,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             let contract_state = current_contracts_trie_leaves
                 .get(address)
                 .ok_or(ForestError::MissingContractCurrentState(**address))?;
-            let original_skeleton = T::create(
+            let original_skeleton = T::create::<LeafDataImpl>(
                 storage,
                 &sorted_leaf_indices,
                 contract_state.storage_root_hash,
@@ -142,7 +143,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             .map(NodeIndex::from_class_hash)
             .collect();
         sorted_leaf_indices.sort();
-        Ok(T::create(
+        Ok(T::create::<LeafDataImpl>(
             storage,
             &sorted_leaf_indices,
             classes_trie_root_hash,

@@ -28,6 +28,7 @@ pub trait Storage: From<HashMap<StorageKey, StorageValue>> {
     fn delete(&mut self, key: &StorageKey) -> Option<StorageValue>;
 }
 
+#[derive(Clone, Debug)]
 pub enum StoragePrefix {
     InnerNode,
     StorageLeaf,
@@ -68,6 +69,6 @@ impl Serialize for StorageKey {
 }
 
 /// Returns a `StorageKey` from a prefix and a suffix.
-pub(crate) fn create_db_key(prefix: StoragePrefix, suffix: &[u8]) -> StorageKey {
+pub(crate) fn create_db_key(prefix: &StoragePrefix, suffix: &[u8]) -> StorageKey {
     StorageKey([prefix.to_bytes().to_vec(), b":".to_vec(), suffix.to_vec()].concat())
 }

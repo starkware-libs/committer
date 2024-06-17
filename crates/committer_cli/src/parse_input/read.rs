@@ -8,6 +8,6 @@ pub mod read_test;
 
 type DeserializationResult<T> = Result<T, DeserializationError>;
 
-pub(crate) fn parse_input(input: String) -> DeserializationResult<Input> {
+pub fn parse_input(input: String) -> DeserializationResult<Input> {
     serde_json::from_str::<RawInput>(&input)?.try_into()
 }

@@ -2,7 +2,10 @@ use crate::patricia_merkle_tree::node_data::errors::{EdgePathError, PathToBottom
 use crate::storage::storage_trait::StorageKey;
 
 use serde_json;
+use starknet_types_core::felt::FromStrError;
 use thiserror::Error;
+
+use super::storage_trait::StoragePrefix;
 
 #[derive(Debug, Error)]
 pub enum StorageError {
@@ -20,10 +23,20 @@ pub enum SerializationError {
 pub enum DeserializationError {
     #[error("There is a key duplicate at {0} mapping.")]
     KeyDuplicate(String),
+    #[error("The key {0} unexpectedally doesn't exist.")]
+    NonExistingKey(String),
     #[error(transparent)]
     ParsingError(#[from] serde_json::Error),
     #[error(transparent)]
     EdgePathError(#[from] EdgePathError),
     #[error(transparent)]
     PathToBottomError(#[from] PathToBottomError),
+    #[error("Unexpected prefix variant when deserializing a leaf.")]
+    LeafPrefixError(StoragePrefix),
+    #[error(transparent)]
+    StringConversionError(#[from] std::str::Utf8Error),
+    #[error(transparent)]
+    FeltParsingError(#[from] FromStrError),
+    #[error("Encountered an invalid type when deserializing a leaf.")]
+    LeafTypeError,
 }

@@ -167,6 +167,8 @@ impl OriginalSkeletonTreeImpl {
             subtrees_roots.push(OriginalSkeletonInputNode::deserialize(
                 &StorageKey::from(subtree.root_hash.0),
                 val,
+                // Dummy value.
+                &StoragePrefix::InnerNode,
             )?)
         }
         Ok(subtrees_roots)

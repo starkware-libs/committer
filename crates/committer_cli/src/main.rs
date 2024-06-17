@@ -7,10 +7,7 @@ use parse_input::read::parse_input;
 use starknet_api::block_hash::block_hash_calculator::calculate_block_commitments;
 use std::io;
 
-pub mod block_hash;
-pub mod filled_tree_output;
-pub mod parse_input;
-pub mod tests;
+pub mod lib;
 
 /// Committer CLI.
 #[derive(Debug, Parser)]

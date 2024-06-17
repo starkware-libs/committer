@@ -20,24 +20,7 @@ pub(crate) trait TreeHashFunction<L: LeafData> {
     /// Computes the hash for the given node data.
     /// The default implementation for internal nodes is based on the following reference:
     /// https://docs.starknet.io/documentation/architecture_and_concepts/Network_Architecture/starknet-state/#trie_construction
-    fn compute_node_hash(node_data: &NodeData<L>) -> HashOutput {
-        match node_data {
-            NodeData::Binary(BinaryData {
-                left_hash,
-                right_hash,
-            }) => HashOutput(Pedersen::hash(&left_hash.0.into(), &right_hash.0.into()).into()),
-            NodeData::Edge(EdgeData {
-                bottom_hash: hash_output,
-                path_to_bottom: PathToBottom { path, length, .. },
-            }) => HashOutput(
-                Felt::from(Pedersen::hash(
-                    &hash_output.0.into(),
-                    &Felt::from(path).into(),
-                )) + Felt::from(*length),
-            ),
-            NodeData::Leaf(leaf_data) => Self::compute_leaf_hash(leaf_data),
-        }
-    }
+    fn compute_node_hash(node_data: &NodeData<L>) -> HashOutput;
 }
 
 pub struct TreeHashFunctionImpl;
@@ -70,6 +53,24 @@ impl TreeHashFunction<ContractState> for TreeHashFunctionImpl {
             .into(),
         )
     }
+    fn compute_node_hash(node_data: &NodeData<ContractState>) -> HashOutput {
+        match node_data {
+            NodeData::Binary(BinaryData {
+                left_hash,
+                right_hash,
+            }) => HashOutput(Pedersen::hash(&left_hash.0.into(), &right_hash.0.into()).into()),
+            NodeData::Edge(EdgeData {
+                bottom_hash: hash_output,
+                path_to_bottom: PathToBottom { path, length, .. },
+            }) => HashOutput(
+                Felt::from(Pedersen::hash(
+                    &hash_output.0.into(),
+                    &Felt::from(path).into(),
+                )) + Felt::from(*length),
+            ),
+            NodeData::Leaf(leaf_data) => Self::compute_leaf_hash(leaf_data),
+        }
+    }
 }
 
 /// Implementation of TreeHashFunction for the classes trie.
@@ -89,6 +90,24 @@ impl TreeHashFunction<CompiledClassHash> for TreeHashFunctionImpl {
             .into(),
         )
     }
+    fn compute_node_hash(node_data: &NodeData<CompiledClassHash>) -> HashOutput {
+        match node_data {
+            NodeData::Binary(BinaryData {
+                left_hash,
+                right_hash,
+            }) => HashOutput(Poseidon::hash(&left_hash.0.into(), &right_hash.0.into()).into()),
+            NodeData::Edge(EdgeData {
+                bottom_hash: hash_output,
+                path_to_bottom: PathToBottom { path, length, .. },
+            }) => HashOutput(
+                Felt::from(Poseidon::hash(
+                    &hash_output.0.into(),
+                    &Felt::from(path).into(),
+                )) + Felt::from(*length),
+            ),
+            NodeData::Leaf(leaf_data) => Self::compute_leaf_hash(leaf_data),
+        }
+    }
 }
 
 /// Implementation of TreeHashFunction for the storage trie.
@@ -97,6 +116,24 @@ impl TreeHashFunction<CompiledClassHash> for TreeHashFunctionImpl {
 impl TreeHashFunction<StarknetStorageValue> for TreeHashFunctionImpl {
     fn compute_leaf_hash(storage_value: &StarknetStorageValue) -> HashOutput {
         HashOutput(storage_value.0)
+    }
+    fn compute_node_hash(node_data: &NodeData<StarknetStorageValue>) -> HashOutput {
+        match node_data {
+            NodeData::Binary(BinaryData {
+                left_hash,
+                right_hash,
+            }) => HashOutput(Pedersen::hash(&left_hash.0.into(), &right_hash.0.into()).into()),
+            NodeData::Edge(EdgeData {
+                bottom_hash: hash_output,
+                path_to_bottom: PathToBottom { path, length, .. },
+            }) => HashOutput(
+                Felt::from(Pedersen::hash(
+                    &hash_output.0.into(),
+                    &Felt::from(path).into(),
+                )) + Felt::from(*length),
+            ),
+            NodeData::Leaf(leaf_data) => Self::compute_leaf_hash(leaf_data),
+        }
     }
 }
 

@@ -3,7 +3,7 @@ use serde::{Serialize, Serializer};
 use crate::felt::Felt;
 use std::collections::HashMap;
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StorageKey(pub Vec<u8>);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

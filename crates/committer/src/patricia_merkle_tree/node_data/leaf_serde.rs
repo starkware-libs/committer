@@ -1,7 +1,18 @@
+use serde_json::Value;
+use std::collections::HashMap;
+
+use crate::felt::Felt;
+use crate::hash::hash_trait::HashOutput;
+use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, CompiledClassHash, Nonce};
 use crate::patricia_merkle_tree::node_data::leaf::{ContractState, LeafDataImpl};
 use crate::patricia_merkle_tree::types::SubTreeHeight;
-use crate::storage::db_object::DBObject;
-use crate::storage::storage_trait::{StoragePrefix, StorageValue};
+use crate::storage::db_object::{DBObject, Deserializable};
+use crate::storage::errors::DeserializationError;
+use crate::storage::storage_trait::{StorageKey, StoragePrefix, StorageValue};
+
+#[cfg(test)]
+#[path = "leaf_serde_test.rs"]
+pub mod leaf_serde_test;
 
 impl DBObject for LeafDataImpl {
     /// Serializes the leaf data into a byte vector.
@@ -41,6 +52,69 @@ impl DBObject for LeafDataImpl {
             LeafDataImpl::StorageValue(_) => StoragePrefix::StorageLeaf,
             LeafDataImpl::CompiledClassHash(_) => StoragePrefix::CompiledClassLeaf,
             LeafDataImpl::ContractState { .. } => StoragePrefix::StateTreeLeaf,
+        }
+    }
+}
+
+impl Deserializable for LeafDataImpl {
+    fn deserialize(
+        _key: &StorageKey,
+        value: &StorageValue,
+        storage_prefix: &StoragePrefix,
+    ) -> Result<Self, DeserializationError>
+    where
+        Self: Sized,
+    {
+        match storage_prefix {
+            StoragePrefix::CompiledClassLeaf => {
+                let json_str = std::str::from_utf8(&value.0)?;
+                let map: HashMap<String, String> = serde_json::from_str(json_str)?;
+                let hash_as_hex =
+                    map.get("compiled_class_hash")
+                        .ok_or(DeserializationError::NonExistingKey(
+                            "compiled_class_hash".to_string(),
+                        ))?;
+                Ok(LeafDataImpl::CompiledClassHash(CompiledClassHash(
+                    Felt::from_hex(hash_as_hex)?,
+                )))
+            }
+            StoragePrefix::StorageLeaf => Ok(LeafDataImpl::StorageValue(
+                Felt::from_bytes_be_slice(&value.0),
+            )),
+            StoragePrefix::StateTreeLeaf => {
+                let json_str = std::str::from_utf8(&value.0)?;
+                let deserialized_map: Value = serde_json::from_str(json_str)?;
+                let class_hash_as_hex = deserialized_map
+                    .get("contract_hash")
+                    .ok_or(DeserializationError::NonExistingKey(
+                        "contract_hash".to_string(),
+                    ))?
+                    .as_str()
+                    .ok_or(DeserializationError::LeafTypeError)?;
+                let nonce_as_hex = deserialized_map
+                    .get("nonce")
+                    .ok_or(DeserializationError::NonExistingKey("nonce".to_string()))?
+                    .as_str()
+                    .ok_or(DeserializationError::LeafTypeError)?;
+                let root_hash_as_hex = deserialized_map
+                    .get("storage_commitment_tree")
+                    .ok_or(DeserializationError::NonExistingKey(
+                        "storage_commitment_tree".to_string(),
+                    ))?
+                    .get("root")
+                    .ok_or(DeserializationError::NonExistingKey("root".to_string()))?
+                    .as_str()
+                    .ok_or(DeserializationError::LeafTypeError)?;
+                assert_eq!(64, root_hash_as_hex.len());
+                Ok(LeafDataImpl::ContractState(ContractState {
+                    nonce: Nonce::from_hex(nonce_as_hex)?,
+                    storage_root_hash: HashOutput::from_hex(root_hash_as_hex)?,
+                    class_hash: ClassHash::from_hex(class_hash_as_hex)?,
+                }))
+            }
+            _ => Err(DeserializationError::LeafPrefixError(
+                storage_prefix.clone(),
+            )),
         }
     }
 }

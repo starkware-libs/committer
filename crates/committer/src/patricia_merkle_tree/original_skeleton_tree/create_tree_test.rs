@@ -51,7 +51,11 @@ use super::OriginalSkeletonTreeImpl;
     create_edge_entry(11, 1, 1),
     create_binary_entry(17, 13),
     create_edge_entry(15, 3, 2),
-    create_binary_entry(30, 20)
+    create_binary_entry(30, 20),
+    create_storage_leaf_entry(8),
+    create_storage_leaf_entry(9),
+    create_storage_leaf_entry(11),
+    create_storage_leaf_entry(15)
     ]).into(),
     create_leaf_modifications(vec![(8, 4), (10, 3), (13, 2)]),
     HashOutput(Felt::from(50_u128 + 248_u128)),
@@ -102,6 +106,11 @@ use super::OriginalSkeletonTreeImpl;
     create_edge_entry(12, 0, 1),
     create_binary_entry(5, 11),
     create_binary_entry(13, 16),
+    create_storage_leaf_entry(10),
+    create_storage_leaf_entry(2),
+    create_storage_leaf_entry(3),
+    create_storage_leaf_entry(4),
+    create_storage_leaf_entry(7)
     ]).into(),
     create_leaf_modifications(vec![(8, 5), (11, 1), (13, 3)]),
     HashOutput(Felt::from(29_u128 + 248_u128)),
@@ -155,7 +164,13 @@ use super::OriginalSkeletonTreeImpl;
     create_binary_entry(6, 59),
     create_edge_entry(24, 0, 2),
     create_binary_entry(25, 65),
-    create_binary_entry(26, 90)
+    create_binary_entry(26, 90),
+    create_storage_leaf_entry(11),
+    create_storage_leaf_entry(13),
+    create_storage_leaf_entry(20),
+    create_storage_leaf_entry(5),
+    create_storage_leaf_entry(19),
+    create_storage_leaf_entry(40),
     ]).into(),
     create_leaf_modifications(vec![(18, 5), (25, 1), (29, 15), (30, 3)]),
     HashOutput(Felt::from(116_u128 + 247_u128)),
@@ -192,8 +207,8 @@ fn test_create_tree(
     sorted_leaf_indices.sort();
 
     let skeleton_tree =
-        OriginalSkeletonTreeImpl::create(&storage, &sorted_leaf_indices, root_hash).unwrap();
-
+        OriginalSkeletonTreeImpl::create::<LeafDataImpl>(&storage, &sorted_leaf_indices, root_hash)
+            .unwrap();
     assert_eq!(&skeleton_tree.nodes, &expected_skeleton.nodes);
 }
 
@@ -204,7 +219,7 @@ pub(crate) fn create_32_bytes_entry(simple_val: u8) -> Vec<u8> {
 }
 
 fn create_patricia_key(val: u8) -> StorageKey {
-    create_db_key(StoragePrefix::InnerNode, &create_32_bytes_entry(val))
+    create_db_key(&StoragePrefix::InnerNode, &create_32_bytes_entry(val))
 }
 
 fn create_binary_val(left: u8, right: u8) -> StorageValue {
@@ -244,6 +259,13 @@ pub(crate) fn create_binary_entry(left: u8, right: u8) -> (StorageKey, StorageVa
     (
         create_patricia_key(left + right),
         create_binary_val(left, right),
+    )
+}
+
+pub(crate) fn create_storage_leaf_entry(val: u8) -> (StorageKey, StorageValue) {
+    (
+        create_db_key(&StoragePrefix::StorageLeaf, &create_32_bytes_entry(val)),
+        StorageValue(create_32_bytes_entry(val)),
     )
 }
 
@@ -314,7 +336,7 @@ pub(crate) fn create_root_edge_entry(
     let length = SubTreeHeight::ACTUAL_HEIGHT.0 - subtree_height.0;
     let new_root = u128::from(old_root) + u128::from(length);
     let key = create_db_key(
-        StoragePrefix::InnerNode,
+        &StoragePrefix::InnerNode,
         &Felt::from(new_root).to_bytes_be(),
     );
     let value = StorageValue(

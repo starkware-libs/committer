@@ -5,7 +5,6 @@ use crate::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
 use crate::patricia_merkle_tree::node_data::leaf::LeafData;
-use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonInputNode;
 use crate::storage::db_object::{DBObject, Deserializable};
 use crate::storage::errors::DeserializationError;
 use crate::storage::storage_trait::{StorageKey, StoragePrefix, StorageValue};
@@ -85,42 +84,49 @@ impl<L: LeafData> DBObject for FilledNode<L> {
     }
 }
 
-impl Deserializable for OriginalSkeletonInputNode {
-    /// Deserializes non-leaf nodes; if a serialized leaf node is given, the hash
-    /// is used but the data is ignored.
+impl<L: LeafData> Deserializable for FilledNode<L> {
+    /// Deserializes filled nodes.
     fn deserialize(
+        // TODO(Nimrod, 20/6/2024): Make the storage key include the prefix and remove it to get the hash.
         key: &StorageKey,
         value: &StorageValue,
-    ) -> Result<OriginalSkeletonInputNode, DeserializationError> {
+        storage_prefix: &StoragePrefix,
+    ) -> Result<Self, DeserializationError> {
         if value.0.len() == BINARY_BYTES {
-            Ok(Self::Binary {
+            Ok(Self {
                 hash: HashOutput(Felt::from_bytes_be_slice(&key.0)),
-                data: BinaryData {
+                data: NodeData::Binary(BinaryData {
                     left_hash: HashOutput(Felt::from_bytes_be_slice(
                         &value.0[..SERIALIZE_HASH_BYTES],
                     )),
                     right_hash: HashOutput(Felt::from_bytes_be_slice(
                         &value.0[SERIALIZE_HASH_BYTES..],
                     )),
-                },
+                }),
             })
         } else if value.0.len() == EDGE_BYTES {
-            return Ok(Self::Edge(EdgeData {
-                bottom_hash: HashOutput(Felt::from_bytes_be_slice(
-                    &value.0[..SERIALIZE_HASH_BYTES],
-                )),
-                path_to_bottom: PathToBottom::new(
-                    U256::from_be_bytes(
-                        value.0[SERIALIZE_HASH_BYTES..SERIALIZE_HASH_BYTES + EDGE_PATH_BYTES]
-                            .try_into()
-                            .expect("Slice with incorrect length."),
-                    )
-                    .into(),
-                    EdgePathLength::new(value.0[EDGE_BYTES - 1])?,
-                )?,
-            }));
+            return Ok(Self {
+                hash: HashOutput(Felt::from_bytes_be_slice(&key.0)),
+                data: NodeData::Edge(EdgeData {
+                    bottom_hash: HashOutput(Felt::from_bytes_be_slice(
+                        &value.0[..SERIALIZE_HASH_BYTES],
+                    )),
+                    path_to_bottom: PathToBottom::new(
+                        U256::from_be_bytes(
+                            value.0[SERIALIZE_HASH_BYTES..SERIALIZE_HASH_BYTES + EDGE_PATH_BYTES]
+                                .try_into()
+                                .expect("Slice with incorrect length."),
+                        )
+                        .into(),
+                        EdgePathLength::new(value.0[EDGE_BYTES - 1])?,
+                    )?,
+                }),
+            });
         } else {
-            return Ok(Self::Leaf(HashOutput(Felt::from_bytes_be_slice(&key.0))));
+            return Ok(Self {
+                hash: (HashOutput(Felt::from_bytes_be_slice(&key.0))),
+                data: NodeData::Leaf(L::deserialize(key, value, storage_prefix)?),
+            });
         }
     }
 }

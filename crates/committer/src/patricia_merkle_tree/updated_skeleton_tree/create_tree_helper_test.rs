@@ -10,6 +10,7 @@ use crate::patricia_merkle_tree::internal_test_utils::{
     as_fully_indexed, get_initial_updated_skeleton, small_tree_index_to_full,
 };
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
+use crate::patricia_merkle_tree::node_data::leaf::LeafDataImpl;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonNodeMap;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
@@ -491,8 +492,12 @@ fn test_update_node_in_nonempty_tree(
 #[case::non_empty_tree(HashOutput(Felt::from(77_u128)))]
 #[tokio::test]
 async fn test_update_non_modified_tree(#[case] root_hash: HashOutput) {
-    let mut original_skeleton_tree =
-        OriginalSkeletonTreeImpl::create_impl(&MapStorage::default(), &[], root_hash).unwrap();
+    let mut original_skeleton_tree = OriginalSkeletonTreeImpl::create_impl::<LeafDataImpl>(
+        &MapStorage::default(),
+        &[],
+        root_hash,
+    )
+    .unwrap();
     let updated =
         UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new()).unwrap();
     let filled = FilledTreeImpl::create::<TreeHashFunctionImpl>(updated, HashMap::new())

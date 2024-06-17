@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
+use strum_macros::{EnumDiscriminants, EnumIter};
 
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, CompiledClassHash, Nonce};
 use crate::patricia_merkle_tree::node_data::errors::{LeafError, LeafResult};
 use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::storage::db_object::DBObject;
-use strum_macros::{EnumDiscriminants, EnumIter};
+use crate::storage::db_object::{DBObject, Deserializable};
 
-pub trait LeafData: Clone + Sync + Send + DBObject {
+pub trait LeafData: Clone + Sync + Send + DBObject + Deserializable {
     /// Returns true if leaf is empty.
     fn is_empty(&self) -> bool;
 

@@ -21,9 +21,12 @@ pub trait DBObject {
     }
 }
 
-pub(crate) trait Deserializable: Sized {
+pub trait Deserializable: Sized {
     /// Deserializes the given value.
-    fn deserialize(key: &StorageKey, value: &StorageValue) -> Result<Self, DeserializationError>
-    where
-        Self: Sized;
+    fn deserialize(
+        key: &StorageKey,
+        value: &StorageValue,
+        // TODO(Nimrod, 1/7/2024): Remove prefix param (prefix is part of the key).
+        prefix: &StoragePrefix,
+    ) -> Result<Self, DeserializationError>;
 }

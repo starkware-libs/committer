@@ -167,6 +167,9 @@ impl OriginalSkeletonTreeImpl {
             subtrees_roots.push(OriginalSkeletonInputNode::deserialize(
                 &StorageKey::from(subtree.root_hash.0),
                 val,
+                // Dummy value.
+                // TODO(Nimrod, 1/7/2024): Use L::get_prefix once the return type is FilledNode.
+                &StoragePrefix::InnerNode,
             )?)
         }
         Ok(subtrees_roots)

@@ -21,9 +21,11 @@ pub trait DBObject {
     }
 }
 
-pub(crate) trait Deserializable: Sized {
+pub trait Deserializable: Sized {
     /// Deserializes the given value.
-    fn deserialize(key: &StorageKey, value: &StorageValue) -> Result<Self, DeserializationError>
-    where
-        Self: Sized;
+    fn deserialize(
+        key: &StorageKey,
+        value: &StorageValue,
+        prefix: &StoragePrefix,
+    ) -> Result<Self, DeserializationError>;
 }

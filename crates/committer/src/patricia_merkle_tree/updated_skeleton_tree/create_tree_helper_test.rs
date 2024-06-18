@@ -492,11 +492,13 @@ fn test_update_node_in_nonempty_tree(
 #[case::non_empty_tree(HashOutput(Felt::from(77_u128)))]
 #[tokio::test]
 async fn test_update_non_modified_storage_tree(#[case] root_hash: HashOutput) {
+    use std::sync::Arc;
+
     let mut original_skeleton_tree =
         OriginalSkeletonTreeImpl::create_impl(&MapStorage::default(), &[], root_hash).unwrap();
     let updated =
         UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new()).unwrap();
-    let filled = StorageTrie::create::<TreeHashFunctionImpl>(updated, HashMap::new())
+    let filled = StorageTrie::create::<TreeHashFunctionImpl>(updated, Arc::new(HashMap::new()))
         .await
         .unwrap();
     assert_eq!(root_hash, filled.get_root_hash());

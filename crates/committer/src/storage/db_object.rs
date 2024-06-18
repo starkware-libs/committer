@@ -24,4 +24,6 @@ pub trait DBObject {
 pub trait Deserializable: Sized {
     /// Deserializes the given value.
     fn deserialize(value: &StorageValue) -> Result<Self, DeserializationError>;
+
+    fn prefix() -> StoragePrefix;
 }

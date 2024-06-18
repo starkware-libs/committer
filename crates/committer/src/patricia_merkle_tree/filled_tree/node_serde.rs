@@ -38,10 +38,10 @@ impl<L: LeafData> FilledNode<L> {
     }
 }
 
-impl OriginalSkeletonInputNode {
+impl NodeDeserializable for OriginalSkeletonInputNode {
     /// Deserializes non-leaf nodes; if a serialized leaf node is given, the hash
     /// is used but the data is ignored.
-    pub(crate) fn deserialize(
+    fn deserialize(
         node_hash: HashOutput,
         value: &StorageValue,
     ) -> Result<OriginalSkeletonInputNode, DeserializationError> {
@@ -125,10 +125,9 @@ impl<L: LeafData> DBObject for FilledNode<L> {
     }
 }
 
-impl<L: LeafData> FilledNode<L> {
+impl<L: LeafData> NodeDeserializable for FilledNode<L> {
     /// Deserializes filled nodes.
-    #[allow(dead_code)]
-    pub(crate) fn deserialize(
+    fn deserialize(
         node_hash: HashOutput,
         value: &StorageValue,
     ) -> Result<Self, DeserializationError> {
@@ -169,4 +168,11 @@ impl<L: LeafData> FilledNode<L> {
             });
         }
     }
+}
+
+pub(crate) trait NodeDeserializable: Sized {
+    fn deserialize(
+        node_hash: HashOutput,
+        value: &StorageValue,
+    ) -> Result<Self, DeserializationError>;
 }

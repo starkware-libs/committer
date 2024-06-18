@@ -80,8 +80,13 @@ pub async fn single_tree_flow_test(
 
     // Build the original tree.
     let mut original_skeleton: OriginalSkeletonTreeImpl =
-        OriginalSkeletonTree::create(&storage, &sorted_leaf_indices, root_hash)
-            .expect("Failed to create the original skeleton tree");
+        OriginalSkeletonTree::create::<StarknetStorageValue>(
+            &storage,
+            root_hash,
+            false,
+            &leaf_modifications,
+        )
+        .expect("Failed to create the original skeleton tree");
 
     // Update the tree with the new data.
     let updated_skeleton: UpdatedSkeletonTreeImpl = UpdatedSkeletonTree::create(

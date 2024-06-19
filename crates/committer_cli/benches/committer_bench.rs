@@ -9,15 +9,18 @@ use committer::{
         types::NodeIndex,
     },
 };
-use committer_cli::tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test;
+use committer_cli::{
+    committer_runner::commit,
+    tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test,
+};
 use criterion::{criterion_group, criterion_main, Criterion};
 
 const CONCURRENCY_MODE: bool = true;
-const INPUT: &str = include_str!("../inputs.json");
 
 pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
+    let input: &str = include_str!("../inputs.json");
     let (leaf_modifications, storage, root_hash) =
-        parse_input_single_storage_tree_flow_test(&serde_json::from_str(INPUT).unwrap());
+        parse_input_single_storage_tree_flow_test(&serde_json::from_str(input).unwrap());
 
     let runtime = match CONCURRENCY_MODE {
         true => tokio::runtime::Builder::new_multi_thread().build().unwrap(),
@@ -47,5 +50,26 @@ pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, single_tree_flow_benchmark);
+pub fn full_committer_flow_benchmark(criterion: &mut Criterion) {
+    let input: &str = include_str!("../inputs_committer_flow.json");
+
+    let runtime = match CONCURRENCY_MODE {
+        true => tokio::runtime::Builder::new_multi_thread().build().unwrap(),
+        false => tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap(),
+    };
+
+    criterion.bench_function("full_committer_flow", |benchmark| {
+        benchmark.iter(|| {
+            runtime.block_on(commit(input));
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    single_tree_flow_benchmark,
+    full_committer_flow_benchmark
+);
 criterion_main!(benches);

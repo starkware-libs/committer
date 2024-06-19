@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 
+use serde::Deserialize;
+
 use crate::block_committer::input::StarknetStorageValue;
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
@@ -39,7 +41,7 @@ pub trait LeafData: Clone + Sync + Send + DBObject + Deserializable + Default + 
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct ContractState {
     pub nonce: Nonce,
     pub storage_root_hash: HashOutput,

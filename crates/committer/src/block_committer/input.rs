@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, CompiledClassHash, Nonce};
@@ -8,18 +10,18 @@ use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::storage::storage_trait::{StorageKey, StorageValue};
 use std::collections::{HashMap, HashSet};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Hash)]
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 pub struct ContractAddress(pub Felt);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Hash)]
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 pub struct StarknetStorageKey(pub Felt);
 
-#[derive(Clone, Default, Debug, Eq, PartialEq)]
+#[derive(Clone, Default, Debug, Deserialize, Eq, PartialEq)]
 pub struct StarknetStorageValue(pub Felt);
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct StateDiff {
     pub address_to_class_hash: HashMap<ContractAddress, ClassHash>,
     pub address_to_nonce: HashMap<ContractAddress, Nonce>,
@@ -28,7 +30,7 @@ pub struct StateDiff {
         HashMap<ContractAddress, HashMap<StarknetStorageKey, StarknetStorageValue>>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct Input {
     pub storage: HashMap<StorageKey, StorageValue>,
     /// All relevant information for the state diff commitment.

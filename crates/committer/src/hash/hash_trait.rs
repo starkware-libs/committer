@@ -1,8 +1,9 @@
 use starknet_types_core::felt::FromStrError;
 
 use crate::{felt::Felt, impl_from_hex_for_felt_wrapper};
+use serde::Deserialize;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, Hash)]
 pub struct HashOutput(pub Felt);
 
 impl HashOutput {

@@ -1,13 +1,13 @@
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 use crate::felt::Felt;
 use std::collections::HashMap;
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Deserialize, Eq, Hash, PartialEq)]
 #[cfg_attr(any(test, feature = "testing"), derive(Clone))]
 pub struct StorageKey(pub Vec<u8>);
 
-#[derive(Debug, Eq, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[cfg_attr(any(test, feature = "testing"), derive(Clone))]
 pub struct StorageValue(pub Vec<u8>);
 

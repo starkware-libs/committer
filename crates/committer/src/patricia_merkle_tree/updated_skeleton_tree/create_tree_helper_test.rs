@@ -1,6 +1,8 @@
 use crate::patricia_merkle_tree::filled_tree::tree::FilledTree;
 use crate::patricia_merkle_tree::filled_tree::tree::StorageTrie;
 use ethnum::{uint, U256};
+use log::Level;
+use logtest::Logger;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 use std::collections::HashMap;
@@ -500,4 +502,38 @@ async fn test_update_non_modified_storage_tree(#[case] root_hash: HashOutput) {
         .await
         .unwrap();
     assert_eq!(root_hash, filled.get_root_hash());
+}
+
+#[rstest]
+/// Test when trying to delete left most leaf but he does not exist.
+#[case::should_get_warn(
+    NodeIndex::FIRST_LEAF,
+    &[NodeIndex::FIRST_LEAF],
+    1,
+    initial_updated_skeleton(&[],&[(NodeIndex::FIRST_LEAF,0)]),
+    )]
+/// Test when trying to delete left most leaf and it exist.
+#[case::should_not_get_warn(
+    NodeIndex::FIRST_LEAF,
+    &[NodeIndex::FIRST_LEAF],
+    0,
+    initial_updated_skeleton(
+    &[(NodeIndex::FIRST_LEAF,OriginalSkeletonNode::UnmodifiedSubTree(HashOutput(Felt::ZERO)))]
+    ,&[(NodeIndex::FIRST_LEAF,0)]
+    ),
+)]
+fn test_warn_update_node_in_empty_tree(
+    #[case] root_index: NodeIndex,
+    #[case] leaf_indices: &[NodeIndex],
+    #[case] expected_logs: usize,
+    #[case] mut update_skeleton: UpdatedSkeletonTreeImpl,
+) {
+    let mut test_logger = Logger::start();
+    update_skeleton.update_node_in_empty_tree(&root_index, leaf_indices);
+    let logs = test_logger.pop();
+    let warn_logs: Vec<_> = logs
+        .iter()
+        .filter(|record| record.level() == Level::Warn)
+        .collect();
+    assert_eq!(warn_logs.len(), expected_logs);
 }

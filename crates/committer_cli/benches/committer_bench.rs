@@ -1,5 +1,3 @@
-#![allow(clippy::unwrap_used)]
-
 use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
 use committer_cli::tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test;
 use criterion::{criterion_group, criterion_main, Criterion};

@@ -1,1 +1,4 @@
 allow-unwrap-in-tests = true
+
+[workspace.benches.lints.clippy]
+unwrap_used = "allow"

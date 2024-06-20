@@ -1,15 +1,17 @@
 use crate::patricia_merkle_tree::node_data::errors::{EdgePathError, PathToBottomError};
-use crate::storage::storage_trait::StorageKey;
+use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::storage::storage_trait::StoragePrefix;
 
 use serde_json;
 use starknet_types_core::felt::FromStrError;
 use thiserror::Error;
 
+use super::storage_trait::StorageKey;
+
 #[derive(Debug, Error)]
 pub enum StorageError {
-    #[error("The key {0:?} does not exist in storage.")]
-    MissingKey(StorageKey),
+    #[error("The key {0:?} does not exist in storage at node index {1:?}.")]
+    MissingKey(StorageKey, NodeIndex),
 }
 
 #[derive(thiserror::Error, Debug)]

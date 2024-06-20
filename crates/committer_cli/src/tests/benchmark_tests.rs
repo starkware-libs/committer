@@ -6,7 +6,9 @@ use serde_json::Value;
 
 use crate::tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test;
 
-//TODO(Aner, 17/06/2024): should the MAX_TIME_FOR_BECHMARK_TEST be for --release or --debug?
+//TODO(Aner, 20/06/2024): this test needs to be fixed to be run correctly in the CI:
+//1. Fix the test to measure cpu_time and not wall_time.
+//2. Fix the max time threshold to be the expected time for the benchmark test.
 const MAX_TIME_FOR_BECHMARK_TEST: f64 = 5.0;
 const INPUT: &str = include_str!("../../inputs.json");
 

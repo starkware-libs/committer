@@ -1,10 +1,11 @@
 use crate::patricia_merkle_tree::node_data::errors::{EdgePathError, PathToBottomError};
-use crate::storage::storage_trait::StorageKey;
 use crate::storage::storage_trait::StoragePrefix;
 
 use serde_json;
 use starknet_types_core::felt::FromStrError;
 use thiserror::Error;
+
+use super::storage_trait::StorageKey;
 
 #[derive(Debug, Error)]
 pub enum StorageError {

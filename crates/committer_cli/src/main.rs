@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use committer_cli::block_hash::{BlockCommitmentsInput, BlockHashInput};
-use committer_cli::committer_runner::commit;
+use committer_cli::commands::commit;
 use committer_cli::parse_input::read::{load_from_file, write_to_file};
 use committer_cli::tests::python_tests::PythonTest;
 use starknet_api::block_hash::block_hash_calculator::{

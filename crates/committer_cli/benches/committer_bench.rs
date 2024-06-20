@@ -5,7 +5,7 @@ use committer_cli::tests::utils::parse_from_python::parse_input_single_storage_t
 use criterion::{criterion_group, criterion_main, Criterion};
 
 const CONCURRENCY_MODE: bool = true;
-const INPUT: &str = include_str!("../inputs.json");
+const INPUT: &str = include_str!("tree_flow_inputs.json");
 
 pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
     let (leaf_modifications, storage, root_hash) =

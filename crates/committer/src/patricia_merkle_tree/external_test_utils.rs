@@ -75,12 +75,10 @@ pub async fn single_tree_flow_test(
         .into_iter()
         .map(|(k, v)| (NodeIndex::FIRST_LEAF + k, v))
         .collect::<LeafModifications<StarknetStorageValue>>();
-    let mut sorted_leaf_indices: Vec<NodeIndex> = leaf_modifications.keys().copied().collect();
-    sorted_leaf_indices.sort();
 
     // Build the original tree.
     let mut original_skeleton: OriginalSkeletonTreeImpl =
-        OriginalSkeletonTree::create(&storage, &sorted_leaf_indices, root_hash)
+        OriginalSkeletonTree::create(&storage, &leaf_modifications, root_hash)
             .expect("Failed to create the original skeleton tree");
 
     // Update the tree with the new data.

@@ -498,6 +498,7 @@ async fn test_update_non_modified_storage_tree(#[case] root_hash: HashOutput) {
         &MapStorage::default(),
         &HashMap::new(),
         root_hash,
+        false,
     )
     .unwrap();
     let updated =

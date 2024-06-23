@@ -46,7 +46,6 @@ use std::collections::HashMap;
 #[case::simple_tree_of_height_3(
     HashMap::from([
     create_root_edge_entry(50, SubTreeHeight::new(3)),
-    create_root_edge_entry(50, SubTreeHeight::new(3)),
     create_binary_entry(8, 9),
     create_edge_entry(11, 1, 1),
     create_binary_entry(17, 13),
@@ -198,6 +197,7 @@ fn test_create_tree(
     #[case] root_hash: HashOutput,
     #[case] expected_skeleton: OriginalSkeletonTreeImpl,
     #[case] subtree_height: SubTreeHeight,
+    #[values(true, false)] compare_modified_leaves: bool,
 ) {
     let leaf_modifications = leaf_modifications
         .into_iter()
@@ -207,6 +207,7 @@ fn test_create_tree(
         &storage,
         &leaf_modifications,
         root_hash,
+        compare_modified_leaves,
     )
     .unwrap();
     assert_eq!(&skeleton_tree.nodes, &expected_skeleton.nodes);

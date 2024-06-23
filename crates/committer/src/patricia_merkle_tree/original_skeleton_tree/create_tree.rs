@@ -19,6 +19,7 @@ use crate::storage::storage_trait::Storage;
 use crate::storage::storage_trait::StoragePrefix;
 use bisection::{bisect_left, bisect_right};
 use std::collections::HashMap;
+
 #[cfg(test)]
 #[path = "create_tree_test.rs"]
 pub mod create_tree_test;
@@ -42,21 +43,32 @@ impl<'a> SubTree<'a> {
         self.sorted_leaf_indices.is_empty()
     }
 
-    fn get_bottom_subtree(&self, path_to_bottom: &PathToBottom, bottom_hash: HashOutput) -> Self {
+    fn get_bottom_subtree(
+        &self,
+        path_to_bottom: &PathToBottom,
+        bottom_hash: HashOutput,
+    ) -> (Self, Vec<&NodeIndex>) {
         let bottom_index = path_to_bottom.bottom_index(self.root_index);
         let bottom_height = self.get_height() - SubTreeHeight::new(path_to_bottom.length.into());
         let leftmost_in_subtree = bottom_index << bottom_height.into();
         let rightmost_in_subtree =
             leftmost_in_subtree - NodeIndex::ROOT + (NodeIndex::ROOT << bottom_height.into());
-        let bottom_leaves =
-            &self.sorted_leaf_indices[bisect_left(self.sorted_leaf_indices, &leftmost_in_subtree)
-                ..bisect_right(self.sorted_leaf_indices, &rightmost_in_subtree)];
+        let left_most_index = bisect_left(self.sorted_leaf_indices, &leftmost_in_subtree);
+        let right_most_index = bisect_right(self.sorted_leaf_indices, &rightmost_in_subtree);
+        let bottom_leaves = &self.sorted_leaf_indices[left_most_index..right_most_index];
+        let abandoned_indices = self.sorted_leaf_indices[..left_most_index]
+            .iter()
+            .chain(self.sorted_leaf_indices[right_most_index..].iter())
+            .collect();
 
-        Self {
-            sorted_leaf_indices: bottom_leaves,
-            root_index: bottom_index,
-            root_hash: bottom_hash,
-        }
+        (
+            Self {
+                sorted_leaf_indices: bottom_leaves,
+                root_index: bottom_index,
+                root_hash: bottom_hash,
+            },
+            abandoned_indices,
+        )
     }
 
     fn get_children_subtrees(&self, left_hash: HashOutput, right_hash: HashOutput) -> (Self, Self) {
@@ -89,6 +101,7 @@ impl OriginalSkeletonTreeImpl {
         &mut self,
         subtrees: Vec<SubTree<'_>>,
         storage: &impl Storage,
+        mut previous_leaves: Option<&mut HashMap<NodeIndex, L>>,
     ) -> OriginalSkeletonTreeResult<()> {
         if subtrees.is_empty() {
             return Ok(());
@@ -132,22 +145,33 @@ impl OriginalSkeletonTreeImpl {
                         continue;
                     }
                     // Parse bottom.
-                    let bottom_subtree = subtree.get_bottom_subtree(&path_to_bottom, bottom_hash);
+                    let (bottom_subtree, abandoned_indices) =
+                        subtree.get_bottom_subtree(&path_to_bottom, bottom_hash);
                     next_subtrees.push(bottom_subtree);
+                    if let Some(ref mut leaves) = previous_leaves {
+                        leaves.extend(
+                            abandoned_indices
+                                .iter()
+                                .map(|idx| (**idx, L::default()))
+                                .collect::<HashMap<NodeIndex, L>>(),
+                        );
+                    }
                 }
                 // Leaf node.
-                NodeData::Leaf(_previous_leaf) => {
+                NodeData::Leaf(previous_leaf) => {
                     if subtree.is_unmodified() {
                         // Sibling leaf.
                         self.nodes.insert(
                             subtree.root_index,
                             OriginalSkeletonNode::UnmodifiedSubTree(filled_root.hash),
                         );
+                    } else if let Some(ref mut leaves) = previous_leaves {
+                        leaves.insert(subtree.root_index, previous_leaf);
                     }
                 }
             }
         }
-        self.fetch_nodes::<L>(next_subtrees, storage)
+        self.fetch_nodes::<L>(next_subtrees, storage, previous_leaves)
     }
 
     fn calculate_subtrees_roots<L: LeafData>(
@@ -196,7 +220,27 @@ impl OriginalSkeletonTreeImpl {
         let mut skeleton_tree = Self {
             nodes: HashMap::new(),
         };
-        skeleton_tree.fetch_nodes::<L>(vec![main_subtree], storage)?;
+        skeleton_tree.fetch_nodes::<L>(vec![main_subtree], storage, None)?;
         Ok(skeleton_tree)
+    }
+
+    #[allow(dead_code)]
+    /// Returns the current tree's leaves at the given indices.
+    pub(crate) fn get_current_leaves<L: LeafData>(
+        storage: &impl Storage,
+        sorted_leaf_indices: &[NodeIndex],
+        root_hash: HashOutput,
+    ) -> OriginalSkeletonTreeResult<HashMap<NodeIndex, L>> {
+        let mut leaves = HashMap::new();
+        let main_subtree = SubTree {
+            sorted_leaf_indices,
+            root_index: NodeIndex::ROOT,
+            root_hash,
+        };
+        let mut skeleton_tree = Self {
+            nodes: HashMap::new(),
+        };
+        skeleton_tree.fetch_nodes(vec![main_subtree], storage, Some(&mut leaves))?;
+        Ok(leaves)
     }
 }

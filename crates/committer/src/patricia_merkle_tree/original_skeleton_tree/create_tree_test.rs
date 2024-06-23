@@ -198,6 +198,7 @@ fn test_create_tree(
     #[case] root_hash: HashOutput,
     #[case] expected_skeleton: OriginalSkeletonTreeImpl,
     #[case] subtree_height: SubTreeHeight,
+    #[values(true, false)] compare_modified_leaves: bool,
 ) {
     let leaf_modifications = leaf_modifications
         .into_iter()
@@ -207,6 +208,7 @@ fn test_create_tree(
         &storage,
         &leaf_modifications,
         root_hash,
+        compare_modified_leaves,
     )
     .unwrap();
     assert_eq!(&skeleton_tree.nodes, &expected_skeleton.nodes);

@@ -97,6 +97,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             storage,
             &contract_dummy_modifications,
             contracts_trie_root_hash,
+            false,
         )?)
     }
 
@@ -110,7 +111,8 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             let contract_state = current_contracts_trie_leaves
                 .get(address)
                 .ok_or(ForestError::MissingContractCurrentState(*address))?;
-            let original_skeleton = T::create(storage, updates, contract_state.storage_root_hash)?;
+            let original_skeleton =
+                T::create(storage, updates, contract_state.storage_root_hash, true)?;
             storage_tries.insert(*address, original_skeleton);
         }
         Ok(storage_tries)
@@ -125,6 +127,7 @@ impl<T: OriginalSkeletonTree> OriginalSkeletonForestImpl<T> {
             storage,
             actual_classes_updates,
             classes_trie_root_hash,
+            true,
         )?)
     }
 }

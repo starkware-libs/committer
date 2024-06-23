@@ -72,7 +72,7 @@ pub async fn tree_computation_flow(
     root_hash: HashOutput,
 ) -> StorageTrie {
     let mut original_skeleton: OriginalSkeletonTreeImpl =
-        OriginalSkeletonTree::create(storage, &leaf_modifications, root_hash)
+        OriginalSkeletonTree::create(storage, &leaf_modifications, root_hash, false)
             .expect("Failed to create the original skeleton tree");
 
     let updated_skeleton: UpdatedSkeletonTreeImpl = UpdatedSkeletonTree::create(

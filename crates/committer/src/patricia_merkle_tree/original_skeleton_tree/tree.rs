@@ -20,6 +20,7 @@ pub(crate) trait OriginalSkeletonTree {
         storage: &impl Storage,
         leaf_modifications: &LeafModifications<L>,
         root_hash: HashOutput,
+        compare_modified_leaves: bool,
     ) -> OriginalSkeletonTreeResult<Self>
     where
         Self: std::marker::Sized;
@@ -40,8 +41,14 @@ impl OriginalSkeletonTree for OriginalSkeletonTreeImpl {
         storage: &impl Storage,
         leaf_modifications: &LeafModifications<L>,
         root_hash: HashOutput,
+        compare_modified_leaves: bool,
     ) -> OriginalSkeletonTreeResult<Self> {
-        Self::create_impl(storage, leaf_modifications, root_hash)
+        Self::create_impl(
+            storage,
+            leaf_modifications,
+            root_hash,
+            compare_modified_leaves,
+        )
     }
 
     fn get_nodes(&self) -> &OriginalSkeletonNodeMap {

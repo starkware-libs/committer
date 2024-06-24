@@ -108,6 +108,20 @@ jobs:
       - run: gcloud storage cp gs://committer-products-external/committer_flow_inputs.json ./crates/committer_cli/benches/committer_flow_inputs.json
       - run: cargo test --release -- --include-ignored test_benchmark
 
+  post-benchmarking:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "test"
+            })
+    
   gcs-push:
     runs-on: ubuntu-20.04
     steps:

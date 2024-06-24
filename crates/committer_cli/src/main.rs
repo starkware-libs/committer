@@ -1,3 +1,5 @@
+use std::io;
+
 use clap::{Args, Parser, Subcommand};
 use committer_cli::block_hash::{BlockCommitmentsInput, BlockHashInput};
 use committer_cli::commands::commit;
@@ -6,7 +8,6 @@ use committer_cli::tests::python_tests::PythonTest;
 use starknet_api::block_hash::block_hash_calculator::{
     calculate_block_commitments, calculate_block_hash,
 };
-use std::io;
 
 /// Committer CLI.
 #[derive(Debug, Parser)]
@@ -34,10 +35,14 @@ enum Command {
     },
     /// Given previous state tree skeleton and a state diff, computes the new commitment.
     Commit {
-        #[clap(flatten)]
-        io_args: IoArgs,
+        /// File path to output.
+        #[clap(long, short = 'o', default_value = "stdout")]
+        output_path: String,
     },
     PythonTest {
+        #[clap(flatten)]
+        io_args: IoArgs,
+
         /// Test name.
         #[clap(long)]
         test_name: String,
@@ -68,13 +73,17 @@ async fn main() {
     let args = CommitterCliArgs::parse();
 
     match args.command {
-        Command::Commit { io_args: _ } => {
+        Command::Commit { output_path } => {
             // TODO(Nimrod, 20/6/2024): Allow read/write from file path.
             let input_string = io::read_to_string(io::stdin()).expect("Failed to read from stdin.");
-            commit(&input_string).await;
+            commit(&input_string, output_path).await;
         }
 
-        Command::PythonTest { test_name, inputs } => {
+        Command::PythonTest {
+            io_args,
+            test_name,
+            inputs,
+        } => {
             // Create PythonTest from test_name.
             let test = PythonTest::try_from(test_name)
                 .unwrap_or_else(|error| panic!("Failed to create PythonTest: {}", error));
@@ -87,6 +96,7 @@ async fn main() {
 
             // Print test's output.
             print!("{}", output);
+            write_to_file(&io_args.output_path, &output);
         }
 
         Command::BlockHash { io_args } => {

@@ -111,15 +111,19 @@ jobs:
   post-benchmarking:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'test!'
-            })
+      - uses: actions/checkout@v4
+      - run: cargo bench > benchmark_output.txt
+      - run: sed -i '/tree_computation_flow/,$!d' benchmark_output.txt
+      - uses: actions/github-script@v7
+          with:
+            script: |
+              const fs = require('fs')
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'testing!'
+              })
     
   gcs-push:
     runs-on: ubuntu-20.04

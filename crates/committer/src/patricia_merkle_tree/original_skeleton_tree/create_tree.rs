@@ -16,6 +16,7 @@ use crate::patricia_merkle_tree::{
 use crate::storage::errors::StorageError;
 use crate::storage::storage_trait::create_db_key;
 use crate::storage::storage_trait::Storage;
+use crate::storage::storage_trait::StorageKey;
 use crate::storage::storage_trait::StoragePrefix;
 use bisection::{bisect_left, bisect_right};
 use std::collections::HashMap;
@@ -78,6 +79,14 @@ impl<'a> SubTree<'a> {
 
     fn is_leaf(&self) -> bool {
         u8::from(self.get_height()) == 0
+    }
+
+    fn prefix<L: LeafData>(&self) -> StoragePrefix {
+        if self.is_leaf() {
+            L::prefix()
+        } else {
+            StoragePrefix::InnerNode
+        }
     }
 }
 
@@ -155,14 +164,16 @@ impl OriginalSkeletonTreeImpl {
         storage: &impl Storage,
     ) -> OriginalSkeletonTreeResult<Vec<FilledNode<L>>> {
         let mut subtrees_roots = vec![];
-        for subtree in subtrees.iter() {
-            let prefix = if subtree.is_leaf() {
-                L::prefix()
-            } else {
-                StoragePrefix::InnerNode
-            };
-            let key = create_db_key(prefix, &subtree.root_hash.0.to_bytes_be());
-            let val = storage.get(&key).ok_or(StorageError::MissingKey(key))?;
+        let db_keys: Vec<StorageKey> = subtrees
+            .iter()
+            .map(|subtree| create_db_key(subtree.prefix::<L>(), &subtree.root_hash.0.to_bytes_be()))
+            .collect();
+
+        let db_vals = storage.mget(&db_keys);
+        for ((subtree, optional_val), db_key) in
+            subtrees.iter().zip(db_vals.iter()).zip(db_keys.into_iter())
+        {
+            let val = optional_val.ok_or(StorageError::MissingKey(db_key))?;
             subtrees_roots.push(FilledNode::deserialize(subtree.root_hash, val)?)
         }
         Ok(subtrees_roots)

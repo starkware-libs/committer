@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use ethnum::U256;
 use serde_json::json;
+use tokio::time::sleep;
 
 use crate::block_committer::input::StarknetStorageValue;
 use crate::felt::Felt;
@@ -71,6 +73,7 @@ pub async fn tree_computation_flow(
     storage: &MapStorage,
     root_hash: HashOutput,
 ) -> StorageTrie {
+    sleep(Duration::from_secs(1)).await;
     let mut original_skeleton: OriginalSkeletonTreeImpl =
         OriginalSkeletonTree::create(storage, &leaf_modifications, root_hash)
             .expect("Failed to create the original skeleton tree");

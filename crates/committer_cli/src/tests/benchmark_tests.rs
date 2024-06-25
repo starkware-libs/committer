@@ -36,7 +36,7 @@ pub async fn test_benchmark_single_tree() {
     assert_eq!(output_hash.as_str().unwrap(), expected_hash);
 
     // 4. Assert the execution time does not exceed the threshold.
-    assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_SINGLE_TREE_BECHMARK_TEST);
+    assert!(execution_time.as_secs_f64() + 1.0 < MAX_TIME_FOR_SINGLE_TREE_BECHMARK_TEST);
 }
 
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
@@ -46,6 +46,8 @@ pub async fn test_benchmark_committer_flow() {
     // Benchmark the committer flow test.
     commit(FLOW_TEST_INPUT).await;
     let execution_time = std::time::Instant::now() - start;
+
+    print!("Execution time: {:?}", execution_time);
 
     // TODO(Aner, 20/06/2024): add assert for the output of the committer flow test.
 

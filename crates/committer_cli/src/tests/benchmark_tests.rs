@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, thread::sleep, time::Duration};
 
 use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
 use pretty_assertions::assert_eq;
@@ -22,6 +22,7 @@ const OUTPUT_PATH: &str = "output_path";
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_single_tree() {
+    sleep(Duration::from_millis(10));
     let input: HashMap<String, String> = serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
     let (leaf_modifications, storage, root_hash) =
         parse_input_single_storage_tree_flow_test(&input);

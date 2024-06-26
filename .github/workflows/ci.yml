@@ -140,6 +140,17 @@ jobs:
       - run: head -n 3 benches.txt > benches1.txt
       - run: cat benches1.txt
 
+      - run: mv ./crates/committer_cli/benches/tree_flow_inputs.json ./crates/committer_cli/benches/tree_flow_inputs.json_bu
+      - run: mv ./crates/committer_cli/benches/committer_flow_inputs.json ./crates/committer_cli/benches/committer_flow_inputs.json_bu
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - run: cat benches1.txt
+
+      - run: mv ./crates/committer_cli/benches/tree_flow_inputs.json_bu ./crates/committer_cli/benches/tree_flow_inputs.json
+      - run: mv ./crates/committer_cli/benches/committer_flow_inputs.json_bu ./crates/committer_cli/benches/committer_flow_inputs.json
+
       - run: cargo bench > benches2.txt
       - run: sed -i '/tree_computation_flow/,$!d' benches2.txt
       - run: head -n 5 benches2.txt
@@ -148,10 +159,25 @@ jobs:
       - run: echo BENCHES_RESULT=$(cat benches3.txt) >> $GITHUB_ENV
       - if: contains(env.BENCHES_RESULT, 'performance')
         run: echo "Performance is good"
+      - if: contains(env.BENCHES_RESULT, 'noise')
+        run: echo "Noise is good"
 
       - run: npm install fs
 
       - if: contains(env.BENCHES_RESULT, 'performance')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs')
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '-- commits line 1 at r1:\n' + fs.readFileSync('benches1.txt', 'utf8'),
+              path: 'Commits'
+            })
+      
+      - if: contains(env.BENCHES_RESULT, 'noise')
         uses: actions/github-script@v6
         with:
           script: |

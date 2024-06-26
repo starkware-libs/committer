@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use std::{sync::Arc, thread::sleep, time::Duration};
+use std::sync::Arc;
 
 use committer::{
     block_committer::input::StarknetStorageValue,
@@ -44,8 +44,6 @@ pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
                 &storage,
                 root_hash,
             ));
-            //TODO(Aner, 26/06/2024)!: remove this sleep after fixing the benchmark test!
-            sleep(Duration::from_millis(10));
         })
     });
 }

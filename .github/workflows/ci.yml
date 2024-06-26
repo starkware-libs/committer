@@ -173,11 +173,11 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '**preformance regressed:**\n' + fs.readFileSync('benches3.txt', 'utf8'),
+              body: '**preformance regressed!**\n' + fs.readFileSync('benches3.txt', 'utf8'),
               path: 'Commits'
             })
       
-      - if: contains(env.BENCHES_RESULT, 'imporved')
+      - if: contains(env.BENCHES_RESULT, 'noise')
         uses: actions/github-script@v6
         with:
           script: |
@@ -186,7 +186,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'performance improved :woo:\n' + fs.readFileSync('benches3.txt', 'utf8'),
+              body: 'performance improved :smiley_cat:\n' + fs.readFileSync('benches3.txt', 'utf8'),
               path: 'Commits'
             })
 

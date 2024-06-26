@@ -164,7 +164,7 @@ jobs:
 
       - run: npm install fs
 
-      - if: contains(env.BENCHES_RESULT, 'performance')
+      - if: contains(env.BENCHES_RESULT, 'regressed')
         uses: actions/github-script@v6
         with:
           script: |
@@ -173,11 +173,11 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '-- commits line 1 at r1:\n' + fs.readFileSync('benches1.txt', 'utf8'),
+              body: '**preformance regressed:**\n' + fs.readFileSync('benches3.txt', 'utf8'),
               path: 'Commits'
             })
       
-      - if: contains(env.BENCHES_RESULT, 'noise')
+      - if: contains(env.BENCHES_RESULT, 'imporved')
         uses: actions/github-script@v6
         with:
           script: |
@@ -186,7 +186,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '-- commits line 1 at r1:\n' + fs.readFileSync('benches1.txt', 'utf8'),
+              body: 'performance improved :woo:\n' + fs.readFileSync('benches3.txt', 'utf8'),
               path: 'Commits'
             })
 

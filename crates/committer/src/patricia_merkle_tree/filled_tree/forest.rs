@@ -65,7 +65,7 @@ impl FilledForestImpl {
         mut updated_forest: UpdatedSkeletonForestImpl<T>,
         storage_updates: HashMap<ContractAddress, LeafModifications<StarknetStorageValue>>,
         classes_updates: LeafModifications<CompiledClassHash>,
-        current_contracts_trie_leaves: &HashMap<ContractAddress, ContractState>,
+        current_contracts_trie_leaves: &HashMap<NodeIndex, ContractState>,
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
     ) -> ForestResult<Self> {
@@ -84,7 +84,7 @@ impl FilledForestImpl {
                 .ok_or(ForestError::MissingUpdatedSkeleton(address))?;
 
             let old_contract_state = current_contracts_trie_leaves
-                .get(&address)
+                .get(&NodeIndex::from_contract_address(&address))
                 .ok_or(ForestError::MissingContractCurrentState(address))?;
             tasks.spawn(Self::new_contract_state::<T, TH>(
                 address,

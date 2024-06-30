@@ -3,6 +3,7 @@ use committer_cli::block_hash::{BlockCommitmentsInput, BlockHashInput};
 use committer_cli::commands::commit;
 use committer_cli::parse_input::read::{load_from_file, write_to_file};
 use committer_cli::tests::python_tests::PythonTest;
+use simplelog::{ColorChoice, Config, LevelFilter, TermLogger, TerminalMode};
 use starknet_api::block_hash::block_hash_calculator::{
     calculate_block_commitments, calculate_block_hash,
 };
@@ -65,6 +66,17 @@ struct GlobalOptions {}
 #[tokio::main]
 /// Main entry point of the committer CLI.
 async fn main() {
+    // Initialize the logger
+    match TermLogger::init(
+        LevelFilter::Info,   // Set the logging level
+        Config::default(),   // Use the default log format
+        TerminalMode::Mixed, // Use mixed mode to log to both stdout and stderr
+        ColorChoice::Auto,   // Automatically choose whether to use colored output
+    ) {
+        Ok(_) => (),
+        err => eprintln!("Failed to initialize the logger: {:?}", err),
+    }
+
     let args = CommitterCliArgs::parse();
 
     match args.command {

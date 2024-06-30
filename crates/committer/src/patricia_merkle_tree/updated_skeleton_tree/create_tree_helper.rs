@@ -1,4 +1,3 @@
-use log::warn;
 use std::collections::HashMap;
 
 use crate::patricia_merkle_tree::node_data::inner_node::EdgePathLength;
@@ -127,10 +126,6 @@ impl UpdatedSkeletonTreeImpl {
             );
             if !self.skeleton_tree.contains_key(root_index) {
                 // "Deletion" of an already empty leaf. Supported but not expected.
-                warn!(
-                    "Leaf {root_index:?} was not finalized (i.e., a deleted leaf) but is in an
-                empty subtree."
-                );
                 return TempSkeletonNode::Empty;
             }
             return TempSkeletonNode::Leaf;

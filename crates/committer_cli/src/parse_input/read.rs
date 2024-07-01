@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufWriter},
+    io::{self, BufWriter}, time::Instant,
 };
 
 use committer::{block_committer::input::Input, storage::errors::DeserializationError};
@@ -28,6 +28,9 @@ pub fn load_from_stdin<T: for<'a> Deserialize<'a>>() -> T {
 }
 
 pub fn write_to_file<T: Serialize>(file_path: &str, object: &T) {
+    let now = Instant::now();
     let file_buffer = BufWriter::new(File::create(file_path).expect("Failed to create file"));
     serde_json::to_writer(file_buffer, object).expect("Failed to serialize");
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:?}", elapsed.as_micros());
 }

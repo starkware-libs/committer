@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
@@ -85,14 +86,20 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     }
 
     fn is_empty(&self) -> bool {
-        let is_empty = self.skeleton_tree.is_empty();
-        if !is_empty {
+        let is_map_empty = self.skeleton_tree.is_empty();
+        let has_empty_tree_root_hash =
+            self.skeleton_tree
+                .get(&NodeIndex::ROOT)
+                .is_some_and(|root_node| {
+                    matches!(root_node, UpdatedSkeletonNode::UnmodifiedSubTree(root_hash) if *root_hash == HashOutput::ROOT_OF_EMPTY_TREE)
+                });
+        if !is_map_empty {
             assert!(
                 self.skeleton_tree.contains_key(&NodeIndex::ROOT),
                 "Root node is missing from non-empty tree."
             );
         }
-        is_empty
+        is_map_empty || has_empty_tree_root_hash
     }
 
     fn get_node(&self, index: NodeIndex) -> UpdatedSkeletonTreeResult<&UpdatedSkeletonNode> {

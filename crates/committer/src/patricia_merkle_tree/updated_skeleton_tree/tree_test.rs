@@ -1,17 +1,24 @@
+use std::collections::HashMap;
+
 use rstest::{fixture, rstest};
 
+use crate::block_committer::input::StarknetStorageValue;
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::internal_test_utils::get_initial_updated_skeleton;
 use crate::patricia_merkle_tree::node_data::inner_node::PathToBottom;
 use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
+use crate::patricia_merkle_tree::original_skeleton_tree::config::OriginalSkeletonStorageTrieConfig;
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
+use crate::patricia_merkle_tree::original_skeleton_tree::tree::{
+    OriginalSkeletonTree, OriginalSkeletonTreeImpl,
+};
 use crate::patricia_merkle_tree::types::{NodeIndex, SubTreeHeight};
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::{
     UpdatedSkeletonTree, UpdatedSkeletonTreeImpl,
 };
+use crate::storage::map_storage::MapStorage;
 
 #[allow(clippy::as_conversions)]
 const TREE_HEIGHT: usize = SubTreeHeight::ACTUAL_HEIGHT.0 as usize;
@@ -131,4 +138,21 @@ fn test_updated_skeleton_tree_impl_create(
     expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
 
     assert_eq!(updated_skeleton_tree.skeleton_tree, expected_skeleton_tree);
+}
+
+#[rstest]
+fn test_updated_empty_tree() {
+    let modifications: LeafModifications<StarknetStorageValue> = HashMap::new();
+    let storage: MapStorage = HashMap::new().into();
+    let mut original_skeleton = OriginalSkeletonTreeImpl::create(
+        &storage,
+        HashOutput::ROOT_OF_EMPTY_TREE,
+        &[],
+        &OriginalSkeletonStorageTrieConfig::new(&modifications, false),
+    )
+    .unwrap();
+
+    let updated_skeleton_tree =
+        UpdatedSkeletonTreeImpl::create(&mut original_skeleton, &HashMap::new()).unwrap();
+    assert!(updated_skeleton_tree.is_empty());
 }

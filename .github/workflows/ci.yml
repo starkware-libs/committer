@@ -160,20 +160,20 @@ jobs:
               done
       
       # Prepare the results for posting comment.
-      - run: echo "Benchmark movements:\n" > bench_new.txt
+      - run: echo "Benchmark movements:" > bench_new.txt
       - run: cat benchmarks_list.txt | 
               while read line; do
-                cargo bench $line > ${line}.txt; 
-                sed -i '/'"${line}"'/,$!d' ${line}.txt;
+                cat ${line}.txt;
                 if grep -q "regressed" ${line}.txt; then
-                  echo "** ${line} performance regressed!" >> bench_new.txt;
+                  echo "**${line} performance regressed!**" >> bench_new.txt;
                   cat ${line}.txt >> bench_new.txt;
                 elif grep -q "improved" ${line}.txt; then
-                  echo "_${line} performance improved_ :smiley_cat:\n" >> bench_new.txt;
+                  echo "_${line} performance improved_ :smiley_cat:" >> bench_new.txt;
                   cat ${line}.txt >> bench_new.txt;
                 fi;
               done
       - run: echo BENCHES_RESULT=$(cat bench_new.txt) >> $GITHUB_ENV
+      - run: cat bench_new.txt
 
       # Post comment in case of performance regression or improvement.
       - run: npm install fs

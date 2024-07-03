@@ -27,12 +27,25 @@ pub struct StateDiff {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+/// User configuration for deciding whether a warning should be given in case of a trivial state update.
+/// If the configuration is set, it requires that the storage will contain the original data for the modified leaves.
+/// Otherwise, it is not required.
+pub struct TrivialUpdatesConfig(pub(crate) bool);
+
+impl From<bool> for TrivialUpdatesConfig {
+    fn from(value: bool) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Input {
     pub storage: HashMap<StorageKey, StorageValue>,
     /// All relevant information for the state diff commitment.
     pub state_diff: StateDiff,
     pub contracts_trie_root_hash: HashOutput,
     pub classes_trie_root_hash: HashOutput,
+    pub trivial_updates_config: TrivialUpdatesConfig,
 }
 
 impl StateDiff {

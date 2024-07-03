@@ -92,6 +92,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         let is_map_empty = self.skeleton_tree.is_empty();
         match self.skeleton_tree.get(&NodeIndex::ROOT) {
             Some(UpdatedSkeletonNode::UnmodifiedSubTree(root_hash)) => {
+                assert!(*root_hash != HashOutput::ROOT_OF_EMPTY_TREE);
                 *root_hash == HashOutput::ROOT_OF_EMPTY_TREE
             }
             Some(_modified_root) => is_map_empty,

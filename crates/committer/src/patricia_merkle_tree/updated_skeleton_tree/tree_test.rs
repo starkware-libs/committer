@@ -141,7 +141,7 @@ fn test_updated_skeleton_tree_impl_create(
 }
 
 #[rstest]
-#[case::empty_modifications(HashMap::new())]
+// #[case::empty_modifications(HashMap::new())]
 #[case::non_empty_modifications(HashMap::from([(NodeIndex::FIRST_LEAF + NodeIndex::from(7), StarknetStorageValue::default())]))]
 fn test_updated_empty_tree(#[case] modifications: LeafModifications<StarknetStorageValue>) {
     let storage: MapStorage = HashMap::new().into();

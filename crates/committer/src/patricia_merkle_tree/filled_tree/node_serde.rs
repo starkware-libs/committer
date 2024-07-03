@@ -92,6 +92,10 @@ impl<L: LeafData> FilledNode<L> {
         is_leaf: bool,
     ) -> Result<Self, DeserializationError> {
         if is_leaf {
+            assert!(
+                ![EDGE_BYTES, BINARY_BYTES].contains(&value.0.len()),
+                "That was the bug!"
+            );
             return Ok(Self {
                 hash: node_hash,
                 data: NodeData::Leaf(L::deserialize(value)?),

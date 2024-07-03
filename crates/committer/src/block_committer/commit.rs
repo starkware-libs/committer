@@ -2,6 +2,7 @@ use log::warn;
 use std::collections::HashMap;
 
 use crate::block_committer::errors::BlockCommitmentError;
+use crate::block_committer::input::ConfigImpl;
 use crate::block_committer::input::ContractAddress;
 use crate::block_committer::input::{Input, StateDiff};
 use crate::patricia_merkle_tree::filled_tree::forest::FilledForestImpl;
@@ -19,22 +20,27 @@ use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::{
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
 use crate::storage::map_storage::MapStorage;
 
+use super::input::Config;
+
 type BlockCommitmentResult<T> = Result<T, BlockCommitmentError>;
 
-pub async fn commit_block(input: Input) -> BlockCommitmentResult<FilledForestImpl> {
+pub async fn commit_block(input: Input<ConfigImpl>) -> BlockCommitmentResult<FilledForestImpl> {
     let (mut original_forest, original_contracts_trie_leaves) =
         OriginalSkeletonForestImpl::<OriginalSkeletonTreeImpl>::create(
             MapStorage::from(input.storage),
             input.contracts_trie_root_hash,
             input.classes_trie_root_hash,
             &input.state_diff,
+            input.config.warn_on_trivial_modifications(),
         )?;
 
-    check_trivial_nonce_and_class_hash_updates(
-        &original_contracts_trie_leaves,
-        &input.state_diff.address_to_class_hash,
-        &input.state_diff.address_to_nonce,
-    );
+    if input.config.warn_on_trivial_modifications() {
+        check_trivial_nonce_and_class_hash_updates(
+            &original_contracts_trie_leaves,
+            &input.state_diff.address_to_class_hash,
+            &input.state_diff.address_to_nonce,
+        );
+    }
 
     let updated_forest = UpdatedSkeletonForestImpl::<UpdatedSkeletonTreeImpl>::create(
         &mut original_forest,

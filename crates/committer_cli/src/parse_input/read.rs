@@ -1,6 +1,9 @@
 use std::{fs::File, io};
 
-use committer::{block_committer::input::Input, storage::errors::DeserializationError};
+use committer::{
+    block_committer::input::{ConfigImpl, Input},
+    storage::errors::DeserializationError,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::parse_input::raw_input::RawInput;
@@ -11,7 +14,7 @@ pub mod read_test;
 
 type DeserializationResult<T> = Result<T, DeserializationError>;
 
-pub fn parse_input(input: &str) -> DeserializationResult<Input> {
+pub fn parse_input(input: &str) -> DeserializationResult<Input<ConfigImpl>> {
     serde_json::from_str::<RawInput>(input)?.try_into()
 }
 

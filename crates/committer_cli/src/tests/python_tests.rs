@@ -4,7 +4,7 @@ use crate::parse_input::read::parse_input;
 use crate::tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test;
 use crate::tests::utils::random_structs::DummyRandomValue;
 use committer::block_committer::input::{
-    ContractAddress, Input, StarknetStorageKey, StarknetStorageValue, StateDiff,
+    ConfigImpl, ContractAddress, Input, StarknetStorageKey, StarknetStorageValue, StateDiff,
 };
 use committer::felt::Felt;
 use committer::hash::hash_trait::HashOutput;
@@ -330,7 +330,7 @@ pub(crate) fn parse_input_test(committer_input: String) -> Result<String, Python
     Ok(create_output_to_python(parse_input(&committer_input)?))
 }
 
-fn create_output_to_python(actual_input: Input) -> String {
+fn create_output_to_python(actual_input: Input<ConfigImpl>) -> String {
     let (storage_keys_hash, storage_values_hash) = hash_storage(&actual_input.storage);
     let (state_diff_keys_hash, state_diff_values_hash) = hash_state_diff(&actual_input.state_diff);
     format!(

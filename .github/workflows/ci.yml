@@ -149,26 +149,9 @@ jobs:
       - run: mv ./crates/committer_cli/benches/tree_flow_inputs.json_bu ./crates/committer_cli/benches/tree_flow_inputs.json
       - run: mv ./crates/committer_cli/benches/committer_flow_inputs.json_bu ./crates/committer_cli/benches/committer_flow_inputs.json
 
-      # Benchmark the new code, splitting the benchmarks.
-      # TODO: split the output file instead.
-      - run: cat benchmarks_list.txt | 
-              while read line; do
-                cargo bench $line > ${line}.txt; 
-                sed -i '/'"${line}"'/,$!d' ${line}.txt;
-              done
+      # Benchmark the new code, splitting the benchmarks, and prepare the results for posting a comment.
+      - run: bash ./crates/committer_cli/benches/bench_split_and_prepare_post.sh benchmarks_list.txt bench_new.txt
 
-      # Prepare the results for posting comment.
-      - run: echo "Benchmark movements:" > bench_new.txt
-      - run: cat benchmarks_list.txt | 
-              while read line; do
-                if grep -q "regressed" ${line}.txt; then
-                  echo "**${line} performance regressed!**" >> bench_new.txt;
-                  cat ${line}.txt >> bench_new.txt;
-                elif grep -q "improved" ${line}.txt; then
-                  echo "_${line} performance improved_ :smiley_cat:" >> bench_new.txt;
-                  cat ${line}.txt >> bench_new.txt;
-                fi;
-              done
       - run: echo BENCHES_RESULT=$(cat bench_new.txt) >> $GITHUB_ENV
 
       # Post comment in case of performance regression or improvement.

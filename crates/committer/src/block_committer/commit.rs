@@ -28,6 +28,7 @@ pub async fn commit_block(input: Input) -> BlockCommitmentResult<FilledForestImp
             input.contracts_trie_root_hash,
             input.classes_trie_root_hash,
             &input.state_diff,
+            &input.trivial_updates_config,
         )?;
 
     check_trivial_nonce_and_class_hash_updates(

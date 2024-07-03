@@ -151,6 +151,7 @@ use crate::storage::map_storage::MapStorage;
         },
         contracts_trie_root_hash: HashOutput(Felt::from(861_u128 + 248_u128)),
         classes_trie_root_hash: HashOutput(Felt::from(155_u128 + 248_u128)),
+        trivial_updates_config: true.into(),
     }, OriginalSkeletonForestImpl{
         classes_trie: create_expected_skeleton(
             vec![
@@ -239,6 +240,7 @@ fn test_create_original_skeleton_forest(
         input.contracts_trie_root_hash,
         input.classes_trie_root_hash,
         &input.state_diff,
+        &false.into(),
     )
     .unwrap();
     let expected_original_contracts_trie_leaves = expected_original_contracts_trie_leaves

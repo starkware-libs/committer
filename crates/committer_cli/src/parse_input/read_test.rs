@@ -205,6 +205,7 @@ fn test_simple_input_parsing() {
         },
         contracts_trie_root_hash: expected_contracts_trie_root_hash,
         classes_trie_root_hash: expected_classes_trie_root_hash,
+        trivial_updates_config: true.into(),
     };
     assert_eq!(parse_input(input).unwrap(), expected_input);
 }

@@ -14,7 +14,7 @@ pub struct ContractAddress(pub Felt);
 // TODO(Nimrod, 1/6/2024): Swap to starknet-types-core types once implemented.
 pub struct StarknetStorageKey(pub Felt);
 
-#[derive(Clone, Default, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub struct StarknetStorageValue(pub Felt);
 
 #[derive(Debug, Default, Eq, PartialEq)]
@@ -92,12 +92,7 @@ impl StateDiff {
                 let updates = match self.storage_updates.get(address) {
                     Some(inner_updates) => inner_updates
                         .iter()
-                        .map(|(key, value)| {
-                            (
-                                NodeIndex::from_starknet_storage_key(key),
-                                StarknetStorageValue(value.0),
-                            )
-                        })
+                        .map(|(key, value)| (NodeIndex::from_starknet_storage_key(key), *value))
                         .collect(),
                     None => HashMap::new(),
                 };

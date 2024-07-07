@@ -558,12 +558,13 @@ pub(crate) fn create_root_edge_entry(
     (key, value)
 }
 
-fn create_previously_empty_leaf_indices<'a>(
-    tree_leaf_indices: &'a [NodeIndex],
-    subtree_leaf_indices: &'a [NodeIndex],
-) -> Vec<&'a NodeIndex> {
+fn create_previously_empty_leaf_indices(
+    tree_leaf_indices: &[NodeIndex],
+    subtree_leaf_indices: &[NodeIndex],
+) -> Vec<NodeIndex> {
     tree_leaf_indices
         .iter()
         .filter(|idx| !subtree_leaf_indices.contains(idx))
+        .copied()
         .collect()
 }

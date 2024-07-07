@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
-use pretty_assertions::assert_eq;
 use serde_json::Value;
 
 use crate::{
@@ -25,16 +24,31 @@ pub async fn test_benchmark_single_tree() {
     let input: HashMap<String, String> = serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
     let (leaf_modifications, storage, root_hash) =
         parse_input_single_storage_tree_flow_test(&input);
-    let expected_hash = input.get("expected_hash").unwrap();
 
     let start = std::time::Instant::now();
     // Benchmark the single tree flow test.
     let output = single_tree_flow_test(leaf_modifications, storage, root_hash).await;
     let execution_time = std::time::Instant::now() - start;
 
+    // Assert correctness of the output of the single tree flow test.
     let output_map: HashMap<&str, Value> = serde_json::from_str(&output).unwrap();
     let output_hash = output_map.get("root_hash").unwrap();
+    let expected_hash = input.get("expected_hash").unwrap();
     assert_eq!(output_hash.as_str().unwrap(), expected_hash);
+
+    // TODO: Assert the storage changes.
+    // let storage_changes = output_map.get("storage_changes").unwrap();
+    // let expected_storage_changes = input.get("expected_storage_changes").unwrap();
+    // match storage_changes {
+    //     Value::Object(storage_changes) => {
+    //         for (key, value) in storage_changes.iter() {
+    //             println!("key: {}, value: {}", key, value);
+    //         }
+    //     }
+    //     _ => panic!("Expected storage changes to be an object."),
+    // }
+    // let expected_storage_changes = input.get("expected_storage_changes").unwrap();
+    // assert_eq!(storage_changes, expected_storage_changes);
 
     // 4. Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_SINGLE_TREE_BECHMARK_TEST);
@@ -43,12 +57,59 @@ pub async fn test_benchmark_single_tree() {
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_committer_flow() {
+    let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
+    let committer_input = input.get("committer_input").unwrap();
+
     let start = std::time::Instant::now();
     // Benchmark the committer flow test.
-    commit(FLOW_TEST_INPUT, OUTPUT_PATH.to_owned()).await;
+    commit(committer_input, OUTPUT_PATH.to_owned()).await;
     let execution_time = std::time::Instant::now() - start;
 
-    // TODO(Aner, 20/06/2024): add assert for the output of the committer flow test.
+    // Assert the output of the committer flow test.
+    let committer_output: HashMap<String, Value> =
+        serde_json::from_str(&std::fs::read_to_string(OUTPUT_PATH).unwrap()).unwrap();
+
+    let contract_storage_root_hash = committer_output.get("contract_storage_root_hash").unwrap();
+    let compiled_class_root_hash = committer_output.get("compiled_class_root_hash").unwrap();
+
+    let expected_contract_storage_root_hash = input.get("contract_states_root").unwrap();
+    let expected_compiled_class_root_hash = input.get("contract_classes_root").unwrap();
+
+    assert_eq!(
+        contract_storage_root_hash.as_str().unwrap(),
+        expected_contract_storage_root_hash
+    );
+    assert_eq!(
+        compiled_class_root_hash.as_str().unwrap(),
+        expected_compiled_class_root_hash
+    );
+
+    //Assert the storage changes.
+    let storage_changes = committer_output
+        .get("storage")
+        .unwrap()
+        .get("storage")
+        .unwrap();
+
+    let expected_storage_changes: HashMap<String, Value> =
+        serde_json::from_str(input.get("expected_facts").unwrap()).unwrap();
+    let allowed_diff: HashMap<String, Value> =
+        serde_json::from_str(input.get("allowed_diff").unwrap()).unwrap();
+
+    match storage_changes {
+        Value::Object(storage_changes) => {
+            for (key, value) in storage_changes.iter() {
+                assert!(expected_storage_changes.contains_key(key));
+                assert_eq!(value, expected_storage_changes.get(key).unwrap());
+            }
+            for (key, _) in expected_storage_changes.iter() {
+                if !storage_changes.contains_key(key) {
+                    assert!(allowed_diff.contains_key(key));
+                }
+            }
+        }
+        _ => panic!("Expected storage changes to be an object."),
+    }
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);

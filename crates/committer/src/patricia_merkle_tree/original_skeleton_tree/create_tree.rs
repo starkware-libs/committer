@@ -192,8 +192,8 @@ impl OriginalSkeletonTreeImpl {
                             && config.compare_leaf(&subtree.root_index, &previous_leaf)?
                         {
                             warn!(
-                                "Encountered a trivial modification at index {:?}",
-                                subtree.root_index
+                                "Encountered a trivial modification at index {:?}, with value{:?}",
+                                subtree.root_index, previous_leaf
                             );
                         }
                         if let Some(ref mut leaves) = previous_leaves {

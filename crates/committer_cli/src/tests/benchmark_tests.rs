@@ -32,9 +32,14 @@ pub async fn test_benchmark_single_tree() {
     let output = single_tree_flow_test(leaf_modifications, storage, root_hash).await;
     let execution_time = std::time::Instant::now() - start;
 
+    // Assert correctness of the output of the single tree flow test.
     let output_map: HashMap<&str, Value> = serde_json::from_str(&output).unwrap();
     let output_hash = output_map.get("root_hash").unwrap();
     assert_eq!(output_hash.as_str().unwrap(), expected_hash);
+
+    let expected_storage_changes = input.get("storage_changes").unwrap();
+    let storage_changes = output_map.get("storage_changes").unwrap();
+    assert_eq!(storage_changes, expected_storage_changes);
 
     // 4. Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_SINGLE_TREE_BECHMARK_TEST);
@@ -43,12 +48,18 @@ pub async fn test_benchmark_single_tree() {
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_committer_flow() {
+    let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
+    let committer_input = input.get("committer_input").unwrap();
+
     let start = std::time::Instant::now();
     // Benchmark the committer flow test.
-    commit(FLOW_TEST_INPUT, OUTPUT_PATH.to_owned()).await;
+    commit(committer_input, OUTPUT_PATH.to_owned()).await;
     let execution_time = std::time::Instant::now() - start;
 
-    // TODO(Aner, 20/06/2024): add assert for the output of the committer flow test.
+    // Assert the output of the committer flow test.
+    let committer_output = std::fs::read_to_string(OUTPUT_PATH).unwrap();
+    let expected_output = input.get("expected_output").unwrap();
+    assert_eq!(&committer_output, expected_output);
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);

@@ -56,6 +56,7 @@ pub fn full_committer_flow_benchmark(criterion: &mut Criterion) {
             .unwrap(),
     };
 
+    // TODO(Aner, 8/7/2024): use structs for deserialization.
     let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
     let committer_input = input.get("committer_input").unwrap();
 

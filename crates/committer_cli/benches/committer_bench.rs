@@ -10,7 +10,8 @@ use committer::{
     },
 };
 use committer_cli::{
-    commands::commit, tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test,
+    commands::commit,
+    tests::utils::parse_from_python::deserialize_input_single_storage_tree_flow_test,
 };
 use criterion::{criterion_group, criterion_main, Criterion};
 
@@ -20,9 +21,8 @@ const FLOW_TEST_INPUT: &str = include_str!("committer_flow_inputs.json");
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
 pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
-    let (leaf_modifications, storage, root_hash) = parse_input_single_storage_tree_flow_test(
-        &serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap(),
-    );
+    let (leaf_modifications, storage, root_hash) =
+        deserialize_input_single_storage_tree_flow_test(SINGLE_TREE_FLOW_INPUT.to_owned());
 
     let runtime = match CONCURRENCY_MODE {
         true => tokio::runtime::Builder::new_multi_thread().build().unwrap(),

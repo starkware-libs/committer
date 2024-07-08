@@ -18,6 +18,14 @@ const FLOW_TEST_INPUT: &str = include_str!("../../benches/committer_flow_inputs.
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
 #[derive(Deserialize)]
+struct TreeRegressionInput {
+    leaf_modifications: String,
+    storage: String,
+    root_hash: String,
+    expected_hash: String,
+    expected_storage_changes: String,
+}
+#[derive(Deserialize)]
 struct CommitterRegressionInput {
     committer_input: String,
     contract_states_root: String,
@@ -28,9 +36,13 @@ struct CommitterRegressionInput {
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_single_tree() {
-    let input: HashMap<String, String> = serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
-    let (leaf_modifications, storage, root_hash) =
-        parse_input_single_storage_tree_flow_test(&input);
+    let regression_input: TreeRegressionInput =
+        serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
+    let (leaf_modifications, storage, root_hash) = parse_input_single_storage_tree_flow_test(
+        regression_input.leaf_modifications,
+        regression_input.storage,
+        regression_input.root_hash,
+    );
 
     let start = std::time::Instant::now();
     // Benchmark the single tree flow test.
@@ -41,7 +53,7 @@ pub async fn test_benchmark_single_tree() {
     // TODO(Aner, 8/7/2024): use structs for deserialization.
     let output_map: HashMap<&str, Value> = serde_json::from_str(&output).unwrap();
     let output_hash = output_map.get("root_hash").unwrap();
-    let expected_hash = input.get("expected_hash").unwrap();
+    let expected_hash = regression_input.expected_hash;
     assert_eq!(output_hash.as_str().unwrap(), expected_hash);
 
     // Assert the storage changes.
@@ -49,7 +61,7 @@ pub async fn test_benchmark_single_tree() {
         panic!("Expected storage changes object to be an object.");
     };
     let expected_storage_changes: Map<String, Value> =
-        serde_json::from_str(input.get("expected_storage_changes").unwrap()).unwrap();
+        serde_json::from_str(&regression_input.expected_storage_changes).unwrap();
     assert_eq!(storage_changes, &expected_storage_changes);
 
     // 4. Assert the execution time does not exceed the threshold.

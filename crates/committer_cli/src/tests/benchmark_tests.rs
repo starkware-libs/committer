@@ -67,6 +67,7 @@ pub async fn test_benchmark_committer_flow() {
     let execution_time = std::time::Instant::now() - start;
 
     // Assert the output of the committer flow test.
+    // TODO(Aner, 8/7/2024): use structs for deserialization.
     let committer_output: HashMap<String, Value> =
         serde_json::from_str(&std::fs::read_to_string(OUTPUT_PATH).unwrap()).unwrap();
 
@@ -82,6 +83,7 @@ pub async fn test_benchmark_committer_flow() {
         regression_input.contract_classes_root
     );
     // Assert the storage changes.
+    // TODO(Aner, 8/7/2024): use structs for deserialization.
     let Value::Object(storage_changes) = committer_output
         .get("storage")
         .unwrap()
@@ -91,6 +93,7 @@ pub async fn test_benchmark_committer_flow() {
         panic!("Expected the storage to be an object.");
     };
 
+    // TODO(Aner, 8/7/2024): fix to deserialize automatically.
     let expected_storage_changes: Map<String, Value> =
         serde_json::from_str(&regression_input.expected_facts).unwrap();
 

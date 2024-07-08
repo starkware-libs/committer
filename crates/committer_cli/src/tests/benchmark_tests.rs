@@ -31,6 +31,7 @@ pub async fn test_benchmark_single_tree() {
     let execution_time = std::time::Instant::now() - start;
 
     // Assert correctness of the output of the single tree flow test.
+    // TODO(Aner, 8/7/2024): use structs for deserialization.
     let output_map: HashMap<&str, Value> = serde_json::from_str(&output).unwrap();
     let output_hash = output_map.get("root_hash").unwrap();
     let expected_hash = input.get("expected_hash").unwrap();
@@ -45,6 +46,7 @@ pub async fn test_benchmark_single_tree() {
 #[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_committer_flow() {
+    // TODO(Aner, 8/7/2024): use structs for deserialization.
     let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
     let committer_input = input.get("committer_input").unwrap();
 
@@ -73,21 +75,19 @@ pub async fn test_benchmark_committer_flow() {
     );
 
     // Assert the storage changes.
-    let storage_changes_obj = committer_output
+    let Value::Object(storage_changes) = committer_output
         .get("storage")
         .unwrap()
         .get("storage")
-        .unwrap();
+        .unwrap()
+    else {
+        panic!("Expected the storage to be an object.");
+    };
 
     let expected_storage_changes: Map<String, Value> =
         serde_json::from_str(input.get("expected_facts").unwrap()).unwrap();
 
-    match storage_changes_obj {
-        Value::Object(storage_changes) => {
-            assert_eq!(storage_changes, &expected_storage_changes);
-        }
-        _ => panic!("Expected storage changes object to be an object."),
-    }
+    assert_eq!(storage_changes, &expected_storage_changes);
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);

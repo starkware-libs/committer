@@ -17,13 +17,23 @@ const SINGLE_TREE_FLOW_INPUT: &str = include_str!("../../benches/tree_flow_input
 const FLOW_TEST_INPUT: &str = include_str!("../../benches/committer_flow_inputs.json");
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
-// TODO(Aner, 8/7/2024): use deserializer to extract the facts to mapping directly.
+struct FactMap(Map<String, Value>);
+impl<'de> Deserialize<'de> for FactMap {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self(
+            serde_json::from_str(&String::deserialize(deserializer)?).unwrap(),
+        ))
+    }
+}
 #[derive(Deserialize)]
 struct CommitterRegressionInput {
     committer_input: String,
     contract_states_root: String,
     contract_classes_root: String,
-    expected_facts: String,
+    expected_facts: FactMap,
 }
 #[derive(Deserialize)]
 struct TreeRegressionOutput {
@@ -123,8 +133,7 @@ pub async fn test_benchmark_committer_flow() {
     };
 
     // TODO(Aner, 8/7/2024): fix to deserialize automatically, using deserializer.
-    let expected_storage_changes: Map<String, Value> =
-        serde_json::from_str(&regression_input.expected_facts).unwrap();
+    let expected_storage_changes: Map<String, Value> = regression_input.expected_facts.0;
 
     assert_eq!(storage_changes, expected_storage_changes);
 

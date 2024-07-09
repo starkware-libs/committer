@@ -34,6 +34,7 @@ impl UpdatedSkeletonForest {
         let classes_trie = UpdatedSkeletonTreeImpl::create(
             &mut original_skeleton_forest.classes_trie,
             class_hash_leaf_modifications,
+            &original_skeleton_forest.classes_trie_sorted_indices,
         )?;
 
         // Storage tries.
@@ -41,13 +42,16 @@ impl UpdatedSkeletonForest {
         let mut storage_tries = HashMap::new();
 
         for (address, updates) in storage_updates {
-            let original_storage_trie = original_skeleton_forest
+            let (original_storage_trie, sorted_leaf_indices) = original_skeleton_forest
                 .storage_tries
                 .get_mut(address)
                 .ok_or(ForestError::MissingOriginalSkeleton(*address))?;
 
-            let updated_storage_trie =
-                UpdatedSkeletonTreeImpl::create(original_storage_trie, updates)?;
+            let updated_storage_trie = UpdatedSkeletonTreeImpl::create(
+                original_storage_trie,
+                updates,
+                sorted_leaf_indices,
+            )?;
             let storage_trie_becomes_empty = updated_storage_trie.is_empty();
 
             storage_tries.insert(*address, updated_storage_trie);
@@ -69,6 +73,7 @@ impl UpdatedSkeletonForest {
         let contracts_trie = UpdatedSkeletonTreeImpl::create(
             &mut original_skeleton_forest.contracts_trie,
             &contracts_trie_leaves,
+            &original_skeleton_forest.contracts_trie_sorted_indices,
         )?;
 
         Ok(Self {

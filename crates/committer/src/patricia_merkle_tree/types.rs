@@ -235,6 +235,11 @@ impl<'a> SortedLeafIndices<'a> {
         Self(indices)
     }
 
+    /// Creates a new instance from the given indices. Assumes indices are sorted.
+    pub(crate) fn from_sorted(sorted_indices: &'a [NodeIndex]) -> Self {
+        Self(sorted_indices)
+    }
+
     /// Returns a subslice of the indices stored at self, at the range [leftmost_idx, rightmost_idx).
     pub(crate) fn subslice(&self, leftmost_idx: usize, rightmost_idx: usize) -> Self {
         Self(&self.0[leftmost_idx..rightmost_idx])

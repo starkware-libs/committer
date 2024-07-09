@@ -98,10 +98,9 @@ impl UpdatedSkeletonTreeImpl {
     pub(crate) fn finalize_middle_layers(
         &mut self,
         original_skeleton: &mut impl OriginalSkeletonTree,
-        leaf_modifications: &LeafModifications<SkeletonLeaf>,
+        sorted_leaf_indices: &[NodeIndex],
     ) -> TempSkeletonNode {
-        let mut leaf_indices: Vec<NodeIndex> = leaf_modifications.keys().cloned().collect();
-        let sorted_leaf_indices = SortedLeafIndices::new(&mut leaf_indices);
+        let sorted_leaf_indices = SortedLeafIndices::from_sorted(sorted_leaf_indices);
         if original_skeleton.get_nodes().is_empty() {
             self.update_node_in_empty_tree(&NodeIndex::ROOT, &sorted_leaf_indices)
         } else {

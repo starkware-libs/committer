@@ -567,3 +567,12 @@ fn create_previously_empty_leaf_indices<'a>(
         .filter(|idx| !subtree_leaf_indices.contains(idx))
         .collect()
 }
+
+pub(crate) fn create_expected_sorted_leaf_indices(indices: &[u128]) -> Vec<NodeIndex> {
+    let mut leaf_indices: Vec<NodeIndex> = indices
+        .iter()
+        .map(|idx| NodeIndex::FIRST_LEAF + NodeIndex::from(*idx))
+        .collect();
+    leaf_indices.sort();
+    leaf_indices
+}

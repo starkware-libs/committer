@@ -511,7 +511,7 @@ async fn test_update_non_modified_storage_tree(#[case] root_hash: HashOutput) {
     )
     .unwrap();
     let updated =
-        UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new()).unwrap();
+        UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &HashMap::new(), &[]).unwrap();
     let filled = StorageTrie::create::<TreeHashFunctionImpl>(updated, Arc::new(empty_map))
         .await
         .unwrap();

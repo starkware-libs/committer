@@ -12,7 +12,8 @@ use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, CompiledClassHas
 use crate::patricia_merkle_tree::node_data::leaf::ContractState;
 use crate::patricia_merkle_tree::original_skeleton_tree::create_tree::create_tree_test::{
     create_32_bytes_entry, create_binary_entry, create_binary_skeleton_node, create_edge_entry,
-    create_edge_skeleton_node, create_expected_skeleton, create_unmodified_subtree_skeleton_node,
+    create_edge_skeleton_node, create_expected_skeleton, create_expected_sorted_leaf_indices,
+    create_unmodified_subtree_skeleton_node,
 };
 use crate::patricia_merkle_tree::original_skeleton_tree::create_tree::create_tree_test::{
     create_compiled_class_leaf_entry, create_contract_state_leaf_entry, create_root_edge_entry,
@@ -162,6 +163,7 @@ use crate::storage::map_storage::MapStorage;
             ],
             3
         ),
+        classes_trie_sorted_indices: create_expected_sorted_leaf_indices(&[0, 6, 7]),
         contracts_trie: create_expected_skeleton(
             vec![
                 create_binary_skeleton_node(1),
@@ -173,10 +175,12 @@ use crate::storage::map_storage::MapStorage;
             ],
             3
         ),
+        contracts_trie_sorted_indices: create_expected_sorted_leaf_indices(&[7, 6, 0]),
         storage_tries: HashMap::from([
             (
                 ContractAddress(Felt::from(0_u128)),
-                create_expected_skeleton(
+                (
+                    create_expected_skeleton(
                     vec![
                         create_binary_skeleton_node(1),
                         create_binary_skeleton_node(2),
@@ -188,11 +192,14 @@ use crate::storage::map_storage::MapStorage;
                         create_unmodified_subtree_skeleton_node(11, 16),
                     ],
                     3
+                    ),
+                    create_expected_sorted_leaf_indices(&[2, 5, 0])
                 )
             ),
             (
                 ContractAddress(Felt::from(6_u128)),
-                create_expected_skeleton(
+                (
+                    create_expected_skeleton(
                     vec![
                         create_binary_skeleton_node(1),
                         create_edge_skeleton_node(2, 0, 1),
@@ -203,11 +210,14 @@ use crate::storage::map_storage::MapStorage;
                         create_unmodified_subtree_skeleton_node(9, 2),
                     ],
                     3
+                    ),
+                    create_expected_sorted_leaf_indices(&[0, 5, 3])
                 )
             ),
             (
                 ContractAddress(Felt::from(7_u128)),
-                create_expected_skeleton(
+                (
+                    create_expected_skeleton(
                     vec![
                         create_binary_skeleton_node(1),
                         create_edge_skeleton_node(2, 0, 1),
@@ -218,9 +228,12 @@ use crate::storage::map_storage::MapStorage;
                         create_unmodified_subtree_skeleton_node(9, 2),
                     ],
                     3
+                    ),
+                    create_expected_sorted_leaf_indices(&[0, 5, 3])
                 )
-            )
+            ),
             ]),
+
         },
         create_contract_leaves(&[
             (7, 29 + 248),

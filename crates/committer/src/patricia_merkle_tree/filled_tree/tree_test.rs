@@ -263,9 +263,12 @@ async fn test_delete_leaf_from_empty_tree() {
     // Create an updated skeleton tree with a single leaf that is deleted.
     let skeleton_modifications = HashMap::from([(NodeIndex::FIRST_LEAF, SkeletonLeaf::Zero)]);
 
-    let updated_skeleton_tree =
-        UpdatedSkeletonTreeImpl::create(&mut original_skeleton_tree, &skeleton_modifications)
-            .unwrap();
+    let updated_skeleton_tree = UpdatedSkeletonTreeImpl::create(
+        &mut original_skeleton_tree,
+        &skeleton_modifications,
+        &[NodeIndex::FIRST_LEAF],
+    )
+    .unwrap();
 
     let leaf_modifications =
         HashMap::from([(NodeIndex::FIRST_LEAF, StarknetStorageValue(Felt::ZERO))]);

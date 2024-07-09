@@ -9,10 +9,7 @@ use committer::{
         types::NodeIndex,
     },
 };
-use committer_cli::{
-    commands::commit,
-    tests::utils::parse_from_python::{parse_input_single_storage_tree_flow_test, TreeFlowInput},
-};
+use committer_cli::{commands::commit, tests::utils::parse_from_python::TreeFlowInput};
 use criterion::{criterion_group, criterion_main, Criterion};
 
 const CONCURRENCY_MODE: bool = true;
@@ -25,9 +22,7 @@ pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
         leaf_modifications,
         storage,
         root_hash,
-    } = parse_input_single_storage_tree_flow_test(
-        &serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap(),
-    );
+    } = serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
 
     let runtime = match CONCURRENCY_MODE {
         true => tokio::runtime::Builder::new_multi_thread().build().unwrap(),

@@ -5,7 +5,8 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::{
-    commands::commit, tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test,
+    commands::commit,
+    tests::utils::parse_from_python::{parse_input_single_storage_tree_flow_test, TreeFlowInput},
 };
 
 //TODO(Aner, 20/06/2024): these tests needs to be fixed to be run correctly in the CI:
@@ -29,8 +30,11 @@ struct CommitterRegressionInput {
 #[tokio::test(flavor = "multi_thread")]
 pub async fn test_benchmark_single_tree() {
     let input: HashMap<String, String> = serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap();
-    let (leaf_modifications, storage, root_hash) =
-        parse_input_single_storage_tree_flow_test(&input);
+    let TreeFlowInput {
+        leaf_modifications,
+        storage,
+        root_hash,
+    } = parse_input_single_storage_tree_flow_test(&input);
 
     let start = std::time::Instant::now();
     // Benchmark the single tree flow test.

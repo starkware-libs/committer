@@ -10,7 +10,8 @@ use committer::{
     },
 };
 use committer_cli::{
-    commands::commit, tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test,
+    commands::commit,
+    tests::utils::parse_from_python::{parse_input_single_storage_tree_flow_test, TreeFlowInput},
 };
 use criterion::{criterion_group, criterion_main, Criterion};
 
@@ -20,7 +21,11 @@ const FLOW_TEST_INPUT: &str = include_str!("committer_flow_inputs.json");
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
 pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
-    let (leaf_modifications, storage, root_hash) = parse_input_single_storage_tree_flow_test(
+    let TreeFlowInput {
+        leaf_modifications,
+        storage,
+        root_hash,
+    } = parse_input_single_storage_tree_flow_test(
         &serde_json::from_str(SINGLE_TREE_FLOW_INPUT).unwrap(),
     );
 

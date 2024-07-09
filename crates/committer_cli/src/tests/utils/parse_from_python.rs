@@ -9,7 +9,17 @@ use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::StorageKey;
 use committer::storage::storage_trait::StorageValue;
 use ethnum::U256;
+use serde::Deserialize;
 use std::collections::HashMap;
+
+#[derive(Deserialize)]
+pub struct TreeRegressionInput {
+    pub leaf_modifications: String,
+    pub storage: String,
+    pub root_hash: String,
+    pub expected_hash: String,
+    pub expected_storage_changes: String,
+}
 
 #[allow(clippy::unwrap_used)]
 pub fn deserialize_input_single_storage_tree_flow_test(
@@ -23,17 +33,15 @@ pub fn deserialize_input_single_storage_tree_flow_test(
 }
 #[allow(clippy::unwrap_used)]
 pub fn parse_input_single_storage_tree_flow_test_from_map(
-    // TODO(Aner, 8/7/2024): use struct for deserialization.
-    input: HashMap<String, String>,
+    input: TreeRegressionInput,
 ) -> (
     LeafModifications<StarknetStorageValue>,
     MapStorage,
     HashOutput,
 ) {
-    // TODO(Aner, 8/7/2024): use struct for deserialization.
-    let leaf_modifications_json = input.get("leaf_modifications").unwrap();
-    let storage_json = input.get("storage").unwrap();
-    let root_hash = input.get("root_hash").unwrap();
+    let leaf_modifications_json = input.leaf_modifications;
+    let storage_json = input.storage;
+    let root_hash = input.root_hash;
 
     parse_input_single_storage_tree_flow_test(
         leaf_modifications_json.to_string(),

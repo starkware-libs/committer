@@ -38,7 +38,7 @@ use thiserror;
 use super::utils::objects::{get_thin_state_diff, get_transaction_output_for_hash, get_tx_data};
 use super::utils::parse_from_python::{
     deserialize_input_single_storage_tree_flow_test,
-    parse_input_single_storage_tree_flow_test_from_map,
+    parse_input_single_storage_tree_flow_test_from_map, TreeRegressionInput,
 };
 
 // Enum representing different Python tests.
@@ -173,7 +173,7 @@ impl PythonTest {
                 Ok(parse_tx_data_test(tx_data))
             }
             Self::SerializeForRustCommitterFlowTest => {
-                let input: HashMap<String, String> =
+                let input: TreeRegressionInput =
                     serde_json::from_str(Self::non_optional_input(input)?)?;
                 Ok(serialize_for_rust_committer_flow_test(input))
             }
@@ -200,7 +200,7 @@ impl PythonTest {
 }
 
 // Test that the fetching of the input to flow test is working.
-fn serialize_for_rust_committer_flow_test(input: HashMap<String, String>) -> String {
+fn serialize_for_rust_committer_flow_test(input: TreeRegressionInput) -> String {
     let (leaf_modifications, storage, root_hash) =
         parse_input_single_storage_tree_flow_test_from_map(input);
     // Serialize the leaf modifications to an object that can be JSON-serialized.

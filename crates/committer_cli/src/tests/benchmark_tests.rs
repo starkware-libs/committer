@@ -3,7 +3,10 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::{
-    commands::commit, tests::utils::parse_from_python::parse_input_single_storage_tree_flow_test,
+    commands::commit,
+    tests::utils::parse_from_python::{
+        parse_input_single_storage_tree_flow_test, TreeRegressionInput,
+    },
 };
 
 //TODO(Aner, 20/06/2024): these tests needs to be fixed to be run correctly in the CI:
@@ -15,14 +18,6 @@ const SINGLE_TREE_FLOW_INPUT: &str = include_str!("../../benches/tree_flow_input
 const FLOW_TEST_INPUT: &str = include_str!("../../benches/committer_flow_inputs.json");
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
-#[derive(Deserialize)]
-struct TreeRegressionInput {
-    leaf_modifications: String,
-    storage: String,
-    root_hash: String,
-    expected_hash: String,
-    expected_storage_changes: String,
-}
 #[derive(Deserialize)]
 struct CommitterRegressionInput {
     committer_input: String,

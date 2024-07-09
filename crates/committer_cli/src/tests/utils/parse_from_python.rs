@@ -9,12 +9,24 @@ use committer::storage::map_storage::MapStorage;
 use committer::storage::storage_trait::StorageKey;
 use committer::storage::storage_trait::StorageValue;
 use ethnum::U256;
+use serde::Deserialize;
+use serde::Deserializer;
 use std::collections::HashMap;
 
 pub struct TreeFlowInput {
     pub leaf_modifications: LeafModifications<StarknetStorageValue>,
     pub storage: MapStorage,
     pub root_hash: HashOutput,
+}
+
+impl<'de> Deserialize<'de> for TreeFlowInput {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let map = HashMap::deserialize(deserializer)?;
+        Ok(parse_input_single_storage_tree_flow_test(&map))
+    }
 }
 
 #[allow(clippy::unwrap_used)]

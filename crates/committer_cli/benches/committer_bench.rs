@@ -9,7 +9,10 @@ use committer::{
         types::NodeIndex,
     },
 };
-use committer_cli::{commands::commit, tests::utils::parse_from_python::TreeFlowInput};
+use committer_cli::{
+    commands::commit, parse_input::read::parse_input,
+    tests::utils::parse_from_python::TreeFlowInput,
+};
 use criterion::{criterion_group, criterion_main, Criterion};
 
 const CONCURRENCY_MODE: bool = true;
@@ -58,11 +61,12 @@ pub fn full_committer_flow_benchmark(criterion: &mut Criterion) {
 
     // TODO(Aner, 8/7/2024): use structs for deserialization.
     let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
-    let committer_input = input.get("committer_input").unwrap();
 
     //TODO(Aner, 27/06/2024): output path should be a pipe (file on memory) to avoid disk IO in the benchmark.
     criterion.bench_function("full_committer_flow", |benchmark| {
         benchmark.iter(|| {
+            let committer_input = parse_input(input.get("committer_input").unwrap())
+                .expect("Failed to parse the given input.");
             runtime.block_on(commit(committer_input, OUTPUT_PATH.to_owned()));
         })
     });

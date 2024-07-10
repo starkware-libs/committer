@@ -4,7 +4,10 @@ use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
 use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
-use crate::{commands::commit, tests::utils::parse_from_python::TreeFlowInput};
+use crate::{
+    commands::commit, parse_input::read::parse_input,
+    tests::utils::parse_from_python::TreeFlowInput,
+};
 
 use super::utils::parse_from_python::parse_input_single_storage_tree_flow_test;
 
@@ -128,7 +131,8 @@ pub async fn test_regression_committer_flow() {
     let start = std::time::Instant::now();
     // Benchmark the committer flow test.
     // TODO(Aner, 9/7/2024): refactor committer_input to be a struct.
-    commit(&committer_input, OUTPUT_PATH.to_owned()).await;
+    let committer_input = parse_input(&committer_input).expect("Failed to parse the given input.");
+    commit(committer_input, OUTPUT_PATH.to_owned()).await;
     let execution_time = std::time::Instant::now() - start;
 
     // Assert correctness of the output of the committer flow test.

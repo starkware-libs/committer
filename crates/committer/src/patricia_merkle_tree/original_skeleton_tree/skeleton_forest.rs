@@ -17,20 +17,19 @@ use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::types::SortedLeafIndices;
 use crate::storage::storage_trait::Storage;
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 #[cfg(test)]
 #[path = "skeleton_forest_test.rs"]
 pub mod skeleton_forest_test;
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct OriginalSkeletonForest {
-    pub(crate) classes_trie: OriginalSkeletonTreeImpl,
-    pub(crate) contracts_trie: OriginalSkeletonTreeImpl,
-    pub(crate) storage_tries: HashMap<ContractAddress, OriginalSkeletonTreeImpl>,
+pub(crate) struct OriginalSkeletonForest<'a> {
+    pub(crate) classes_trie: OriginalSkeletonTreeImpl<'a>,
+    pub(crate) contracts_trie: OriginalSkeletonTreeImpl<'a>,
+    pub(crate) storage_tries: HashMap<ContractAddress, OriginalSkeletonTreeImpl<'a>>,
 }
 
-impl OriginalSkeletonForest {
+impl<'a> OriginalSkeletonForest<'a> {
     /// Creates an original skeleton forest that includes the storage tries of the modified contracts,
     /// the classes trie and the contracts trie. Additionally, returns the original contract states that
     /// are needed to compute the contract state tree.
@@ -39,25 +38,30 @@ impl OriginalSkeletonForest {
         contracts_trie_root_hash: HashOutput,
         classes_trie_root_hash: HashOutput,
         state_diff: &StateDiff,
+        forest_sorted_indices: &ForestSortedIndices<'a>,
         config: &impl Config,
     ) -> ForestResult<(Self, HashMap<NodeIndex, ContractState>)>
     where
         Self: std::marker::Sized,
     {
-        let accessed_addresses = state_diff.accessed_addresses();
-        let (contracts_trie, original_contracts_trie_leaves) =
-            Self::create_contracts_trie(&accessed_addresses, contracts_trie_root_hash, &storage)?;
+        let (contracts_trie, original_contracts_trie_leaves) = Self::create_contracts_trie(
+            contracts_trie_root_hash,
+            &storage,
+            forest_sorted_indices.contracts_trie_sorted_indices,
+        )?;
         let storage_tries = Self::create_storage_tries(
             &state_diff.actual_storage_updates(),
             &original_contracts_trie_leaves,
             &storage,
             config,
+            &forest_sorted_indices.storage_tries_sorted_indices,
         )?;
         let classes_trie = Self::create_classes_trie(
             &state_diff.actual_classes_updates(),
             classes_trie_root_hash,
             &storage,
             config,
+            forest_sorted_indices.classes_trie_sorted_indices,
         )?;
 
         Ok((
@@ -73,18 +77,17 @@ impl OriginalSkeletonForest {
     /// Creates the contracts trie original skeleton.
     /// Also returns the previous contracts state of the modified contracts.
     fn create_contracts_trie(
-        accessed_addresses: &HashSet<&ContractAddress>,
         contracts_trie_root_hash: HashOutput,
         storage: &impl Storage,
-    ) -> ForestResult<(OriginalSkeletonTreeImpl, HashMap<NodeIndex, ContractState>)> {
-        let mut sorted_leaf_indices: Vec<NodeIndex> = accessed_addresses
-            .iter()
-            .map(|address| NodeIndex::from_contract_address(address))
-            .collect();
+        contracts_trie_sorted_indices: SortedLeafIndices<'a>,
+    ) -> ForestResult<(
+        OriginalSkeletonTreeImpl<'a>,
+        HashMap<NodeIndex, ContractState>,
+    )> {
         Ok(OriginalSkeletonTreeImpl::create_and_get_previous_leaves(
             storage,
             contracts_trie_root_hash,
-            SortedLeafIndices::new(&mut sorted_leaf_indices),
+            contracts_trie_sorted_indices,
             &OriginalSkeletonContractsTrieConfig::new(),
         )?)
     }
@@ -94,22 +97,25 @@ impl OriginalSkeletonForest {
         original_contracts_trie_leaves: &HashMap<NodeIndex, ContractState>,
         storage: &impl Storage,
         config: &impl Config,
-    ) -> ForestResult<HashMap<ContractAddress, OriginalSkeletonTreeImpl>> {
+        storage_tries_sorted_indices: &HashMap<ContractAddress, SortedLeafIndices<'a>>,
+    ) -> ForestResult<HashMap<ContractAddress, OriginalSkeletonTreeImpl<'a>>> {
         let mut storage_tries = HashMap::new();
         for (address, updates) in actual_storage_updates {
-            let mut sorted_leaf_indices: Vec<NodeIndex> = updates.keys().copied().collect();
+            let sorted_leaf_indices = storage_tries_sorted_indices
+                .get(address)
+                .ok_or(ForestError::MissingSortedLeafIndices(*address))?;
             let contract_state = original_contracts_trie_leaves
                 .get(&NodeIndex::from_contract_address(address))
                 .ok_or(ForestError::MissingContractCurrentState(*address))?;
-
             let config = OriginalSkeletonStorageTrieConfig::new(
                 updates,
                 config.warn_on_trivial_modifications(),
             );
+
             let original_skeleton = OriginalSkeletonTreeImpl::create(
                 storage,
                 contract_state.storage_root_hash,
-                SortedLeafIndices::new(&mut sorted_leaf_indices),
+                *sorted_leaf_indices,
                 &config,
             )?;
             storage_tries.insert(*address, original_skeleton);
@@ -122,19 +128,25 @@ impl OriginalSkeletonForest {
         classes_trie_root_hash: HashOutput,
         storage: &impl Storage,
         config: &impl Config,
-    ) -> ForestResult<OriginalSkeletonTreeImpl> {
+        contracts_trie_sorted_indices: SortedLeafIndices<'a>,
+    ) -> ForestResult<OriginalSkeletonTreeImpl<'a>> {
         let config = OriginalSkeletonClassesTrieConfig::new(
             actual_classes_updates,
             config.warn_on_trivial_modifications(),
         );
-        let mut sorted_leaf_indices: Vec<NodeIndex> =
-            actual_classes_updates.keys().copied().collect();
 
         Ok(OriginalSkeletonTreeImpl::create(
             storage,
             classes_trie_root_hash,
-            SortedLeafIndices::new(&mut sorted_leaf_indices),
+            contracts_trie_sorted_indices,
             &config,
         )?)
     }
+}
+
+/// Holds all the indices of the modified leaves in the Starknet forest grouped by tree and sorted.
+pub(crate) struct ForestSortedIndices<'a> {
+    pub(crate) storage_tries_sorted_indices: HashMap<ContractAddress, SortedLeafIndices<'a>>,
+    pub(crate) contracts_trie_sorted_indices: SortedLeafIndices<'a>,
+    pub(crate) classes_trie_sorted_indices: SortedLeafIndices<'a>,
 }

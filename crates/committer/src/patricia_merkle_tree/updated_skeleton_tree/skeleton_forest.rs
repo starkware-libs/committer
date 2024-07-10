@@ -7,7 +7,9 @@ use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
 use crate::patricia_merkle_tree::node_data::leaf::{
     ContractState, LeafModifications, SkeletonLeaf,
 };
-use crate::patricia_merkle_tree::original_skeleton_tree::skeleton_forest::OriginalSkeletonForest;
+use crate::patricia_merkle_tree::original_skeleton_tree::skeleton_forest::{
+    ForestSortedIndices, OriginalSkeletonForest,
+};
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
 use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
@@ -26,6 +28,7 @@ impl UpdatedSkeletonForest {
         original_contracts_trie_leaves: &HashMap<NodeIndex, ContractState>,
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
+        forest_sorted_indices: &ForestSortedIndices<'_>,
     ) -> ForestResult<Self>
     where
         Self: std::marker::Sized,
@@ -34,6 +37,7 @@ impl UpdatedSkeletonForest {
         let classes_trie = UpdatedSkeletonTreeImpl::create(
             &mut original_skeleton_forest.classes_trie,
             class_hash_leaf_modifications,
+            forest_sorted_indices.classes_trie_sorted_indices,
         )?;
 
         // Storage tries.
@@ -45,9 +49,13 @@ impl UpdatedSkeletonForest {
                 .storage_tries
                 .get_mut(address)
                 .ok_or(ForestError::MissingOriginalSkeleton(*address))?;
+            let sorted_indices = forest_sorted_indices
+                .storage_tries_sorted_indices
+                .get(address)
+                .ok_or(ForestError::MissingSortedLeafIndices(*address))?;
 
             let updated_storage_trie =
-                UpdatedSkeletonTreeImpl::create(original_storage_trie, updates)?;
+                UpdatedSkeletonTreeImpl::create(original_storage_trie, updates, *sorted_indices)?;
             let storage_trie_becomes_empty = updated_storage_trie.is_empty();
 
             storage_tries.insert(*address, updated_storage_trie);
@@ -69,6 +77,7 @@ impl UpdatedSkeletonForest {
         let contracts_trie = UpdatedSkeletonTreeImpl::create(
             &mut original_skeleton_forest.contracts_trie,
             &contracts_trie_leaves,
+            forest_sorted_indices.contracts_trie_sorted_indices,
         )?;
 
         Ok(Self {

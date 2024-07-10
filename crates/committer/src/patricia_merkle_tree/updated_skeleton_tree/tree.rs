@@ -4,7 +4,7 @@ use crate::hash::hash_trait::HashOutput;
 use crate::patricia_merkle_tree::node_data::leaf::{LeafModifications, SkeletonLeaf};
 use crate::patricia_merkle_tree::original_skeleton_tree::node::OriginalSkeletonNode;
 use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
-use crate::patricia_merkle_tree::types::NodeIndex;
+use crate::patricia_merkle_tree::types::{NodeIndex, SortedLeafIndices};
 use crate::patricia_merkle_tree::updated_skeleton_tree::create_tree_helper::TempSkeletonNode;
 use crate::patricia_merkle_tree::updated_skeleton_tree::errors::UpdatedSkeletonTreeError;
 use crate::patricia_merkle_tree::updated_skeleton_tree::node::UpdatedSkeletonNode;
@@ -25,6 +25,7 @@ pub(crate) trait UpdatedSkeletonTree: Sized + Send + Sync {
     fn create(
         original_skeleton: &mut impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
+        sorted_leaf_indices: SortedLeafIndices<'_>,
     ) -> UpdatedSkeletonTreeResult<Self>;
 
     /// Does the skeleton represents an empty-tree (i.e. all leaves are empty).
@@ -45,6 +46,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
     fn create(
         original_skeleton: &mut impl OriginalSkeletonTree,
         leaf_modifications: &LeafModifications<SkeletonLeaf>,
+        sorted_leaf_indices: SortedLeafIndices<'_>,
     ) -> UpdatedSkeletonTreeResult<Self> {
         if leaf_modifications.is_empty() {
             return Self::create_unmodified(original_skeleton);
@@ -54,7 +56,7 @@ impl UpdatedSkeletonTree for UpdatedSkeletonTreeImpl {
         let mut updated_skeleton_tree = UpdatedSkeletonTreeImpl { skeleton_tree };
 
         let temp_root_node =
-            updated_skeleton_tree.finalize_middle_layers(original_skeleton, leaf_modifications);
+            updated_skeleton_tree.finalize_middle_layers(original_skeleton, sorted_leaf_indices);
         // Finalize root.
         match temp_root_node {
             TempSkeletonNode::Empty => assert!(updated_skeleton_tree.skeleton_tree.is_empty()),

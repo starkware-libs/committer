@@ -3,6 +3,7 @@ use rstest::rstest;
 use std::collections::HashMap;
 
 use super::OriginalSkeletonForest;
+use crate::block_committer::commit::get_all_indices;
 use crate::block_committer::input::{
     ConfigImpl, ContractAddress, Input, StarknetStorageKey, StarknetStorageValue, StateDiff,
 };
@@ -20,6 +21,9 @@ use crate::patricia_merkle_tree::original_skeleton_tree::create_tree::create_tre
 };
 use crate::patricia_merkle_tree::types::NodeIndex;
 use crate::patricia_merkle_tree::types::SubTreeHeight;
+use crate::patricia_merkle_tree::{
+    original_skeleton_tree::skeleton_forest::ForestSortedIndices, types::SortedLeafIndices,
+};
 use crate::storage::map_storage::MapStorage;
 
 // This test assumes for simplicity that hash is addition (i.e hash(a,b) = a + b).
@@ -233,11 +237,22 @@ fn test_create_original_skeleton_forest(
     #[case] expected_forest: OriginalSkeletonForest,
     #[case] expected_original_contracts_trie_leaves: HashMap<ContractAddress, ContractState>,
 ) {
+    let (mut storage_tries_indices, mut contracts_trie_indices, mut classes_trie_indices) =
+        get_all_indices(&input.state_diff);
+    let forest_sorted_indices = ForestSortedIndices {
+        storage_tries_sorted_indices: storage_tries_indices
+            .iter_mut()
+            .map(|(address, indices)| (*address, SortedLeafIndices::new(indices)))
+            .collect(),
+        contracts_trie_sorted_indices: SortedLeafIndices::new(&mut contracts_trie_indices),
+        classes_trie_sorted_indices: SortedLeafIndices::new(&mut classes_trie_indices),
+    };
     let (actual_forest, original_contracts_trie_leaves) = OriginalSkeletonForest::create(
         MapStorage::from(input.storage),
         input.contracts_trie_root_hash,
         input.classes_trie_root_hash,
         &input.state_diff,
+        &forest_sorted_indices,
         &ConfigImpl::new(false),
     )
     .unwrap();

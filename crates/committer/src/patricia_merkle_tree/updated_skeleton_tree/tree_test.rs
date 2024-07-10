@@ -131,8 +131,13 @@ fn test_updated_skeleton_tree_impl_create(
         .iter()
         .map(|(index, val)| (*index, (*val).into()))
         .collect();
-    let updated_skeleton_tree =
-        UpdatedSkeletonTreeImpl::create(&mut original_skeleton, &leaf_modifications).unwrap();
+    let mut leaf_indices: Vec<NodeIndex> = leaf_modifications.keys().copied().collect();
+    let updated_skeleton_tree = UpdatedSkeletonTreeImpl::create(
+        &mut original_skeleton,
+        &leaf_modifications,
+        SortedLeafIndices::new(&mut leaf_indices),
+    )
+    .unwrap();
 
     let mut expected_skeleton_tree = initial_updated_skeleton.skeleton_tree.clone();
     expected_skeleton_tree.extend(expected_skeleton_additions.iter().cloned());
@@ -146,10 +151,11 @@ fn test_updated_skeleton_tree_impl_create(
 fn test_updated_empty_tree(#[case] modifications: LeafModifications<StarknetStorageValue>) {
     let storage: MapStorage = HashMap::new().into();
     let mut indices: Vec<NodeIndex> = modifications.keys().copied().collect();
+    let sorted_leaf_indices = SortedLeafIndices::new(&mut indices);
     let mut original_skeleton = OriginalSkeletonTreeImpl::create(
         &storage,
         HashOutput::ROOT_OF_EMPTY_TREE,
-        SortedLeafIndices::new(&mut indices),
+        sorted_leaf_indices,
         &OriginalSkeletonStorageTrieConfig::new(&modifications, false),
     )
     .unwrap();
@@ -158,7 +164,11 @@ fn test_updated_empty_tree(#[case] modifications: LeafModifications<StarknetStor
         .into_iter()
         .map(|(idx, leaf)| (idx, leaf.0.into()))
         .collect();
-    let updated_skeleton_tree =
-        UpdatedSkeletonTreeImpl::create(&mut original_skeleton, &skeleton_modifications).unwrap();
+    let updated_skeleton_tree = UpdatedSkeletonTreeImpl::create(
+        &mut original_skeleton,
+        &skeleton_modifications,
+        sorted_leaf_indices,
+    )
+    .unwrap();
     assert!(updated_skeleton_tree.is_empty());
 }

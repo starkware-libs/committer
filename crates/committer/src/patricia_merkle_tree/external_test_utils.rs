@@ -93,6 +93,7 @@ pub async fn tree_computation_flow(
                 )
             })
             .collect(),
+        sorted_leaf_indices,
     )
     .expect("Failed to create the updated skeleton tree");
 

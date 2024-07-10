@@ -46,3 +46,6 @@ warnings = "deny"
 [workspace.lints.clippy]
 as_conversions = "deny"
 unwrap_used = "deny"
+
+[profile.bench]
+debug = true

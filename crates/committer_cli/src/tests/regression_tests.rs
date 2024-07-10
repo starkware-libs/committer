@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
+use committer::{
+    block_committer::input::{ConfigImpl, Input},
+    patricia_merkle_tree::external_test_utils::single_tree_flow_test,
+};
 use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
@@ -33,9 +36,22 @@ impl<'de> Deserialize<'de> for FactMap {
     }
 }
 
+struct CommitterInput(Input<ConfigImpl>);
+
+impl<'de> Deserialize<'de> for CommitterInput {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self(
+            parse_input(&String::deserialize(deserializer)?).unwrap(),
+        ))
+    }
+}
+
 #[derive(Deserialize)]
 struct CommitterRegressionInput {
-    committer_input: String,
+    committer_input: CommitterInput,
     contract_states_root: String,
     contract_classes_root: String,
     expected_facts: FactMap,
@@ -130,9 +146,7 @@ pub async fn test_regression_committer_flow() {
 
     let start = std::time::Instant::now();
     // Benchmark the committer flow test.
-    // TODO(Aner, 9/7/2024): refactor committer_input to be a struct.
-    let committer_input = parse_input(&committer_input).expect("Failed to parse the given input.");
-    commit(committer_input, OUTPUT_PATH.to_owned()).await;
+    commit(committer_input.0, OUTPUT_PATH.to_owned()).await;
     let execution_time = std::time::Instant::now() - start;
 
     // Assert correctness of the output of the committer flow test.

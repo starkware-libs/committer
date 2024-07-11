@@ -61,13 +61,14 @@ pub fn full_committer_flow_benchmark(criterion: &mut Criterion) {
 
     // TODO(Aner, 8/7/2024): use structs for deserialization.
     let input: HashMap<String, String> = serde_json::from_str(FLOW_TEST_INPUT).unwrap();
-    let input = input.get("committer_input").unwrap();
+    let committer_input_string = input.get("committer_input").unwrap();
     // TODO(Aner, 27/06/2024): output path should be a pipe (file on memory)
     // to avoid disk IO in the benchmark.
     criterion.bench_function("full_committer_flow", |benchmark| {
         benchmark.iter(|| {
             // TODO(Aner, 10/07/2024): replace functions with running main.
-            let committer_input = parse_input(input).expect("Failed to parse the given input.");
+            let committer_input =
+                parse_input(committer_input_string).expect("Failed to parse the given input.");
             runtime.block_on(commit(committer_input, OUTPUT_PATH.to_owned()));
         })
     });

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 use committer::{
     block_committer::input::{ConfigImpl, Input},
@@ -24,6 +24,14 @@ const FLOW_TEST_INPUT: &str = include_str!("../../benches/committer_flow_inputs.
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
 struct FactMap(Map<String, Value>);
+
+impl Deref for FactMap {
+    type Target = Map<String, Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl<'de> Deserialize<'de> for FactMap {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -163,7 +171,7 @@ pub async fn test_regression_committer_flow() {
 
     assert_eq!(contract_storage_root_hash, expected_contract_states_root);
     assert_eq!(compiled_class_root_hash, expected_contract_classes_root);
-    assert_eq!(storage_changes, expected_facts.0);
+    assert_eq!(storage_changes, *expected_facts);
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);

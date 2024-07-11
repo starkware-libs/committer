@@ -17,7 +17,7 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
 };
 use committer::patricia_merkle_tree::node_data::leaf::ContractState;
 use committer::patricia_merkle_tree::types::SubTreeHeight;
-use log::error;
+use tracing::{debug, error, info, warn};
 
 use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
@@ -199,10 +199,10 @@ impl PythonTest {
                 Ok("Done!".to_owned())
             }
             Self::LogError => {
-                log::error!("This is an error log message.");
-                log::warn!("This is a warn log message.");
-                log::info!("This is an info log message.");
-                log::debug!("This is a debug log message.");
+                error!("This is an error log message.");
+                warn!("This is a warn log message.");
+                info!("This is an info log message.");
+                debug!("This is a debug log message.");
                 panic!("This is a panic message.");
             }
         }

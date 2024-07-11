@@ -1,5 +1,5 @@
-use log::warn;
 use std::collections::HashMap;
+use tracing::warn;
 
 use crate::block_committer::errors::BlockCommitmentError;
 use crate::block_committer::input::Config;

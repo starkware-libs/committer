@@ -19,10 +19,10 @@ use crate::storage::storage_trait::create_db_key;
 use crate::storage::storage_trait::Storage;
 use crate::storage::storage_trait::StorageKey;
 use crate::storage::storage_trait::StoragePrefix;
-use log::warn;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use tracing::warn;
 
 #[cfg(test)]
 #[path = "create_tree_test.rs"]

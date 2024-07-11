@@ -32,6 +32,8 @@ strum.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tracing.workspace = true
 
 [[bench]]
 harness = false

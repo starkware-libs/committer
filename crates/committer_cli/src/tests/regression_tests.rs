@@ -23,6 +23,7 @@ const SINGLE_TREE_FLOW_INPUT: &str = include_str!("../../benches/tree_flow_input
 const FLOW_TEST_INPUT: &str = include_str!("../../benches/committer_flow_inputs.json");
 const OUTPUT_PATH: &str = "benchmark_output.txt";
 
+#[derive(derive_more::Deref)]
 struct FactMap(Map<String, Value>);
 
 impl<'de> Deserialize<'de> for FactMap {
@@ -163,7 +164,7 @@ pub async fn test_regression_committer_flow() {
 
     assert_eq!(contract_storage_root_hash, expected_contract_states_root);
     assert_eq!(compiled_class_root_hash, expected_contract_classes_root);
-    assert_eq!(storage_changes, expected_facts.0);
+    assert_eq!(storage_changes, *expected_facts);
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);

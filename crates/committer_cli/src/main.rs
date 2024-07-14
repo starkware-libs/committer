@@ -58,7 +58,7 @@ struct GlobalOptions {}
 
 #[tokio::main]
 /// Main entry point of the committer CLI.
-#[instrument(level = "debug")]
+#[instrument(level = "info", name = "main")]
 async fn main() {
     // Initialize the logger
     configure_tracing();

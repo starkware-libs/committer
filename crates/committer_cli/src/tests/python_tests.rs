@@ -17,7 +17,7 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
 };
 use committer::patricia_merkle_tree::node_data::leaf::ContractState;
 use committer::patricia_merkle_tree::types::SubTreeHeight;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info, instrument, warn};
 
 use committer::patricia_merkle_tree::external_test_utils::single_tree_flow_test;
 use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
@@ -91,6 +91,7 @@ pub enum PythonTestError {
 impl TryFrom<String> for PythonTest {
     type Error = PythonTestError;
 
+    #[instrument(level = "info", name = "main")]
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
             "example_test" => Ok(Self::ExampleTest),

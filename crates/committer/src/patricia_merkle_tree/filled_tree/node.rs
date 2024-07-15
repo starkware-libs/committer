@@ -23,7 +23,7 @@ pub struct CompiledClassHash(pub Felt);
 impl_from_hex_for_felt_wrapper!(CompiledClassHash);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-/// A node in a Patricia-Merkle tree which was modified during an update.
+/// A node in a Patricia-Merkle tree, complete with its hash and data.
 pub struct FilledNode<L: LeafData> {
     pub hash: HashOutput,
     pub data: NodeData<L>,

@@ -18,7 +18,7 @@ use crate::storage::errors::StorageError;
 use crate::storage::storage_trait::create_db_key;
 use crate::storage::storage_trait::Storage;
 use crate::storage::storage_trait::StorageKey;
-use crate::storage::storage_trait::StoragePrefix;
+use crate::storage::storage_trait::StarknetPrefix;
 use log::warn;
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -225,7 +225,7 @@ impl<'a> OriginalSkeletonTreeImpl<'a> {
                     if subtree.is_leaf() {
                         L::prefix()
                     } else {
-                        StoragePrefix::InnerNode
+                        StarknetPrefix::InnerNode.to_storage_prefix()
                     },
                     &subtree.root_hash.0.to_bytes_be(),
                 )

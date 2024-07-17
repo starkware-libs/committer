@@ -16,6 +16,7 @@ use crate::storage::storage_trait::Storage;
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::join;
 use tokio::task::JoinSet;
 
 pub struct FilledForest {
@@ -55,12 +56,6 @@ impl FilledForest {
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
     ) -> ForestResult<Self> {
-        let classes_trie = ClassesTrie::create::<TH>(
-            Arc::new(updated_forest.classes_trie),
-            Arc::new(classes_updates),
-        )
-        .await?;
-
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();
         let mut tasks = JoinSet::new();
@@ -96,16 +91,19 @@ impl FilledForest {
             filled_storage_tries.insert(address, filled_storage_trie);
         }
 
-        let contracts_trie = ContractsTrie::create::<TH>(
+        let classes_trie_task = ClassesTrie::create::<TH>(
+            Arc::new(updated_forest.classes_trie),
+            Arc::new(classes_updates),
+        );
+        let contracts_trie_task = ContractsTrie::create::<TH>(
             Arc::new(updated_forest.contracts_trie),
             Arc::new(contracts_trie_modifications),
-        )
-        .await?;
-
+        );
+        let (classes_trie, contracts_trie) = join!(classes_trie_task, contracts_trie_task);
         Ok(Self {
             storage_tries: filled_storage_tries,
-            contracts_trie,
-            classes_trie,
+            contracts_trie: contracts_trie?,
+            classes_trie: classes_trie?,
         })
     }
 

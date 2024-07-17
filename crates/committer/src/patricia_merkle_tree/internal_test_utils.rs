@@ -25,6 +25,8 @@ use crate::storage::storage_trait::StorageValue;
 use ethnum::U256;
 use rand::rngs::ThreadRng;
 use rstest::{fixture, rstest};
+
+use crate::patricia_merkle_tree::filled_tree::tree::FilledTreeImpl;
 #[derive(Debug, PartialEq, Clone, Copy, Default, Eq)]
 pub(crate) struct MockLeaf(pub(crate) Felt);
 
@@ -84,6 +86,8 @@ impl TreeHashFunction<MockLeaf> for TreeHashFunctionImpl {
 }
 
 generate_trie_config!(OriginalSkeletonMockTrieConfig, MockLeaf);
+
+pub(crate) type MockTrie = FilledTreeImpl<MockLeaf>;
 
 struct MockHash;
 

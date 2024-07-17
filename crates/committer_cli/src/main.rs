@@ -7,6 +7,7 @@ use committer_cli::tracing_utils::configure_tracing;
 use starknet_api::block_hash::block_hash_calculator::{
     calculate_block_commitments, calculate_block_hash,
 };
+use tracing::info;
 
 /// Committer CLI.
 #[derive(Debug, Parser)]
@@ -27,7 +28,6 @@ enum Command {
         #[clap(long, short = 'o', default_value = "stdout")]
         output_path: String,
     },
-    /// Given previous state tree skeleton and a state diff, computes the new commitment.
     /// Calculates commitments needed for the block hash.
     BlockHashCommitments {
         /// File path to output.
@@ -61,6 +61,7 @@ async fn main() {
     configure_tracing();
 
     let args = CommitterCliArgs::parse();
+    info!("Starting committer-cli with args \n{:?}", args);
 
     match args.command {
         Command::Commit { output_path } => {
@@ -89,19 +90,23 @@ async fn main() {
 
         Command::BlockHash { output_path } => {
             let block_hash_input: BlockHashInput = load_from_stdin();
+            info!("Successfully loaded block hash input.");
             let block_hash =
                 calculate_block_hash(block_hash_input.header, block_hash_input.block_commitments);
             write_to_file(&output_path, &block_hash);
+            info!("Successfully computed block hash.");
         }
 
         Command::BlockHashCommitments { output_path } => {
             let commitments_input: BlockCommitmentsInput = load_from_stdin();
+            info!("Successfully loaded block hash commitment input.");
             let commitments = calculate_block_commitments(
                 &commitments_input.transactions_data,
                 &commitments_input.state_diff,
                 commitments_input.l1_da_mode,
             );
             write_to_file(&output_path, &commitments);
+            info!("Successfully computed block hash commitment.");
         }
     }
 }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use tracing::info;
 use tracing::warn;
 
 use crate::block_committer::errors::BlockCommitmentError;
@@ -42,6 +43,7 @@ pub async fn commit_block(input: Input<ConfigImpl>) -> BlockCommitmentResult<Fil
         &forest_sorted_indices,
         &input.config,
     )?;
+    info!("Original skeleton forest created successfully.");
 
     if input.config.warn_on_trivial_modifications() {
         check_trivial_nonce_and_class_hash_updates(
@@ -59,8 +61,9 @@ pub async fn commit_block(input: Input<ConfigImpl>) -> BlockCommitmentResult<Fil
         &input.state_diff.address_to_class_hash,
         &input.state_diff.address_to_nonce,
     )?;
+    info!("Updated skeleton forest created successfully.");
 
-    Ok(FilledForest::create::<TreeHashFunctionImpl>(
+    let filled_forest = FilledForest::create::<TreeHashFunctionImpl>(
         updated_forest,
         actual_storage_updates,
         actual_classes_updates,
@@ -68,7 +71,10 @@ pub async fn commit_block(input: Input<ConfigImpl>) -> BlockCommitmentResult<Fil
         &input.state_diff.address_to_class_hash,
         &input.state_diff.address_to_nonce,
     )
-    .await?)
+    .await?;
+    info!("Filled forest created successfully.");
+
+    Ok(filled_forest)
 }
 
 /// Compares the previous state's nonce and class hash with the given in the state diff.

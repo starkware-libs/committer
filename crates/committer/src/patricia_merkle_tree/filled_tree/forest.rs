@@ -55,11 +55,10 @@ impl FilledForest {
         address_to_class_hash: &HashMap<ContractAddress, ClassHash>,
         address_to_nonce: &HashMap<ContractAddress, Nonce>,
     ) -> ForestResult<Self> {
-        let classes_trie = ClassesTrie::create::<TH>(
+        let classes_trie_task = tokio::spawn(ClassesTrie::create::<TH>(
             Arc::new(updated_forest.classes_trie),
             Arc::new(classes_updates),
-        )
-        .await?;
+        ));
 
         let mut contracts_trie_modifications = HashMap::new();
         let mut filled_storage_tries = HashMap::new();
@@ -105,7 +104,7 @@ impl FilledForest {
         Ok(Self {
             storage_tries: filled_storage_tries,
             contracts_trie,
-            classes_trie,
+            classes_trie: classes_trie_task.await??,
         })
     }
 

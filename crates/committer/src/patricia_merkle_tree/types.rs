@@ -4,7 +4,6 @@ use crate::patricia_merkle_tree::errors::TypesError;
 use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 
-use bisection::{bisect_left, bisect_right};
 use ethnum::U256;
 
 #[cfg(test)]
@@ -271,10 +270,15 @@ impl<'a> SortedLeafIndices<'a> {
     }
 
     pub(crate) fn bisect_left(&self, leftmost_value: &NodeIndex) -> usize {
-        bisect_left(self.0, leftmost_value)
+        match self.0.binary_search(leftmost_value) {
+            Ok(pos) | Err(pos) => pos,
+        }
     }
 
     pub(crate) fn bisect_right(&self, rightmost_value: &NodeIndex) -> usize {
-        bisect_right(self.0, rightmost_value)
+        match self.0.binary_search(rightmost_value) {
+            Err(pos) => pos,
+            Ok(pos) => pos + 1,
+        }
     }
 }

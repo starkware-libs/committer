@@ -11,7 +11,7 @@ pub(crate) struct RawInput {
     pub state_diff: RawStateDiff,
     pub contracts_trie_root_hash: RawFelt,
     pub classes_trie_root_hash: RawFelt,
-    pub config: ConfigImpl,
+    pub config: RawConfigImpl,
 }
 
 #[derive(Deserialize, Debug)]
@@ -19,6 +19,21 @@ pub(crate) struct RawInput {
 pub(crate) struct RawStorageEntry {
     pub key: Vec<u8>,
     pub value: Vec<u8>,
+}
+
+#[derive(Deserialize, Debug)]
+pub(crate) struct RawConfigImpl {
+    warn_on_trivial_modifications: bool,
+    log_level: usize,
+}
+
+impl From<RawConfigImpl> for ConfigImpl {
+    fn from(raw_config: RawConfigImpl) -> Self {
+        Self::new(
+            raw_config.warn_on_trivial_modifications,
+            raw_config.log_level,
+        )
+    }
 }
 
 #[derive(Deserialize, Debug)]

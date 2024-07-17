@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use log::LevelFilter;
 
 use crate::felt::Felt;
 use crate::hash::hash_trait::HashOutput;
@@ -35,23 +35,43 @@ pub trait Config: Debug + Eq + PartialEq {
     /// If the configuration is set, it requires that the storage will contain the original data for
     /// the modified leaves. Otherwise, it is not required.
     fn warn_on_trivial_modifications(&self) -> bool;
+
+    /// Indicates from which log level output should be printed out to console.
+    fn logger_level(&self) -> LevelFilter;
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ConfigImpl {
     warn_on_trivial_modifications: bool,
+    log_level: LevelFilter,
 }
 
 impl Config for ConfigImpl {
     fn warn_on_trivial_modifications(&self) -> bool {
         self.warn_on_trivial_modifications
     }
+
+    fn logger_level(&self) -> LevelFilter {
+        self.log_level
+    }
 }
 
 impl ConfigImpl {
-    pub fn new(warn_on_trivial_modifications: bool) -> Self {
+    /// Creates a new instance from the flag of whether to warn on trivial updates or not and
+    /// converts the `logging` python library levels to `LevelFilter` as described in the docs.
+    /// https://docs.python.org/3/library/logging.html#logging-levels
+    pub fn new(warn_on_trivial_modifications: bool, python_logger_level: usize) -> Self {
+        let log_level = match python_logger_level {
+            10 => LevelFilter::Debug,
+            20 => LevelFilter::Info,
+            30 => LevelFilter::Warn,
+            40 => LevelFilter::Error,
+            _ => panic!("Unexpected log level."),
+        };
+
         Self {
             warn_on_trivial_modifications,
+            log_level,
         }
     }
 }

@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
 use crate::block_committer::input::ContractAddress;
-use crate::felt::Felt;
-use crate::forest_errors::{ForestError, ForestResult};
-use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
-use crate::patricia_merkle_tree::node_data::leaf::{
-    ContractState, LeafModifications, SkeletonLeaf,
+use crate::starknet_patricia_merkle_tree::starknet_leaf::leaf::ContractState;
+use committer::felt::Felt;
+use crate::starknet_forest::forest_errors::{ForestError, ForestResult};
+use crate::starknet_patricia_merkle_tree::node::{from_contract_address, ClassHash, Nonce};
+use committer::patricia_merkle_tree::node_data::leaf::{
+    LeafModifications, SkeletonLeaf,
 };
-use crate::patricia_merkle_tree::original_skeleton_tree::skeleton_forest::OriginalSkeletonForest;
-use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTree;
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
+use crate::starknet_forest::original_skeleton_forest::OriginalSkeletonForest;
+use committer::patricia_merkle_tree::types::NodeIndex;
+use committer::patricia_merkle_tree::updated_skeleton_tree::tree::{UpdatedSkeletonTree, UpdatedSkeletonTreeImpl};
 
 pub(crate) struct UpdatedSkeletonForest {
     pub(crate) classes_trie: UpdatedSkeletonTreeImpl,
@@ -53,7 +53,7 @@ impl UpdatedSkeletonForest {
             storage_tries.insert(*address, updated_storage_trie);
 
             let current_leaf = original_contracts_trie_leaves
-                .get(&NodeIndex::from_contract_address(address))
+                .get(&from_contract_address(address))
                 .ok_or(ForestError::MissingContractCurrentState(*address))?;
 
             let skeleton_leaf = Self::updated_contract_skeleton_leaf(
@@ -62,7 +62,7 @@ impl UpdatedSkeletonForest {
                 current_leaf,
                 storage_trie_becomes_empty,
             );
-            contracts_trie_leaves.insert(NodeIndex::from_contract_address(address), skeleton_leaf);
+            contracts_trie_leaves.insert(from_contract_address(address), skeleton_leaf);
         }
 
         // Contracts trie.

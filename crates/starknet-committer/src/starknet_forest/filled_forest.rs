@@ -1,18 +1,17 @@
 use crate::block_committer::input::{ContractAddress, StarknetStorageValue};
-use crate::forest_errors::{ForestError, ForestResult};
-use crate::hash::hash_trait::HashOutput;
-use crate::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
-use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
-use crate::patricia_merkle_tree::filled_tree::tree::FilledTree;
-use crate::patricia_merkle_tree::filled_tree::tree::{
-    ClassesTrie, ContractsTrie, StorageTrie, StorageTrieMap,
-};
-use crate::patricia_merkle_tree::node_data::leaf::{ContractState, LeafModifications};
-use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::ForestHashFunction;
-use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::UpdatedSkeletonForest;
-use crate::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
-use crate::storage::storage_trait::Storage;
+use crate::starknet_forest::forest_errors::{ForestError, ForestResult};
+use crate::starknet_patricia_merkle_tree::starknet_leaf::leaf::ContractState;
+use crate::starknet_patricia_merkle_tree::types::{ClassesTrie, ContractsTrie, StorageTrie, StorageTrieMap};
+use committer::hash::hash_trait::HashOutput;
+use crate::starknet_patricia_merkle_tree::node::{from_contract_address, CompiledClassHash};
+use crate::starknet_patricia_merkle_tree::node::{ClassHash, Nonce};
+use committer::patricia_merkle_tree::filled_tree::tree::FilledTree;
+use committer::patricia_merkle_tree::node_data::leaf::LeafModifications;
+use committer::patricia_merkle_tree::types::NodeIndex;
+use crate::hash::ForestHashFunction;
+use crate::starknet_forest::updated_skeleton_forest::UpdatedSkeletonForest;
+use committer::patricia_merkle_tree::updated_skeleton_tree::tree::UpdatedSkeletonTreeImpl;
+use committer::storage::storage_trait::Storage;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -70,7 +69,7 @@ impl FilledForest {
                 .ok_or(ForestError::MissingUpdatedSkeleton(address))?;
 
             let original_contract_state = original_contracts_trie_leaves
-                .get(&NodeIndex::from_contract_address(&address))
+                .get(&from_contract_address(&address))
                 .ok_or(ForestError::MissingContractCurrentState(address))?;
             contracts_state_tasks.spawn(Self::new_contract_state::<TH>(
                 address,
@@ -88,7 +87,7 @@ impl FilledForest {
         while let Some(result) = contracts_state_tasks.join_next().await {
             let (address, new_contract_state, filled_storage_trie) = result??;
             contracts_trie_modifications.insert(
-                NodeIndex::from_contract_address(&address),
+                from_contract_address(&address),
                 new_contract_state,
             );
             filled_storage_tries.insert(address, filled_storage_trie);

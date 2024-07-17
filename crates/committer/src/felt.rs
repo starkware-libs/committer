@@ -23,7 +23,8 @@ pub struct Felt(pub StarknetTypesFelt);
 macro_rules! impl_from_hex_for_felt_wrapper {
     ($wrapper:ty) => {
         impl $wrapper {
-            pub(crate) fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
+            #[allow(dead_code)]
+            pub fn from_hex(hex_string: &str) -> Result<Self, FromStrError> {
                 Ok(Self(Felt::from_hex(hex_string)?))
             }
         }

@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use serde_json::Value;
 
 use crate::block_committer::input::StarknetStorageValue;
-use crate::felt::Felt;
-use crate::hash::hash_trait::HashOutput;
-use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, CompiledClassHash, Nonce};
-use crate::patricia_merkle_tree::node_data::leaf::ContractState;
-use crate::patricia_merkle_tree::types::SubTreeHeight;
-use crate::storage::db_object::{DBObject, Deserializable};
-use crate::storage::errors::DeserializationError;
-use crate::storage::storage_trait::{StarknetPrefix, StorageValue};
+use committer::felt::Felt;
+use committer::hash::hash_trait::HashOutput;
+use crate::starknet_patricia_merkle_tree::node::{ClassHash, CompiledClassHash, Nonce};
+use crate::starknet_patricia_merkle_tree::starknet_leaf::leaf::ContractState;
+use committer::patricia_merkle_tree::types::SubTreeHeight;
+use committer::storage::db_object::{DBObject, Deserializable};
+use committer::storage::errors::DeserializationError;
+use committer::storage::storage_trait::{StarknetPrefix, StorageValue};
 
 #[cfg(test)]
 #[path = "leaf_serde_test.rs"]

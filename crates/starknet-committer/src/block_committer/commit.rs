@@ -7,16 +7,19 @@ use crate::block_committer::input::ConfigImpl;
 use crate::block_committer::input::ContractAddress;
 use crate::block_committer::input::Input;
 use crate::block_committer::input::StateDiff;
-use crate::patricia_merkle_tree::filled_tree::forest::FilledForest;
-use crate::patricia_merkle_tree::filled_tree::node::{ClassHash, Nonce};
-use crate::patricia_merkle_tree::node_data::leaf::ContractState;
-use crate::patricia_merkle_tree::original_skeleton_tree::skeleton_forest::ForestSortedIndices;
-use crate::patricia_merkle_tree::original_skeleton_tree::skeleton_forest::OriginalSkeletonForest;
-use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::patricia_merkle_tree::types::SortedLeafIndices;
-use crate::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
-use crate::patricia_merkle_tree::updated_skeleton_tree::skeleton_forest::UpdatedSkeletonForest;
-use crate::storage::map_storage::MapStorage;
+use crate::starknet_forest::filled_forest::FilledForest;
+use crate::starknet_patricia_merkle_tree::node::from_contract_address;
+use crate::starknet_patricia_merkle_tree::node::{ClassHash, Nonce};
+use crate::starknet_patricia_merkle_tree::starknet_leaf::leaf::ContractState;
+use crate::starknet_forest::original_skeleton_forest::ForestSortedIndices;
+use crate::starknet_forest::original_skeleton_forest::OriginalSkeletonForest;
+use committer::patricia_merkle_tree::types::NodeIndex;
+use committer::patricia_merkle_tree::types::SortedLeafIndices;
+use committer::patricia_merkle_tree::updated_skeleton_tree::hash_function::TreeHashFunctionImpl;
+use crate::starknet_forest::updated_skeleton_forest::UpdatedSkeletonForest;
+use committer::storage::map_storage::MapStorage;
+
+use super::input::StarknetStorageKey;
 
 type BlockCommitmentResult<T> = Result<T, BlockCommitmentError>;
 
@@ -80,7 +83,7 @@ fn check_trivial_nonce_and_class_hash_updates(
 ) {
     for (address, nonce) in address_to_nonce.iter() {
         if original_contracts_trie_leaves
-            .get(&NodeIndex::from_contract_address(address))
+            .get(&from_contract_address(address))
             .is_some_and(|previous_contract_state| previous_contract_state.nonce == *nonce)
         {
             warn!(
@@ -92,7 +95,7 @@ fn check_trivial_nonce_and_class_hash_updates(
 
     for (address, class_hash) in address_to_class_hash.iter() {
         if original_contracts_trie_leaves
-            .get(&NodeIndex::from_contract_address(address))
+            .get(&from_contract_address(address))
             .is_some_and(|previous_contract_state| {
                 previous_contract_state.class_hash == *class_hash
             })
@@ -120,12 +123,12 @@ pub(crate) fn get_all_modified_indices(
     let accessed_addresses = state_diff.accessed_addresses();
     let contracts_trie_indices: Vec<NodeIndex> = accessed_addresses
         .iter()
-        .map(|address| NodeIndex::from_contract_address(address))
+        .map(|address| from_contract_address(address))
         .collect();
     let classes_trie_indices: Vec<NodeIndex> = state_diff
         .class_hash_to_compiled_class_hash
         .keys()
-        .map(NodeIndex::from_class_hash)
+        .map(from_class_hash)
         .collect();
     let storage_tries_indices: HashMap<ContractAddress, Vec<NodeIndex>> = accessed_addresses
         .iter()
@@ -133,7 +136,7 @@ pub(crate) fn get_all_modified_indices(
             let indices: Vec<NodeIndex> = match state_diff.storage_updates.get(address) {
                 Some(updates) => updates
                     .keys()
-                    .map(NodeIndex::from_starknet_storage_key)
+                    .map(from_starknet_storage_key)
                     .collect(),
                 None => Vec::new(),
             };
@@ -146,3 +149,12 @@ pub(crate) fn get_all_modified_indices(
         classes_trie_indices,
     )
 }
+
+#[allow(dead_code)]
+pub(crate) fn from_class_hash(class_hash: &ClassHash) -> NodeIndex {
+    NodeIndex::from_leaf_felt(&class_hash.0)
+}
+
+pub(crate) fn from_starknet_storage_key(key: &StarknetStorageKey) -> NodeIndex {
+        NodeIndex::from_leaf_felt(&key.0)
+    }

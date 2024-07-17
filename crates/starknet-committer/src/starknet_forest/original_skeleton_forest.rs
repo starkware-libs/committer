@@ -1,24 +1,25 @@
 use crate::block_committer::input::Config;
 use crate::block_committer::input::ContractAddress;
 use crate::block_committer::input::StarknetStorageValue;
-use crate::forest_errors::ForestError;
-use crate::forest_errors::ForestResult;
-use crate::hash::hash_trait::HashOutput;
-use crate::patricia_merkle_tree::filled_tree::node::CompiledClassHash;
-use crate::patricia_merkle_tree::node_data::leaf::ContractState;
-use crate::patricia_merkle_tree::node_data::leaf::LeafModifications;
-use crate::patricia_merkle_tree::original_skeleton_tree::config::OriginalSkeletonClassesTrieConfig;
-use crate::patricia_merkle_tree::original_skeleton_tree::config::OriginalSkeletonContractsTrieConfig;
-use crate::patricia_merkle_tree::original_skeleton_tree::config::OriginalSkeletonStorageTrieConfig;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
-use crate::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
-use crate::patricia_merkle_tree::types::NodeIndex;
-use crate::patricia_merkle_tree::types::SortedLeafIndices;
-use crate::storage::storage_trait::Storage;
+use crate::starknet_forest::forest_errors::ForestError;
+use crate::starknet_forest::forest_errors::ForestResult;
+use crate::starknet_patricia_merkle_tree::node::from_contract_address;
+use crate::starknet_patricia_merkle_tree::tree::OriginalSkeletonClassesTrieConfig;
+use crate::starknet_patricia_merkle_tree::tree::OriginalSkeletonContractsTrieConfig;
+use crate::starknet_patricia_merkle_tree::tree::OriginalSkeletonStorageTrieConfig;
+use committer::hash::hash_trait::HashOutput;
+use committer::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTree;
+use crate::starknet_patricia_merkle_tree::node::CompiledClassHash;
+use crate::starknet_patricia_merkle_tree::starknet_leaf::leaf::ContractState;
+use committer::patricia_merkle_tree::node_data::leaf::LeafModifications;
+use committer::patricia_merkle_tree::original_skeleton_tree::tree::OriginalSkeletonTreeImpl;
+use committer::patricia_merkle_tree::types::NodeIndex;
+use committer::patricia_merkle_tree::types::SortedLeafIndices;
+use committer::storage::storage_trait::Storage;
 use std::collections::HashMap;
 
 #[cfg(test)]
-#[path = "skeleton_forest_test.rs"]
+#[path = "update_skeleton_forest_test.rs"]
 pub mod skeleton_forest_test;
 
 #[derive(Debug, PartialEq)]
@@ -105,7 +106,7 @@ impl<'a> OriginalSkeletonForest<'a> {
                 .get(address)
                 .ok_or(ForestError::MissingSortedLeafIndices(*address))?;
             let contract_state = original_contracts_trie_leaves
-                .get(&NodeIndex::from_contract_address(address))
+                .get(&from_contract_address(address))
                 .ok_or(ForestError::MissingContractCurrentState(*address))?;
             let config = OriginalSkeletonStorageTrieConfig::new(
                 updates,

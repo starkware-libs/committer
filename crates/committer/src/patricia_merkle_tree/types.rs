@@ -1,7 +1,5 @@
-use crate::block_committer::input::{ContractAddress, StarknetStorageKey};
 use crate::felt::Felt;
 use crate::patricia_merkle_tree::errors::TypesError;
-use crate::patricia_merkle_tree::filled_tree::node::ClassHash;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePathLength, PathToBottom};
 
 use ethnum::U256;
@@ -133,22 +131,12 @@ impl NodeIndex {
         .expect("Illegal PathToBottom")
     }
 
-    pub(crate) fn from_starknet_storage_key(key: &StarknetStorageKey) -> Self {
-        Self::from_leaf_felt(&key.0)
-    }
-
-    pub(crate) fn from_contract_address(address: &ContractAddress) -> Self {
-        Self::from_leaf_felt(&address.0)
-    }
-
-    pub(crate) fn from_class_hash(class_hash: &ClassHash) -> Self {
-        Self::from_leaf_felt(&class_hash.0)
-    }
-
-    fn from_leaf_felt(felt: &Felt) -> Self {
+    #[allow(dead_code)]
+    pub fn from_leaf_felt(felt: &Felt) -> Self {
         Self::FIRST_LEAF + Self::from_felt_value(felt)
     }
 
+    #[allow(dead_code)]
     fn from_felt_value(felt: &Felt) -> Self {
         Self(U256::from(felt))
     }
@@ -225,18 +213,18 @@ impl TryFrom<NodeIndex> for Felt {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub(crate) struct SortedLeafIndices<'a>(&'a [NodeIndex]);
+pub struct SortedLeafIndices<'a>(&'a [NodeIndex]);
 
 impl<'a> SortedLeafIndices<'a> {
     /// Creates a new instance by sorting the given indices.
     // TODO(Nimrod, 1/8/2024): Remove duplicates from the given indices.
-    pub(crate) fn new(indices: &'a mut [NodeIndex]) -> Self {
+    pub fn new(indices: &'a mut [NodeIndex]) -> Self {
         indices.sort();
         Self(indices)
     }
 
     /// Returns a subslice of the indices stored at self, at the range [leftmost_idx, rightmost_idx).
-    pub(crate) fn subslice(&self, leftmost_idx: usize, rightmost_idx: usize) -> Self {
+    pub fn subslice(&self, leftmost_idx: usize, rightmost_idx: usize) -> Self {
         Self(&self.0[leftmost_idx..rightmost_idx])
     }
 

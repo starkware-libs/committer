@@ -2062,6 +2062,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "starknet-committer"
+version = "0.1.0-rc.0"
+dependencies = [
+ "committer",
+ "log",
+ "rstest",
+ "serde",
+ "serde_json",
+ "starknet-types-core",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "starknet-crypto"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

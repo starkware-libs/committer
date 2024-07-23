@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 use committer::{
     block_committer::input::{ConfigImpl, Input},
@@ -168,4 +168,46 @@ pub async fn test_regression_committer_flow() {
 
     // Assert the execution time does not exceed the threshold.
     assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);
+}
+
+#[ignore = "To avoid running the benchmark test in Coverage or without the --release flag."]
+#[tokio::test(flavor = "multi_thread")]
+pub async fn test_regression_committer_all_files() {
+    let dir_path = fs::read_dir("./benches/regression_files").unwrap();
+    let mut file_counter = 0;
+    for file_path in dir_path {
+        file_counter += 1;
+        let CommitterRegressionInput {
+            committer_input,
+            contract_states_root: expected_contract_states_root,
+            contract_classes_root: expected_contract_classes_root,
+            expected_facts,
+        } = serde_json::from_str(&fs::read_to_string(file_path.unwrap().path()).unwrap()).unwrap();
+
+        let start = std::time::Instant::now();
+        // Benchmark the committer flow test.
+        commit(committer_input.0, OUTPUT_PATH.to_owned()).await;
+        let execution_time = std::time::Instant::now() - start;
+
+        // Assert correctness of the output of the committer flow test.
+        let CommitterRegressionOutput {
+            contract_storage_root_hash,
+            compiled_class_root_hash,
+            storage:
+                StorageObject {
+                    storage: Value::Object(storage_changes),
+                },
+        } = serde_json::from_str(&std::fs::read_to_string(OUTPUT_PATH).unwrap()).unwrap()
+        else {
+            panic!("Expected the storage to be an object.");
+        };
+
+        assert_eq!(contract_storage_root_hash, expected_contract_states_root);
+        assert_eq!(compiled_class_root_hash, expected_contract_classes_root);
+        assert_eq!(storage_changes, *expected_facts);
+
+        // Assert the execution time does not exceed the threshold.
+        assert!(execution_time.as_secs_f64() < MAX_TIME_FOR_COMMITTER_FLOW_BECHMARK_TEST);
+    }
+    assert_eq!(file_counter, 100);
 }

@@ -27,7 +27,7 @@ use rand::rngs::ThreadRng;
 use rstest::{fixture, rstest};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default, Eq)]
-pub(crate) struct MockLeaf(pub(crate) Felt);
+pub struct MockLeaf(pub(crate) Felt);
 
 impl DBObject for MockLeaf {
     fn serialize(&self) -> StorageValue {

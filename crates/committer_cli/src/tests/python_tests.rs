@@ -16,6 +16,7 @@ use committer::patricia_merkle_tree::node_data::inner_node::{
     BinaryData, EdgeData, EdgePathLength, NodeData, PathToBottom,
 };
 use committer::patricia_merkle_tree::node_data::leaf::ContractState;
+use committer::patricia_merkle_tree::original_skeleton_tree::config::OriginalSkeletonStorageTrieConfig;
 use committer::patricia_merkle_tree::types::SubTreeHeight;
 use log::error;
 
@@ -187,7 +188,13 @@ impl PythonTest {
                     root_hash,
                 } = serde_json::from_str(Self::non_optional_input(input)?)?;
                 // 2. Run the test.
-                let output = single_tree_flow_test(leaf_modifications, storage, root_hash).await;
+                let output = single_tree_flow_test::<StarknetStorageValue, TreeHashFunctionImpl>(
+                    leaf_modifications.clone(),
+                    storage,
+                    root_hash,
+                    OriginalSkeletonStorageTrieConfig::new(&leaf_modifications, false),
+                )
+                .await;
                 // 3. Serialize and return output.
                 Ok(output)
             }

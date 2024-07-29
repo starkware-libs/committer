@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use thiserror::Error;
 
+use crate::patricia_merkle_tree::filled_tree::errors::StorageTrieError;
 use crate::patricia_merkle_tree::node_data::inner_node::{EdgePath, EdgePathLength};
 use crate::patricia_merkle_tree::types::NodeIndex;
 
@@ -28,6 +29,8 @@ pub enum EdgePathError {
 pub enum LeafError {
     #[error("Missing modification data at index {0:?}.")]
     MissingLeafModificationData(NodeIndex),
+    #[error("While computing the storage trie at index {0:?} got the following error: {1:?}")]
+    StorageTrieComputationFailed(Box<StorageTrieError>, NodeIndex),
 }
 
 pub type LeafResult<T> = Result<T, LeafError>;

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::felt::Felt;
 use crate::generate_trie_config;
 use crate::hash::hash_trait::HashOutput;
@@ -52,15 +50,15 @@ impl Deserializable for MockLeaf {
 }
 
 impl Leaf for MockLeaf {
+    type I = Self;
+    type O = ();
+
     fn is_empty(&self) -> bool {
         self.0 == Felt::ZERO
     }
 
-    async fn create(
-        index: &NodeIndex,
-        leaf_modifications: Arc<LeafModifications<Self>>,
-    ) -> LeafResult<Self> {
-        Self::from_modifications(index, leaf_modifications)
+    async fn create(input: Self::I) -> LeafResult<(Self, Option<Self::O>)> {
+        Ok((input, None))
     }
 }
 

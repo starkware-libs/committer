@@ -7,7 +7,7 @@
 // Then upload the new files to GCS with this new prefix (run e.g.,
 // gcloud storage cp LOCAL_FILE gs://committer-testing-artifacts/NEW_PREFIX/tree_flow_inputs.json).
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use committer::{
     block_committer::input::StarknetStorageValue,
@@ -17,7 +17,7 @@ use committer::{
     },
 };
 use committer_cli::{commands::parse_and_commit, tests::utils::parse_from_python::TreeFlowInput};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 
 const CONCURRENCY_MODE: bool = true;
 const SINGLE_TREE_FLOW_INPUT: &str = include_str!("tree_flow_inputs.json");
@@ -42,16 +42,19 @@ pub fn single_tree_flow_benchmark(criterion: &mut Criterion) {
         .into_iter()
         .map(|(k, v)| (NodeIndex::FIRST_LEAF + k, v))
         .collect::<LeafModifications<StarknetStorageValue>>();
-    let arc_leaf_modifications = Arc::new(leaf_modifications);
 
-    criterion.bench_function("tree_computation_flow", |benchmark| {
-        benchmark.iter(|| {
-            runtime.block_on(tree_computation_flow(
-                Arc::clone(&arc_leaf_modifications),
-                &storage,
-                root_hash,
-            ));
-        })
+    criterion.bench_function("tree_computation_flow", move |b| {
+        b.iter_batched(
+            || leaf_modifications.clone(),
+            |leaf_modifications_input| {
+                runtime.block_on(tree_computation_flow(
+                    leaf_modifications_input,
+                    &storage,
+                    root_hash,
+                ));
+            },
+            BatchSize::LargeInput,
+        )
     });
 }
 

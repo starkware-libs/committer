@@ -249,8 +249,8 @@ impl<L: Leaf + 'static> FilledTree<L> for FilledTreeImpl<L> {
         // This function iterates over each node in the tree, using the node's `db_key` as the hashmap key
         // and the result of the node's `serialize` method as the value.
         self.get_all_nodes()
-            .iter()
-            .map(|(_, node)| (node.db_key(), node.serialize()))
+            .values()
+            .map(|node| (node.db_key(), node.serialize()))
             .collect()
     }
 

@@ -22,6 +22,7 @@ pub(crate) const STORAGE_LEAF_SIZE: usize = SERIALIZE_HASH_BYTES;
 
 /// Temporary struct to serialize the leaf CompiledClass.
 /// Required to comply to existing storage layout.
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 pub(crate) struct LeafCompiledClassToSerialize {
     pub(crate) compiled_class_hash: Felt,

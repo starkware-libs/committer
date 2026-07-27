@@ -9,19 +9,19 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
         with:
           components: rustfmt
           toolchain: nightly-2024-01-12
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       # Fetch testing artifacts.
       - id: auth
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093" # v3.0.0
         with:
           credentials_json: ${{ secrets.COMMITER_PRODUCTS_EXT_WRITER_JSON }}
-      - uses: 'google-github-actions/setup-gcloud@v2'
+      - uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # v3.0.1
       - run: echo "INPUT_FILES_PREFIX=$(cat ./crates/committer_cli/src/tests/flow_test_files_prefix)" >> $GITHUB_ENV
       - run: gcloud storage cp gs://committer-testing-artifacts/$INPUT_FILES_PREFIX/tree_flow_inputs.json ./crates/committer_cli/benches/tree_flow_inputs.json
       - run: gcloud storage cp gs://committer-testing-artifacts/$INPUT_FILES_PREFIX/committer_flow_inputs.json ./crates/committer_cli/benches/committer_flow_inputs.json

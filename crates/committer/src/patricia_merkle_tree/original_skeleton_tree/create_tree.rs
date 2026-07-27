@@ -245,7 +245,7 @@ impl<'a> OriginalSkeletonTreeImpl<'a> {
 
         let db_vals = storage.mget(&db_keys);
         for ((subtree, optional_val), db_key) in
-            subtrees.iter().zip(db_vals.iter()).zip(db_keys.into_iter())
+            subtrees.iter().zip(db_vals.iter()).zip(db_keys)
         {
             let val = optional_val.ok_or(StorageError::MissingKey(db_key))?;
             subtrees_roots.push(FilledNode::deserialize(
